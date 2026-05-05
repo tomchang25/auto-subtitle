@@ -22,4 +22,5 @@ def test_translation_news_subtitles():
         print(f"\nEN: {chunk['segment']}\nZH: {chunk['translation']}")
 
 
-test_translation_news_subtitles()
+if __name__ == "__main__":
+    test_translation_news_subtitles()
