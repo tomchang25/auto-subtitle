@@ -21,3 +21,7 @@ pydub
 yt-dlp
 ffmpeg-python
 
+# Translation (Gemini)
+google-genai
+python-dotenv
+
