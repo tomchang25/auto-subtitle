@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+import logging
 from typing import List
 
 from subforge.translation.base import SubtitleChunk, TranslatedChunk
+
+logger = logging.getLogger(__name__)
+
+# Default batch sizes by device — GPU can handle more at once
+_DEFAULT_BATCH_CPU = 4
+_DEFAULT_BATCH_GPU = 16
 
 
 class NLLBTranslator:
@@ -12,11 +19,11 @@ class NLLBTranslator:
         self,
         src_lang: str = "eng_Latn",
         tgt_lang: str = "zho_Hans",
-        batch_size: int = 4,
+        batch_size: int | None = None,
     ):
         self.src_lang = src_lang
         self.tgt_lang = tgt_lang
-        self.batch_size = batch_size
+        self._explicit_batch_size = batch_size
         self._tokenizer = None
         self._model = None
 
@@ -37,12 +44,23 @@ class NLLBTranslator:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._model.to(device)
 
+        if self._explicit_batch_size is not None:
+            batch_size = self._explicit_batch_size
+        else:
+            batch_size = _DEFAULT_BATCH_GPU if device.type == "cuda" else _DEFAULT_BATCH_CPU
+
+        logger.info(
+            "NLLB translation: %d chunks, batch_size=%d, device=%s",
+            len(chunks), batch_size, device,
+        )
+
         self._tokenizer.src_lang = self.src_lang
         texts = [c["segment"] for c in chunks]
         translations: list[str] = []
+        total = len(texts)
 
-        for i in range(0, len(texts), self.batch_size):
-            batch = texts[i : i + self.batch_size]
+        for i in range(0, total, batch_size):
+            batch = texts[i : i + batch_size]
             inputs = self._tokenizer(
                 batch,
                 return_tensors="pt",
@@ -56,5 +74,8 @@ class NLLBTranslator:
             )
             decoded = self._tokenizer.batch_decode(generated, skip_special_tokens=True)
             translations.extend(decoded)
+
+            done = min(i + batch_size, total)
+            logger.info("NLLB progress: %d/%d (%d%%)", done, total, done * 100 // total)
 
         return [{**c, "translation": zh} for c, zh in zip(chunks, translations)]
