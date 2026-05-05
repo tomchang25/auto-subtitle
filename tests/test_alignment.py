@@ -153,6 +153,7 @@ def test_split_long_sentences_by_length():
                 )
 
 
-# test_align_sentences_with_timestamps()
-# test_refine_sentences_by_timing()
-test_split_long_sentences_by_length()
+if __name__ == "__main__":
+    # test_align_sentences_with_timestamps()
+    # test_refine_sentences_by_timing()
+    test_split_long_sentences_by_length()

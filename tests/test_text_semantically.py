@@ -59,4 +59,5 @@ def test_split_to_sentences():
         print(f"> {words}")
 
 
-test_split_to_sentences()
+if __name__ == "__main__":
+    test_split_to_sentences()

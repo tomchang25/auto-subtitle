@@ -7,12 +7,20 @@ from transformers import (
 import torch
 
 # --- MarianMT Setup ---
-_marian_model = "Helsinki-NLP/opus-mt-en-zh"
-_marian_tokenizer = MarianTokenizer.from_pretrained(_marian_model)
-_marian_model_obj = MarianMTModel.from_pretrained(_marian_model)
+_marian_model_name = "Helsinki-NLP/opus-mt-en-zh"
+_marian_tokenizer = None
+_marian_model_obj = None
+
+
+def _load_marian_model():
+    global _marian_tokenizer, _marian_model_obj
+    if _marian_tokenizer is None or _marian_model_obj is None:
+        _marian_tokenizer = MarianTokenizer.from_pretrained(_marian_model_name)
+        _marian_model_obj = MarianMTModel.from_pretrained(_marian_model_name)
 
 
 def _translate_marian(texts, batch_size=8):
+    _load_marian_model()
     all_translations = []
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
@@ -150,14 +158,3 @@ def translate_subtitles(chunks, method="marian", **kwargs):
     return chunks
 
 
-if __name__ == "__main__":
-    print("0")
-    from google import genai
-
-    print("1")
-    client = genai.Client(api_key="AIzaSyBZjna_LeqnINgH4jSW2zWI7nkNvWeNRp0")
-    print("2")
-    response = client.models.generate_content(
-        model="gemini-2.0-flash", contents="Explain how AI works in a few words"
-    )
-    print(response.text)
