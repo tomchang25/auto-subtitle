@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, List
 
-from subforge.translation.base import SubtitleChunk, TranslatedChunk
+from subforge.translation.base import ProgressCallback, SubtitleChunk, TranslatedChunk
 
 if TYPE_CHECKING:
     from google import genai
@@ -271,6 +271,7 @@ class GeminiTranslator:
         chunks: List[SubtitleChunk],
         cache_dir: Path | None = None,
         force: bool = False,
+        progress_callback: ProgressCallback | None = None,
     ) -> List[TranslatedChunk]:
         """Translate all chunks, splitting into batches for long inputs.
 
@@ -313,6 +314,13 @@ class GeminiTranslator:
                             "Batch %d/%d: loaded from cache", batch_idx + 1, num_batches
                         )
                         all_results.extend(cached)
+                        if progress_callback:
+                            done = len(all_results)
+                            pct = done * 100 // total
+                            progress_callback(
+                                "Translate",
+                                f"{pct}% ({done}/{total} chunks, batch {batch_idx + 1}/{num_batches} cached)",
+                            )
                         continue
                     logger.warning(
                         "Batch %d/%d: cache size mismatch (%d vs %d), re-translating",
@@ -339,9 +347,16 @@ class GeminiTranslator:
                 with open(batch_cache, "w", encoding="utf-8") as f:
                     json.dump(batch_results, f, ensure_ascii=False, indent=2)
 
+            done = len(all_results)
+            pct = done * 100 // total
             logger.info(
                 "Batch %d/%d complete (%d/%d total)",
-                batch_idx + 1, num_batches, len(all_results), total,
+                batch_idx + 1, num_batches, done, total,
             )
+            if progress_callback:
+                progress_callback(
+                    "Translate",
+                    f"{pct}% ({done}/{total} chunks, batch {batch_idx + 1}/{num_batches})",
+                )
 
         return all_results

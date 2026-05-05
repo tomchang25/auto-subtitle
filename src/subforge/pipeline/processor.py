@@ -213,6 +213,7 @@ class SubtitlePipeline:
                     en_sentences,
                     cache_dir=translation_cache,
                     force=self.force,
+                    progress_callback=self.progress_callback,
                 )
             except Exception as exc:
                 err_msg = str(exc)

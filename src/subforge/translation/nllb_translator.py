@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import List
 
-from subforge.translation.base import SubtitleChunk, TranslatedChunk
+from subforge.translation.base import ProgressCallback, SubtitleChunk, TranslatedChunk
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,7 @@ class NLLBTranslator:
         chunks: List[SubtitleChunk],
         cache_dir: Path | None = None,
         force: bool = False,
+        progress_callback: ProgressCallback | None = None,
     ) -> List[TranslatedChunk]:
         self._load()
         import torch
@@ -82,6 +83,12 @@ class NLLBTranslator:
             translations.extend(decoded)
 
             done = min(i + batch_size, total)
-            logger.info("NLLB progress: %d/%d (%d%%)", done, total, done * 100 // total)
+            pct = done * 100 // total
+            logger.info("NLLB progress: %d/%d (%d%%)", done, total, pct)
+            if progress_callback:
+                progress_callback(
+                    "Translate",
+                    f"{pct}% ({done}/{total} chunks)",
+                )
 
         return [{**c, "translation": zh} for c, zh in zip(chunks, translations)]
