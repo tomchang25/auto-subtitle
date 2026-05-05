@@ -1,13 +1,6 @@
 import argparse
 import logging
 
-from subforge.pipeline.processor import SubtitlePipeline
-from subforge.config import (
-    WHISPER_MODEL,
-    OUTPUT_DIR,
-    DEFAULT_URL,
-)
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate subtitles from a YouTube URL.")
@@ -33,6 +26,12 @@ def parse_args():
 
 
 def main():
+    from subforge.utils import check_dependencies
+    check_dependencies(gui=False)
+
+    from subforge.pipeline.processor import SubtitlePipeline
+    from subforge.config import WHISPER_MODEL, OUTPUT_DIR, DEFAULT_URL
+
     logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(name)s - %(message)s")
     args = parse_args()
     url = args.url or input("Enter YouTube URL: ").strip() or DEFAULT_URL

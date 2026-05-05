@@ -1,17 +1,20 @@
 # Python
 __pycache__/
+
 *.py[cod]
 *$py.class
 *.egg-info/
+*.egg
+
 dist/
 build/
-*.egg
 tests/data/*.wav
 tests/data/*.mp3
 
 # Virtual environment
 venv/
 .venv/
+.testvenv/
 
 # Models (large files)
 models/

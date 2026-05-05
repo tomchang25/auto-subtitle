@@ -1,8 +1,42 @@
+import importlib.util
 import json
 import logging
+import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# Modules required by each entry point, mapped to their pip package names.
+_CORE_DEPS = {
+    "faster_whisper": "faster-whisper",
+    "yt_dlp": "yt-dlp",
+    "ffmpeg": "ffmpeg-python",
+    "demucs": "demucs",
+}
+_GUI_DEPS = {
+    "PySide6": "PySide6-Essentials",
+}
+
+
+def check_dependencies(*, gui: bool = False) -> None:
+    """Check that required optional packages are installed.
+
+    Exits with a clear message if anything is missing, so the user doesn't
+    see a raw ImportError traceback.
+    """
+    required = dict(_CORE_DEPS)
+    if gui:
+        required.update(_GUI_DEPS)
+
+    missing = [
+        pkg for mod, pkg in required.items() if importlib.util.find_spec(mod) is None
+    ]
+    if missing:
+        print(
+            f"\n✗ Missing dependencies: {', '.join(missing)}\n"
+            f'  Install with:  pip install -e ".[full]"\n'
+        )
+        sys.exit(1)
 
 
 def save_word_segments(word_segments, path: Path):
