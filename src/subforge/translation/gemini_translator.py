@@ -27,7 +27,9 @@ LANG_MAP: dict[str, str] = {
     "eng_Latn": "English",
 }
 
+# Matches "1. text" or "1) text" — captures the number and the rest
 _NUMBERING_RE = re.compile(r"^\d+[\.\)]\s*")
+_NUMBERED_LINE_RE = re.compile(r"^(\d+)[\.\)]\s*(.*)")
 
 MODEL_FALLBACK: list[str] = [
     "gemini-3.1-flash-lite-preview",  # 500 RPD
@@ -81,24 +83,44 @@ class GeminiTranslator:
             self._client = _genai.Client(api_key=self._api_key)
 
     def _build_prompt(self, texts: list[str], src_name: str, tgt_name: str) -> str:
+        n = len(texts)
         numbered = "\n".join(f"{i + 1}. {t}" for i, t in enumerate(texts))
         return (
             f"You are a professional subtitle translator.\n"
-            f"Translate the following {src_name} subtitles into {tgt_name}.\n"
+            f"Translate the following {n} {src_name} subtitles into {tgt_name}.\n"
             f"Rules:\n"
+            f"- Output EXACTLY {n} lines, numbered 1 to {n}\n"
+            f"- One translation per line — do NOT merge or split lines\n"
+            f"- Even if a line is very short or seems incomplete, translate it as-is on its own line\n"
             f"- Keep translations concise (suitable for subtitles)\n"
-            f"- Maintain the same numbering\n"
-            f"- Output ONLY the translations, one per line, prefixed with the number\n"
-            f"- Do not add explanations\n\n"
+            f"- Output ONLY the numbered translations, no explanations\n\n"
             f"{numbered}"
         )
 
-    def _parse_response(self, text: str, expected: int) -> list[str] | None:
+    def _parse_response_strict(self, text: str, expected: int) -> list[str] | None:
+        """Parse response expecting exact count match (fast path)."""
         lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
         translations = [
             _NUMBERING_RE.sub("", line) for line in lines if _NUMBERING_RE.match(line)
         ]
         return translations if len(translations) == expected else None
+
+    def _parse_response_by_number(self, text: str, expected: int) -> list[str]:
+        """Parse response by matching line numbers, filling gaps with empty strings."""
+        result = [""] * expected
+        matched = 0
+        for line in text.strip().splitlines():
+            m = _NUMBERED_LINE_RE.match(line.strip())
+            if not m:
+                continue
+            idx = int(m.group(1)) - 1  # 0-based
+            if 0 <= idx < expected:
+                result[idx] = m.group(2).strip()
+                matched += 1
+        logger.info(
+            "Number-based parse: matched %d/%d lines", matched, expected
+        )
+        return result
 
     def _call_api(self, prompt: str, model: str) -> str:
         """Call Gemini API with specified model and return the response text."""
@@ -135,6 +157,9 @@ class GeminiTranslator:
                 "Trying model: %s (%d/%d)", model, model_idx + 1, len(self._models)
             )
 
+            best_response: str | None = None
+            best_match_count: int = 0
+
             for attempt in range(3):
                 try:
                     response_text = self._call_api(prompt, model)
@@ -142,12 +167,14 @@ class GeminiTranslator:
                         "=== RESPONSE START (model=%s, attempt=%d) ===\n%s\n=== RESPONSE END ===",
                         model, attempt + 1, response_text,
                     )
-                    parsed = self._parse_response(response_text, len(texts))
+
+                    # Fast path: exact count match
+                    parsed = self._parse_response_strict(response_text, len(texts))
                     if parsed is not None:
                         logger.info("Translation success: %d/%d chunks translated", len(parsed), len(texts))
                         return [{**c, "translation": t} for c, t in zip(chunks, parsed)]
 
-                    # Count mismatch — log details for debugging
+                    # Count mismatch — log details
                     response_lines = [
                         line.strip()
                         for line in response_text.strip().splitlines()
@@ -160,33 +187,14 @@ class GeminiTranslator:
                         len(texts), len(numbered_lines), len(response_lines),
                         model, attempt + 1,
                     )
-                    # Show first and last few lines for quick diagnosis
                     if numbered_lines:
                         preview = numbered_lines[:3] + (["..."] if len(numbered_lines) > 6 else []) + numbered_lines[-3:]
                         logger.info("Response preview:\n  %s", "\n  ".join(preview))
 
-                    if attempt < 2:
-                        pass  # retry
-                    else:
-                        logger.warning(
-                            "Count mismatch after 3 retries, returning partial results"
-                        )
-                        lines = [
-                            line.strip()
-                            for line in response_text.strip().splitlines()
-                            if line.strip()
-                        ]
-                        translations = [
-                            _NUMBERING_RE.sub("", line)
-                            for line in lines
-                            if _NUMBERING_RE.match(line)
-                        ]
-                        translations = translations[: len(texts)]
-                        translations.extend([""] * (len(texts) - len(translations)))
-                        return [
-                            {**c, "translation": t}
-                            for c, t in zip(chunks, translations)
-                        ]
+                    # Track best response across retries
+                    if len(numbered_lines) > best_match_count:
+                        best_match_count = len(numbered_lines)
+                        best_response = response_text
                 except Exception as exc:
                     last_exc = exc
                     exc_str = str(exc)
@@ -228,6 +236,18 @@ class GeminiTranslator:
                             exc_str,
                         )
                         break  # → next model
+
+            # After 3 attempts with this model: fall back to number-based parse
+            if best_response is not None:
+                logger.warning(
+                    "Using best response (%d/%d lines) with number-based alignment",
+                    best_match_count, len(texts),
+                )
+                translations = self._parse_response_by_number(best_response, len(texts))
+                missing = [i + 1 for i, t in enumerate(translations) if not t]
+                if missing:
+                    logger.warning("Missing translations for lines: %s", missing)
+                return [{**c, "translation": t} for c, t in zip(chunks, translations)]
 
         logger.error("Translation failed: all models exhausted")
         raise RuntimeError("Translation failed: all models exhausted") from last_exc
