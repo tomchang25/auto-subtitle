@@ -91,7 +91,12 @@ def refine_sentences_by_timing(
         duration = end - start
 
         if duration < min_duration and merged:
-            merged[-1].extend(chunk)
+            prev_end = merged[-1][-1]["end"]
+            gap = chunk[0]["start"] - prev_end
+            if gap <= max_gap:
+                merged[-1].extend(chunk)
+            else:
+                merged.append(chunk)
         else:
             merged.append(chunk)
 

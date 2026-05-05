@@ -16,6 +16,7 @@ from youtube_subtitle_app.nlp.alignment import (
     align_sentences_with_timestamps,
     refine_sentences_by_timing,
 )
+from youtube_subtitle_app.nlp.segmentation import split_long_sentences_by_length
 
 from youtube_subtitle_app.subtitle.writer import write_srt
 
@@ -24,6 +25,8 @@ from youtube_subtitle_app.config import (
     WHISPER_MODEL,
     ENGINE,
     OUTPUT_DIR,
+    MAX_WORDS,
+    SOFT_LIMIT,
 )
 from youtube_subtitle_app.utils import get_bounds_and_text
 
@@ -135,13 +138,17 @@ class SubtitlePipeline:
         self._emit("Refine", "Refining segment timing")
         refined = refine_sentences_by_timing(aligned)
 
-        # Step 8: Write SRT
+        # Step 8: Split long segments
+        self._emit("Split", "Splitting long segments by word count")
+        refined = split_long_sentences_by_length(refined, min_words=SOFT_LIMIT, max_words=MAX_WORDS)
+
+        # Step 9: Write SRT
         en_sentences = get_bounds_and_text(refined)
         srt_path = self.project_dir / "output.srt"
         write_srt(en_sentences, srt_path)
         self._emit("Done", f"SRT written to {srt_path}")
 
-        # Step 9 (optional): Download MP4 with audio
+        # Step 10 (optional): Download MP4 with audio
         if self.download_mp4:
             self._emit("Video", f"Downloading MP4 (quality={self.video_quality})")
             output_base = self.project_dir / self.title
