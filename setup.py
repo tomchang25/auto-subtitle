@@ -1,19 +1,27 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="youtube_subtitle_app",
+    name="auto-subtitle",
     version="0.1.0",
     author="Greysuki",
-    description="A tool to download YouTube audio and generate subtitles using ASR and NLP.",
+    description="Generate clean, accurate subtitles from YouTube videos.",
     packages=find_packages(),
     install_requires=[
         "yt-dlp",
-        "nemo_toolkit[asr]",
+        "faster-whisper",
         "spacy",
         "ffmpeg-python",
-        "torch",
         "demucs",
-        "pytest",
+        "PySide6",
+        # torch: installed separately via setup.bat/sh with CUDA support
     ],
+    extras_require={
+        "experimental": [
+            "nemo_toolkit[asr]",
+        ],
+        "dev": [
+            "pytest",
+        ],
+    },
     python_requires=">=3.11",
 )
