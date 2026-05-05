@@ -11,6 +11,8 @@ def format_srt(segments):
         start = format_time(seg["start"])
         end = format_time(seg["end"])
         text = seg["segment"].strip()
+        if seg.get("translation"):
+            text = text + "\n" + seg["translation"].strip()
         srt_lines.extend([str(i), f"{start} --> {end}", text, ""])
 
     return "\n".join(srt_lines)

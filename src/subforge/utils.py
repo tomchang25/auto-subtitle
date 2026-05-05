@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 import importlib.util
 import json
 import logging
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from subforge.translation.base import SubtitleChunk
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +50,7 @@ def save_word_segments(word_segments, path: Path):
         json.dump(word_segments, f, indent=2)
 
 
-def get_bounds_and_text(chunks):
+def get_bounds_and_text(chunks) -> list[SubtitleChunk]:
     return [
         {
             "start": chunk[0]["start"],

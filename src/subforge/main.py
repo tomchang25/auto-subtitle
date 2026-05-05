@@ -3,6 +3,8 @@ import logging
 
 
 def parse_args():
+    from subforge.translation.factory import BACKEND_NAMES
+
     parser = argparse.ArgumentParser(description="Generate subtitles from a YouTube URL.")
     parser.add_argument("--url", help="YouTube URL (prompted if omitted).")
     parser.add_argument(
@@ -21,6 +23,12 @@ def parse_args():
         default="1080p",
         choices=("480p", "720p", "1080p", "1440p", "2160p"),
         help="Video quality when downloading MP4 (default: 1080p).",
+    )
+    parser.add_argument(
+        "--translate",
+        default=None,
+        choices=BACKEND_NAMES,
+        help="Enable translation and choose backend (default: disabled).",
     )
     return parser.parse_args()
 
@@ -44,6 +52,7 @@ def main():
         output_dir=OUTPUT_DIR,
         download_mp4=args.download_video,
         video_quality=args.video_quality,
+        translate_method=args.translate,
     )
 
     logger = logging.getLogger(__name__)

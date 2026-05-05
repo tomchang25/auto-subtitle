@@ -27,6 +27,7 @@ from subforge.pipeline.processor import SubtitlePipeline, PipelineCancelled
 from subforge.transcription.faster_whisper_transcriber import (
     SUPPORTED_MODELS as WHISPER_MODELS,
 )
+from subforge.translation.factory import BACKEND_NAMES
 
 
 class PipelineWorker(QObject):
@@ -42,6 +43,7 @@ class PipelineWorker(QObject):
         use_demucs: bool,
         download_mp4: bool = False,
         video_quality: str = "1080p",
+        translate_method: str | None = None,
     ):
         super().__init__()
         self.url = url
@@ -49,6 +51,7 @@ class PipelineWorker(QObject):
         self.use_demucs = use_demucs
         self.download_mp4 = download_mp4
         self.video_quality = video_quality
+        self.translate_method = translate_method
         self._pipeline: SubtitlePipeline | None = None
 
     def cancel(self):
@@ -66,10 +69,13 @@ class PipelineWorker(QObject):
                 use_demucs=self.use_demucs,
                 download_mp4=self.download_mp4,
                 video_quality=self.video_quality,
+                translate_method=self.translate_method,
                 progress_callback=lambda step, detail: self.progress.emit(step, detail),
             )
             srt_path = self._pipeline.run()
-            video_path = str(self._pipeline.video_path) if self._pipeline.video_path else ""
+            video_path = (
+                str(self._pipeline.video_path) if self._pipeline.video_path else ""
+            )
             self.finished.emit(str(srt_path), video_path)
         except PipelineCancelled:
             self.cancelled.emit()
@@ -122,7 +128,9 @@ class MainWindow(QMainWindow):
 
         self.download_mp4_check = QCheckBox("Download MP4")
         self.download_mp4_check.setChecked(False)
-        self.download_mp4_check.setToolTip("Download video (with audio) for testing with SRT")
+        self.download_mp4_check.setToolTip(
+            "Download video (with audio) for testing with SRT"
+        )
         settings_row.addWidget(self.download_mp4_check)
 
         self.quality_combo = QComboBox()
@@ -130,6 +138,13 @@ class MainWindow(QMainWindow):
         self.quality_combo.setCurrentText("1080p")
         self.quality_combo.setToolTip("Video quality")
         settings_row.addWidget(self.quality_combo)
+
+        settings_row.addWidget(QLabel("Translate:"))
+        self.translate_combo = QComboBox()
+        self.translate_combo.addItems(["none"] + BACKEND_NAMES)
+        self.translate_combo.setCurrentText("none")
+        self.translate_combo.setToolTip("Translation backend (none = disabled)")
+        settings_row.addWidget(self.translate_combo)
 
         settings_row.addStretch(1)
         layout.addLayout(settings_row)
@@ -170,6 +185,7 @@ class MainWindow(QMainWindow):
         self._append_log(f"Starting: {url}")
         self._append_log(f"Model: {model_name}")
 
+        translate_text = self.translate_combo.currentText()
         self._thread = QThread(self)
         self._worker = PipelineWorker(
             url=url,
@@ -177,6 +193,7 @@ class MainWindow(QMainWindow):
             use_demucs=self.demucs_check.isChecked(),
             download_mp4=self.download_mp4_check.isChecked(),
             video_quality=self.quality_combo.currentText(),
+            translate_method=None if translate_text == "none" else translate_text,
         )
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)
