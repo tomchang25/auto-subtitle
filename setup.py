@@ -9,10 +9,12 @@ setup(
     install_requires=[
         "yt-dlp",
         "nemo_toolkit[asr]",
+        "faster-whisper",
         "spacy",
         "ffmpeg-python",
         "torch",
         "demucs",
+        "PySide6",
         "pytest",
     ],
     python_requires=">=3.11",
