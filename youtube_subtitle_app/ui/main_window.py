@@ -35,15 +35,25 @@ ENGINES = ("faster-whisper", "parakeet")
 
 class PipelineWorker(QObject):
     progress = Signal(str, str)
-    finished = Signal(str)
+    finished = Signal(str, str)  # srt_path, video_path (or empty)
     failed = Signal(str)
 
-    def __init__(self, url: str, engine: str, model_name: str, use_demucs: bool):
+    def __init__(
+        self,
+        url: str,
+        engine: str,
+        model_name: str,
+        use_demucs: bool,
+        download_mp4: bool = False,
+        video_quality: str = "1080p",
+    ):
         super().__init__()
         self.url = url
         self.engine = engine
         self.model_name = model_name
         self.use_demucs = use_demucs
+        self.download_mp4 = download_mp4
+        self.video_quality = video_quality
 
     @Slot()
     def run(self):
@@ -54,10 +64,13 @@ class PipelineWorker(QObject):
                 model_name=self.model_name,
                 output_dir=OUTPUT_DIR,
                 use_demucs=self.use_demucs,
+                download_mp4=self.download_mp4,
+                video_quality=self.video_quality,
                 progress_callback=lambda step, detail: self.progress.emit(step, detail),
             )
             srt_path = pipeline.run()
-            self.finished.emit(str(srt_path))
+            video_path = str(pipeline.video_path) if pipeline.video_path else ""
+            self.finished.emit(str(srt_path), video_path)
         except Exception as exc:
             self.failed.emit(f"{type(exc).__name__}: {exc}")
 
@@ -110,6 +123,18 @@ class MainWindow(QMainWindow):
         self.demucs_check = QCheckBox("Use Demucs")
         self.demucs_check.setChecked(True)
         settings_row.addWidget(self.demucs_check)
+
+        self.download_mp4_check = QCheckBox("Download MP4")
+        self.download_mp4_check.setChecked(False)
+        self.download_mp4_check.setToolTip("Download video (with audio) for testing with SRT")
+        settings_row.addWidget(self.download_mp4_check)
+
+        self.quality_combo = QComboBox()
+        self.quality_combo.addItems(["480p", "720p", "1080p", "1440p", "2160p"])
+        self.quality_combo.setCurrentText("1080p")
+        self.quality_combo.setToolTip("Video quality")
+        settings_row.addWidget(self.quality_combo)
+
         settings_row.addStretch(1)
         layout.addLayout(settings_row)
 
@@ -165,13 +190,15 @@ class MainWindow(QMainWindow):
             engine=engine,
             model_name=model_name,
             use_demucs=self.demucs_check.isChecked(),
+            download_mp4=self.download_mp4_check.isChecked(),
+            video_quality=self.quality_combo.currentText(),
         )
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)
         self._worker.progress.connect(self._on_progress)
         self._worker.finished.connect(self._on_finished)
         self._worker.failed.connect(self._on_failed)
-        self._worker.finished.connect(self._thread.quit)
+        self._worker.finished.connect(lambda *_: self._thread.quit())
         self._worker.failed.connect(self._thread.quit)
         self._thread.finished.connect(self._cleanup_thread)
         self._thread.start()
@@ -183,10 +210,14 @@ class MainWindow(QMainWindow):
         else:
             self._append_log(f"[{step}]")
 
-    @Slot(str)
-    def _on_finished(self, srt_path: str):
+    @Slot(str, str)
+    def _on_finished(self, srt_path: str, video_path: str):
         self._last_srt = Path(srt_path)
-        self.result_label.setText(f"SRT: {srt_path}")
+        result_text = f"SRT: {srt_path}"
+        if video_path:
+            result_text += f"\nMP4: {video_path}"
+            self._append_log(f"Video: {video_path}")
+        self.result_label.setText(result_text)
         self.open_folder_button.setEnabled(True)
         self._append_log(f"Done: {srt_path}")
 

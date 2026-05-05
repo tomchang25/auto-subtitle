@@ -61,6 +61,8 @@ class SubtitlePipeline:
         output_dir: Path = OUTPUT_DIR,
         engine: str = ENGINE,
         use_demucs: bool = True,
+        download_mp4: bool = False,
+        video_quality: str = "1080p",
         progress_callback: Optional[ProgressCallback] = None,
     ):
         self.url = url
@@ -68,10 +70,13 @@ class SubtitlePipeline:
         self.model_name = model_name or _default_model_for(engine)
         self.output_dir = output_dir
         self.use_demucs = use_demucs
+        self.download_mp4 = download_mp4
+        self.video_quality = video_quality
         self.progress_callback = progress_callback
         self.project_dir = None
         self.title = None
         self.audio_path = None
+        self.video_path = None
 
     def _emit(self, step: str, detail: str = ""):
         message = f"[{step}] {detail}" if detail else f"[{step}]"
@@ -135,4 +140,14 @@ class SubtitlePipeline:
         srt_path = self.project_dir / "output.srt"
         write_srt(en_sentences, srt_path)
         self._emit("Done", f"SRT written to {srt_path}")
+
+        # Step 9 (optional): Download MP4 with audio
+        if self.download_mp4:
+            self._emit("Video", f"Downloading MP4 (quality={self.video_quality})")
+            output_base = self.project_dir / self.title
+            self.video_path = download_video(
+                self.url, output_base, quality=self.video_quality, force=False
+            )
+            self._emit("Video", f"MP4 saved to {self.video_path}")
+
         return srt_path
