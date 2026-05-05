@@ -2,6 +2,7 @@ from pathlib import Path
 from youtube_subtitle_app.downloader.youtube import (
     get_video_title,
     download_audio,
+    download_video,
 )
 
 from youtube_subtitle_app.audio.preprocess import preprocess_audio
@@ -13,11 +14,15 @@ from youtube_subtitle_app.transcription.nemo_transcriber import (
 from youtube_subtitle_app.nlp.text_semantically import (
     split_to_sentences,
 )
-from youtube_subtitle_app.nlp.alignment import refine_chunks_by_time
+from youtube_subtitle_app.nlp.alignment import (
+    align_sentences_with_timestamps,
+    refine_sentences_by_timing,
+)
 
 from youtube_subtitle_app.subtitle.writer import write_srt
 
 from youtube_subtitle_app.config import *
+from youtube_subtitle_app.utils import get_bounds_and_text
 
 
 class SubtitlePipeline:
@@ -43,6 +48,7 @@ class SubtitlePipeline:
         self.audio_path = download_audio(
             self.url, output_base, format="mp3", force=False
         )
+        # _ = download_video(self.url, output_base, quality="1080p", force=False)
 
         # Step 3: Preprocess audio
         processed_audio = preprocess_audio(self.audio_path, self.project_dir)
@@ -54,9 +60,15 @@ class SubtitlePipeline:
         full_text = " ".join([seg["word"] for seg in word_segments])
         sentence_chunks = split_to_sentences(full_text)
 
-        # Step 6: Refine by time
-        refined_chunks = refine_chunks_by_time(word_segments, sentence_chunks)
+        # Step 6: Timestamp alignment
+        aligned = align_sentences_with_timestamps(word_segments, sentence_chunks)
 
-        # 7. Write to SRT
+        # Step 7: Refinement
+        refined = refine_sentences_by_timing(aligned)
+
+        # Step 8: Translation
+        en_sentences = get_bounds_and_text(refined)
+
+        # 8. Write to SRT
         srt_path = self.project_dir / "output.srt"
-        write_srt(refined_chunks, srt_path)
+        write_srt(en_sentences, srt_path)

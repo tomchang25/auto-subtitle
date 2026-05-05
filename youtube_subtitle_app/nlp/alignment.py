@@ -26,56 +26,73 @@ def verify_word_order(word_segments, sentence_chunks, context=3):
     print("[Verify] Word order matches between ASR and NLP.")
 
 
-def refine_chunks_by_time(
-    word_segments,
-    sentence_chunks,
-    max_gap=1.5,
-    min_duration=1.5,
-    force_split_if_gap=True,
+def align_sentences_with_timestamps(word_segments, sentence_chunks):
+    """
+    Adds start/end timestamps to each sentence chunk based on aligned word_segments.
+    Modifies each sentence_chunk (list of tokens) by adding:
+    - sentence["start"]
+    - sentence["end"]
+    """
+    import re
+
+    def normalize(text):
+        return re.sub(r"[^\w']+", "", text.lower())
+
+    # Flatten sentence_chunks into a list of tokens
+    flat_tokens = [token for chunk in sentence_chunks for token in chunk]
+    ws_words = [normalize(w["word"]) for w in word_segments]
+    tok_words = [normalize(t["text"]) for t in flat_tokens]
+
+    # Verify length matches
+    if len(ws_words) != len(tok_words):
+        raise ValueError(
+            f"[Align] Token count mismatch: ASR={len(ws_words)}, NLP={len(tok_words)}"
+        )
+
+    # Match confirmed: now assign timestamps
+    for token, word in zip(flat_tokens, word_segments):
+        token["start"] = int(word["start"] * 100) / 100
+        token["end"] = int(word["end"] * 100) / 100
+
+    return sentence_chunks
+
+
+def refine_sentences_by_timing(
+    sentence_chunks, min_duration=2.0, max_gap=1.0, force_split_if_gap=True
 ):
-    verify_word_order(word_segments, sentence_chunks)
+    """
+    - Splits long sentences at word-level time gaps
+    - Merges short chunks to previous
+    """
+    refined = []
 
-    refined_chunks = []
-    word_index = 0
-
+    # Step 1: Split by time gap
     for chunk in sentence_chunks:
-        matched = word_segments[word_index : word_index + len(chunk)]
-        word_index += len(chunk)
+        current = [chunk[0]]
 
-        sub_chunks = []
-        current = [matched[0]]
-
-        for i in range(1, len(matched)):
-            gap = matched[i]["start"] - matched[i - 1]["end"]
-            is_split = chunk[i]["is_punct"] or chunk[i]["is_break"]
+        for i in range(1, len(chunk)):
+            gap = chunk[i]["start"] - chunk[i - 1]["end"]
+            is_split = chunk[i]["is_punct"]
 
             if gap > max_gap and (is_split or force_split_if_gap):
-                sub_chunks.append(current)
-                current = [matched[i]]
+                refined.append(current)
+                current = [chunk[i]]
             else:
-                current.append(matched[i])
+                current.append(chunk[i])
 
         if current:
-            sub_chunks.append(current)
+            refined.append(current)
 
-        refined_chunks.extend(sub_chunks)
-
-    # Merge short segments
-    merged_chunks = []
-    for seg in refined_chunks:
-        start = seg[0]["start"]
-        end = seg[-1]["end"]
+    # Step 2: Merge short-duration chunks
+    merged = []
+    for chunk in refined:
+        start = chunk[0]["start"]
+        end = chunk[-1]["end"]
         duration = end - start
-        if duration < min_duration and merged_chunks:
-            merged_chunks[-1].extend(seg)
-        else:
-            merged_chunks.append(seg)
 
-    return [
-        {
-            "segment": " ".join([w["word"] for w in chunk]),
-            "start": chunk[0]["start"],
-            "end": chunk[-1]["end"],
-        }
-        for chunk in merged_chunks
-    ]
+        if duration < min_duration and merged:
+            merged[-1].extend(chunk)
+        else:
+            merged.append(chunk)
+
+    return merged

@@ -10,6 +10,7 @@ build/
 # Virtual environments
 venv/
 .env/
+fairseq
 
 # IDEs
 .vscode/
@@ -22,3 +23,6 @@ logs/
 
 # Backup
 .backup
+
+
+secrets
