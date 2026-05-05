@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from subforge.translation.factory import BACKEND_NAMES
+from subforge.translation.base import SubtitleChunk
 from subforge.translation.gemini_translator import (
     LANG_MAP,
     GeminiTranslator,
@@ -13,9 +14,9 @@ from subforge.translation.gemini_translator import (
 )
 
 
-def _make_chunks(texts):
+def _make_chunks(texts: list[str]) -> list[SubtitleChunk]:
     return [
-        {"start": i * 2.0, "end": i * 2.0 + 1.5, "segment": t}
+        SubtitleChunk(start=i * 2.0, end=i * 2.0 + 1.5, segment=t)
         for i, t in enumerate(texts)
     ]
 
@@ -35,11 +36,13 @@ def _inject_model(t: GeminiTranslator, responses: list[str]) -> MagicMock:
 
 # --- Factory registration ---
 
+
 def test_gemini_registered_in_factory():
     assert "gemini" in BACKEND_NAMES
 
 
 # --- LANG_MAP ---
+
 
 def test_lang_map_has_required_codes():
     for code in ("zho_Hant", "zho_Hans", "jpn_Jpan", "kor_Hang", "eng_Latn"):
@@ -47,12 +50,13 @@ def test_lang_map_has_required_codes():
 
 
 def test_lang_map_unknown_code_falls_back_to_code_itself():
-    t = _make_translator()
+    _make_translator()
     src = LANG_MAP.get("xxx_Unkn", "xxx_Unkn")
     assert src == "xxx_Unkn"
 
 
 # --- API key resolution ---
+
 
 def test_resolve_key_explicit_wins(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "env-key")
@@ -72,6 +76,7 @@ def test_resolve_key_missing_raises(monkeypatch):
 
 
 # --- _parse_response ---
+
 
 def test_parse_response_period_prefix():
     t = GeminiTranslator.__new__(GeminiTranslator)
@@ -99,6 +104,7 @@ def test_parse_response_single_item():
 
 
 # --- translate ---
+
 
 def test_translate_basic():
     chunks = _make_chunks(["Hello", "World"])
@@ -133,14 +139,17 @@ def test_translate_count_mismatch_falls_back_per_sentence():
     chunks = _make_chunks(["Hello", "World", "Bye"])
     t = _make_translator(tgt_lang="zho_Hant")
     # 3 batch attempts each return wrong count, then 3 per-sentence calls
-    mock_model = _inject_model(t, [
-        "1. 你好",      # batch attempt 0 — missing lines 2 and 3
-        "1. 你好",      # batch attempt 1 — still wrong
-        "1. 你好",      # batch attempt 2 — wrong → triggers per-sentence fallback
-        "1. 你好",      # per-sentence: Hello
-        "1. 世界",      # per-sentence: World
-        "1. 再見",      # per-sentence: Bye
-    ])
+    mock_model = _inject_model(
+        t,
+        [
+            "1. 你好",  # batch attempt 0 — missing lines 2 and 3
+            "1. 你好",  # batch attempt 1 — still wrong
+            "1. 你好",  # batch attempt 2 — wrong → triggers per-sentence fallback
+            "1. 你好",  # per-sentence: Hello
+            "1. 世界",  # per-sentence: World
+            "1. 再見",  # per-sentence: Bye
+        ],
+    )
 
     result = t.translate(chunks)
 

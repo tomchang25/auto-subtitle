@@ -4,7 +4,7 @@ import logging
 import os
 import re
 import time
-from typing import TYPE_CHECKING, List
+from typing import List
 
 from google import genai
 
@@ -84,9 +84,9 @@ class GeminiTranslator:
         )
 
     def _parse_response(self, text: str, expected: int) -> list[str] | None:
-        lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
+        lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
         translations = [
-            _NUMBERING_RE.sub("", l) for l in lines if _NUMBERING_RE.match(l)
+            _NUMBERING_RE.sub("", line) for line in lines if _NUMBERING_RE.match(line)
         ]
         return translations if len(translations) == expected else None
 
@@ -130,14 +130,14 @@ class GeminiTranslator:
                     )
                     # Pad with empty strings if we got fewer translations
                     lines = [
-                        l.strip()
-                        for l in response_text.strip().splitlines()
-                        if l.strip()
+                        line.strip()
+                        for line in response_text.strip().splitlines()
+                        if line.strip()
                     ]
                     translations = [
-                        _NUMBERING_RE.sub("", l)
-                        for l in lines
-                        if _NUMBERING_RE.match(l)
+                        _NUMBERING_RE.sub("", line)
+                        for line in lines
+                        if _NUMBERING_RE.match(line)
                     ]
                     # Pad or truncate to match input length
                     translations = translations[: len(texts)]
