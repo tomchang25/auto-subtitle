@@ -1,49 +1,48 @@
-# Auto Subtitle
+# SubForge
 
-Easily generate clean, accurate subtitles from any YouTube link — powered by state-of-the-art speech recognition and smart post-processing.
-
----
-
-## 🎯 What It Does
-
-- 🎧 Just paste a YouTube link — the app downloads audio and transcribes it
-- 🧠 Powered by [faster-whisper](https://github.com/SYSTRAN/faster-whisper) with built-in punctuation
-- 🧾 Splits overly long ASR output into sentence-like segments using NLP
-- 🔇 Fixes common loop/noise gibberish with background cleanup
-- 📝 Outputs a ready-to-use `.srt` subtitle file
+Generate clean, accurate subtitles from any YouTube link — powered by state-of-the-art speech recognition and smart post-processing.
 
 ---
 
-## 🧠 Why It Helps
+## What It Does
+
+- Paste a YouTube link — the app downloads audio and transcribes it
+- Powered by [faster-whisper](https://github.com/SYSTRAN/faster-whisper) with built-in punctuation
+- Splits overly long ASR output into sentence-like segments using NLP
+- Fixes common loop/noise gibberish with background cleanup
+- Outputs a ready-to-use `.srt` subtitle file
+
+---
+
+## Why It Helps
 
 ASR models are powerful, but often give you:
 
-- One **massive block** of text — hard to subtitle or read
+- One massive block of text — hard to subtitle or read
 - Garbled loop segments when background noise kicks in
 
 This app cleans it up for you:
 
-- 🔪 Chunks long lines using sentence logic (with spaCy + custom rules)
-- 🎚️ Runs optional noise removal with Demucs for cleaner input
-- 💬 Gives you clean, natural subtitles with proper timecodes
+- Chunks long lines using sentence logic (with spaCy + custom rules)
+- Runs optional noise removal with Demucs for cleaner input
+- Gives you clean, natural subtitles with proper timecodes
 
 ---
 
-## 🚧 Coming Soon
+## Coming Soon
 
-- 🌍 Auto-translate and generate **dual-language subtitles**
-- 🇯🇵 Japanese speech recognition model support
+- Auto-translate and generate dual-language subtitles
+- Japanese speech recognition model support
 
 ---
 
-## 🛠️ Setup
+## Setup
 
 Requires Python 3.11+.
 
 ```bash
-# Clone this repo
-git clone https://github.com/tomchang25/auto-subtitle.git
-cd auto-subtitle
+git clone https://github.com/tomchang25/subforge.git
+cd subforge
 ```
 
 ### One-click install
@@ -85,7 +84,7 @@ pip install -e .
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ```bash
 # GUI
@@ -96,26 +95,26 @@ subforge-cli --url "https://www.youtube.com/watch?v=..."
 subforge-cli --url "..." --model large-v3 --download-video --video-quality 720p
 ```
 
-You’ll be prompted to paste a YouTube URL. The program will:
+The program will:
 
 1. Download the audio
 2. Transcribe it (with punctuation from faster-whisper)
 3. Break into aligned subtitle chunks
-5. Export an `.srt` file under `~/Documents/AutoSubtitle/<video title>/output.srt`
+4. Export an `.srt` file under `~/Documents/AutoSubtitle/<video title>/output.srt`
 
 ---
 
-## 🧪 Run Tests
+## Run Tests
 
 ```bash
 pytest tests/ -v
 ```
 
-You’ll need test assets under `tests/data/` for some integration tests.
+You'll need test assets under `tests/data/` for some integration tests.
 
 ---
 
-## 🧠 Credits
+## Credits
 
 - [faster-whisper](https://github.com/SYSTRAN/faster-whisper) – speech recognition
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) – YouTube audio downloading
@@ -123,6 +122,6 @@ You’ll need test assets under `tests/data/` for some integration tests.
 
 ---
 
-## 🪪 License
+## License
 
 MIT License
