@@ -6,6 +6,7 @@ from subforge.translation.base import Translator
 
 BACKENDS: dict[str, tuple[str, str]] = {
     "nllb": ("subforge.translation.nllb_translator", "NLLBTranslator"),
+    "gemini": ("subforge.translation.gemini_translator", "GeminiTranslator"),
 }
 
 DEFAULT = "nllb"

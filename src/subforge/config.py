@@ -16,7 +16,7 @@ MIN_DURATION = 1.5
 # Translation
 TRANSLATE_METHOD: str | None = None  # None = disabled by default
 TRANSLATE_SRC_LANG = "eng_Latn"      # NLLB language code
-TRANSLATE_TGT_LANG = "zho_Hans"      # NLLB language code
+TRANSLATE_TGT_LANG = "zho_Hant"      # FLORES language code
 
 # Paths
 OUTPUT_DIR = Path.home() / "Documents" / "AutoSubtitle"

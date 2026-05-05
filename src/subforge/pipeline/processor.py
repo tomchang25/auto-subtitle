@@ -158,8 +158,13 @@ class SubtitlePipeline:
         if self.translate_method:
             self._emit("Translate", f"method={self.translate_method}")
             from subforge.translation.factory import create_translator
+            from subforge.config import TRANSLATE_SRC_LANG, TRANSLATE_TGT_LANG
 
-            translator = create_translator(self.translate_method)
+            translator = create_translator(
+                self.translate_method,
+                src_lang=TRANSLATE_SRC_LANG,
+                tgt_lang=TRANSLATE_TGT_LANG,
+            )
             en_sentences = translator.translate(en_sentences)
             self._check_cancel()
 
