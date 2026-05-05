@@ -1,6 +1,11 @@
+import logging
 from pathlib import Path
+
 from pydub import AudioSegment
+
 from subforge.audio.demucs_wrapper import run_demucs
+
+logger = logging.getLogger(__name__)
 
 
 def preprocess_audio(audio_path: Path, project_dir: Path, use_demucs=True) -> Path:
@@ -11,7 +16,7 @@ def preprocess_audio(audio_path: Path, project_dir: Path, use_demucs=True) -> Pa
     if not audio_path.exists():
         raise FileNotFoundError(f"Audio not found: {audio_path}")
 
-    print(f"[Preprocess] Starting on {audio_path}")
+    logger.info("Starting on %s", audio_path)
 
     if use_demucs:
         audio_path = run_demucs(audio_path, project_dir / "demucs_output")
@@ -25,5 +30,5 @@ def preprocess_audio(audio_path: Path, project_dir: Path, use_demucs=True) -> Pa
     audio = audio.set_channels(1)
     audio.export(wav_path, format="wav")
 
-    print(f"[Preprocess] Mono WAV saved: {wav_path}")
+    logger.info("Mono WAV saved: %s", wav_path)
     return wav_path
