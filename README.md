@@ -39,18 +39,59 @@ This app cleans it up for you:
 
 ## 🛠️ Setup
 
+Requires Python 3.11+.
+
 ```bash
 # Clone this repo
 git clone https://github.com/tomchang25/auto-subtitle.git
 cd auto-subtitle
+```
 
-# Create and activate virtual environment
+### One-click install
+
+The setup scripts create a `venv/`, install the right `torch` build for your
+platform (CUDA 12.4 on Windows/Linux, MPS on macOS), install the base
+dependencies, and download the spaCy English model. Re-running the script on
+an existing venv is safe.
+
+```bat
+:: Windows
+setup.bat
+```
+
+```bash
+# macOS / Linux
+./setup.sh
+```
+
+### Manual install
+
+If you prefer to manage the environment yourself:
+
+```bash
 python -m venv venv
-venv\Scripts\activate    # on Windows
-# source venv/bin/activate  # on macOS/Linux
+source venv/bin/activate          # macOS / Linux
+# venv\Scripts\activate           # Windows
 
-# Install dependencies
-pip install -e .
+# Install torch + torchaudio for your platform first.
+# Linux / Windows with NVIDIA GPU:
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
+# macOS:
+# pip install torch torchaudio
+
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm
+```
+
+### Experimental: NeMo / Parakeet backend
+
+The default backend is `faster-whisper`. To opt into the larger NVIDIA NeMo
+Parakeet backend:
+
+```bash
+pip install -r requirements-experimental.txt
+# or, when installing the project itself:
+pip install -e ".[experimental]"
 ```
 
 ---

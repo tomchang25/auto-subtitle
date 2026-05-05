@@ -1,0 +1,26 @@
+# Base requirements for auto-subtitle.
+#
+# NOTE: torch and torchaudio are intentionally omitted from this file.
+# They must be installed separately by setup.bat / setup.sh so the correct
+# CUDA / CPU / MPS build can be chosen for the host platform.
+
+# Speech recognition
+faster-whisper
+
+# GUI
+PySide6-Essentials
+
+# NLP / text processing
+spacy
+deepmultilingualpunctuation
+
+# Audio
+demucs
+pydub
+
+# Media / IO
+yt-dlp
+ffmpeg-python
+
+# Subtitle formatting
+pysubs2
