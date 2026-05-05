@@ -30,7 +30,6 @@ from youtube_subtitle_app.transcription.faster_whisper_transcriber import (
     SUPPORTED_MODELS as WHISPER_MODELS,
 )
 
-
 ENGINES = ("faster-whisper", "parakeet")
 
 
