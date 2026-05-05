@@ -61,10 +61,17 @@ def align_sentences_with_timestamps(word_segments, sentence_chunks):
 
 
 def refine_sentences_by_timing(
-    sentence_chunks, min_duration=2.0, max_gap=1.0, force_split_if_gap=True
+    sentence_chunks,
+    min_duration=2.0,
+    max_gap=1.0,
+    breath_gap=0.3,
+    min_words_for_breath_split=8,
+    force_split_if_gap=True,
 ):
     """
     - Splits long sentences at word-level time gaps
+    - Large gap (>max_gap): always split
+    - Breathing gap (>breath_gap): split only if current chunk >= min_words_for_breath_split
     - Merges short chunks to previous
     """
     refined = []
@@ -77,7 +84,12 @@ def refine_sentences_by_timing(
             gap = chunk[i]["start"] - chunk[i - 1]["end"]
             is_split = chunk[i]["is_punct"]
 
+            # Large gap: always split (original behavior)
             if gap > max_gap and (is_split or force_split_if_gap):
+                refined.append(current)
+                current = [chunk[i]]
+            # Breathing gap: split only if chunk is already long enough
+            elif gap > breath_gap and len(current) >= min_words_for_breath_split:
                 refined.append(current)
                 current = [chunk[i]]
             else:

@@ -1,4 +1,6 @@
+import hashlib
 import logging
+import shutil
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -32,7 +34,11 @@ from subforge.config import (
     WHISPER_MODEL,
     OUTPUT_DIR,
     MAX_WORDS,
-    SOFT_LIMIT,
+    MIN_WORDS,
+    MAX_GAP,
+    MIN_DURATION,
+    BREATH_GAP,
+    MIN_WORDS_FOR_BREATH_SPLIT,
 )
 from subforge.utils import get_bounds_and_text, save_word_segments
 
@@ -184,13 +190,19 @@ class SubtitlePipeline:
 
         # Step 7: Refinement
         self._emit("Refine", "Refining segment timing")
-        refined = refine_sentences_by_timing(aligned)
+        refined = refine_sentences_by_timing(
+            aligned,
+            min_duration=MIN_DURATION,
+            max_gap=MAX_GAP,
+            breath_gap=BREATH_GAP,
+            min_words_for_breath_split=MIN_WORDS_FOR_BREATH_SPLIT,
+        )
         self._check_cancel()
 
         # Step 8: Split long segments
         self._emit("Split", "Splitting long segments by word count")
         refined = split_long_sentences_by_length(
-            refined, min_words=SOFT_LIMIT, max_words=MAX_WORDS
+            refined, min_words=MIN_WORDS, max_words=MAX_WORDS
         )
         self._check_cancel()
 
@@ -208,6 +220,19 @@ class SubtitlePipeline:
                 tgt_lang=TRANSLATE_TGT_LANG,
             )
             translation_cache = self.project_dir / "translation_cache"
+
+            # Invalidate translation cache if segmentation changed
+            seg_hash = hashlib.sha256(
+                "\n".join(s["segment"] for s in en_sentences).encode()
+            ).hexdigest()
+            hash_file = self.project_dir / "translation_cache.hash"
+            if hash_file.exists() and hash_file.read_text().strip() != seg_hash:
+                logger.info("Segmentation changed, clearing translation cache")
+                self._emit("Translate", "Segmentation changed, clearing cache")
+                if translation_cache.exists():
+                    shutil.rmtree(translation_cache)
+            hash_file.write_text(seg_hash)
+
             try:
                 en_sentences = translator.translate(
                     en_sentences,
