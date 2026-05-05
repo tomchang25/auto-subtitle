@@ -23,7 +23,7 @@ from subforge.config import (
     WHISPER_MODEL,
     OUTPUT_DIR,
 )
-from subforge.pipeline.processor import SubtitlePipeline
+from subforge.pipeline.processor import SubtitlePipeline, PipelineCancelled
 from subforge.transcription.faster_whisper_transcriber import (
     SUPPORTED_MODELS as WHISPER_MODELS,
 )
@@ -33,6 +33,7 @@ class PipelineWorker(QObject):
     progress = Signal(str, str)
     finished = Signal(str, str)  # srt_path, video_path (or empty)
     failed = Signal(str)
+    cancelled = Signal()
 
     def __init__(
         self,
@@ -48,11 +49,17 @@ class PipelineWorker(QObject):
         self.use_demucs = use_demucs
         self.download_mp4 = download_mp4
         self.video_quality = video_quality
+        self._pipeline: SubtitlePipeline | None = None
+
+    def cancel(self):
+        """Request pipeline cancellation (thread-safe: sets an atomic bool)."""
+        if self._pipeline is not None:
+            self._pipeline.cancel()
 
     @Slot()
     def run(self):
         try:
-            pipeline = SubtitlePipeline(
+            self._pipeline = SubtitlePipeline(
                 url=self.url,
                 model_name=self.model_name,
                 output_dir=OUTPUT_DIR,
@@ -61,9 +68,11 @@ class PipelineWorker(QObject):
                 video_quality=self.video_quality,
                 progress_callback=lambda step, detail: self.progress.emit(step, detail),
             )
-            srt_path = pipeline.run()
-            video_path = str(pipeline.video_path) if pipeline.video_path else ""
+            srt_path = self._pipeline.run()
+            video_path = str(self._pipeline.video_path) if self._pipeline.video_path else ""
             self.finished.emit(str(srt_path), video_path)
+        except PipelineCancelled:
+            self.cancelled.emit()
         except Exception as exc:
             self.failed.emit(f"{type(exc).__name__}: {exc}")
 
@@ -91,6 +100,10 @@ class MainWindow(QMainWindow):
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self._on_start)
         url_row.addWidget(self.start_button)
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.setEnabled(False)
+        self.cancel_button.clicked.connect(self._on_cancel)
+        url_row.addWidget(self.cancel_button)
         layout.addLayout(url_row)
 
         # Settings row
@@ -150,6 +163,7 @@ class MainWindow(QMainWindow):
         model_name = self.model_combo.currentText()
 
         self.start_button.setEnabled(False)
+        self.cancel_button.setEnabled(True)
         self.open_folder_button.setEnabled(False)
         self.result_label.setText("Running…")
         self.log.clear()
@@ -169,8 +183,10 @@ class MainWindow(QMainWindow):
         self._worker.progress.connect(self._on_progress)
         self._worker.finished.connect(self._on_finished)
         self._worker.failed.connect(self._on_failed)
+        self._worker.cancelled.connect(self._on_cancelled)
         self._worker.finished.connect(lambda *_: self._thread.quit())
         self._worker.failed.connect(self._thread.quit)
+        self._worker.cancelled.connect(self._thread.quit)
         self._thread.finished.connect(self._cleanup_thread)
         self._thread.start()
 
@@ -199,6 +215,20 @@ class MainWindow(QMainWindow):
         QMessageBox.critical(self, "Pipeline failed", message)
 
     @Slot()
+    def _on_cancel(self):
+        """User clicked Cancel — request graceful stop."""
+        if self._worker is not None:
+            self._worker.cancel()
+        self.cancel_button.setEnabled(False)
+        self._append_log("Cancelling… (will stop after current step)")
+
+    @Slot()
+    def _on_cancelled(self):
+        """Pipeline confirmed cancellation."""
+        self.result_label.setText("Cancelled.")
+        self._append_log("Pipeline cancelled by user.")
+
+    @Slot()
     def _cleanup_thread(self):
         if self._worker is not None:
             self._worker.deleteLater()
@@ -207,6 +237,7 @@ class MainWindow(QMainWindow):
         self._worker = None
         self._thread = None
         self.start_button.setEnabled(True)
+        self.cancel_button.setEnabled(False)
 
     @Slot()
     def _on_open_folder(self):
