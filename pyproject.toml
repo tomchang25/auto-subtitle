@@ -16,11 +16,11 @@ dependencies = [
     "pydub",
     "yt-dlp",
     "ffmpeg-python",
-    "pysubs2",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest"]
+ci = ["spacy", "pydub", "ffmpeg-python"]
 
 [project.scripts]
 subforge = "subforge.ui.main_window:run"
