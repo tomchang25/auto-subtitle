@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import List
 
 from subforge.translation.base import SubtitleChunk, TranslatedChunk
@@ -34,7 +35,12 @@ class NLLBTranslator:
             self._tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME)
             self._model = AutoModelForSeq2SeqLM.from_pretrained(self.MODEL_NAME)
 
-    def translate(self, chunks: List[SubtitleChunk]) -> List[TranslatedChunk]:
+    def translate(
+        self,
+        chunks: List[SubtitleChunk],
+        cache_dir: Path | None = None,
+        force: bool = False,
+    ) -> List[TranslatedChunk]:
         self._load()
         import torch
 

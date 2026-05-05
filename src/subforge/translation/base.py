@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Protocol
 from typing_extensions import TypedDict
 
@@ -16,4 +17,9 @@ class TranslatedChunk(TypedDict):
 
 
 class Translator(Protocol):
-    def translate(self, chunks: List[SubtitleChunk]) -> List[TranslatedChunk]: ...
+    def translate(
+        self,
+        chunks: List[SubtitleChunk],
+        cache_dir: Path | None = None,
+        force: bool = False,
+    ) -> List[TranslatedChunk]: ...

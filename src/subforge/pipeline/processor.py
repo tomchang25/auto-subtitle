@@ -75,7 +75,16 @@ class SubtitlePipeline:
         self.audio_path = None
         self.video_path = None
 
-    _AUDIO_EXTENSIONS = {".mp3", ".wav", ".flac", ".m4a", ".ogg", ".opus", ".wma", ".aac"}
+    _AUDIO_EXTENSIONS = {
+        ".mp3",
+        ".wav",
+        ".flac",
+        ".m4a",
+        ".ogg",
+        ".opus",
+        ".wma",
+        ".aac",
+    }
 
     def cancel(self):
         """Request cancellation. The pipeline will stop before the next step."""
@@ -131,8 +140,10 @@ class SubtitlePipeline:
             f"Preparing WAV (demucs={'on' if self.use_demucs else 'off'})",
         )
         processed_audio = preprocess_audio(
-            self.audio_path, self.project_dir,
-            use_demucs=self.use_demucs, force=self.force,
+            self.audio_path,
+            self.project_dir,
+            use_demucs=self.use_demucs,
+            force=self.force,
         )
         self._check_cancel()
 
@@ -140,6 +151,7 @@ class SubtitlePipeline:
         word_segments_path = self.project_dir / "word_segments.json"
         if not self.force and word_segments_path.exists():
             import json
+
             self._emit("Transcribe", "Loading cached word segments")
             with open(word_segments_path, "r", encoding="utf-8") as f:
                 word_segments = json.load(f)
@@ -195,22 +207,54 @@ class SubtitlePipeline:
                 src_lang=TRANSLATE_SRC_LANG,
                 tgt_lang=TRANSLATE_TGT_LANG,
             )
+            translation_cache = self.project_dir / "translation_cache"
             try:
-                en_sentences = translator.translate(en_sentences)
+                en_sentences = translator.translate(
+                    en_sentences,
+                    cache_dir=translation_cache,
+                    force=self.force,
+                )
             except Exception as exc:
                 err_msg = str(exc)
                 if "429" in err_msg or "quota" in err_msg.lower():
-                    self._emit("Translate", "FAILED: API quota exceeded. "
-                              "Free tier daily limit reached. "
-                              "Try again tomorrow or enable billing.")
+                    self._emit(
+                        "Translate",
+                        "FAILED: API quota exceeded. "
+                        "Free tier daily limit reached. "
+                        "Try again tomorrow or enable billing.",
+                    )
                 else:
                     self._emit("Translate", f"FAILED: {type(exc).__name__}: {exc}")
-                logger.warning("Translation failed, outputting English-only SRT: %s", exc)
+                logger.warning(
+                    "Translation failed, outputting English-only SRT: %s", exc
+                )
             self._check_cancel()
 
         srt_path = self.project_dir / "output.srt"
-        write_srt(en_sentences, srt_path)
-        self._emit("Done", f"SRT written to {srt_path}")
+        has_translation = any(s.get("translation") for s in en_sentences)
+
+        if has_translation:
+            from subforge.subtitle.formatter import format_srt
+
+            # Bilingual (default)
+            write_srt(en_sentences, srt_path)
+            # Source language only
+            src_path = self.project_dir / "output_en.srt"
+            src_path.write_text(
+                format_srt(en_sentences, mode="source"), encoding="utf-8"
+            )
+            # Translation only
+            tgt_path = self.project_dir / "output_zh.srt"
+            tgt_path.write_text(
+                format_srt(en_sentences, mode="translation"), encoding="utf-8"
+            )
+            self._emit(
+                "Done",
+                f"SRT written: {srt_path.name}, {src_path.name}, {tgt_path.name}",
+            )
+        else:
+            write_srt(en_sentences, srt_path)
+            self._emit("Done", f"SRT written to {srt_path}")
 
         # Step 10 (optional): Download MP4 with audio
         if self.download_mp4:
