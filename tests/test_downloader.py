@@ -4,7 +4,7 @@ from subforge.downloader.youtube import (
     download_video,
 )
 
-TEST_URL = "https://www.youtube.com/watch?v=392JUMCBSQY"  # Mexican Navy ship hits Brooklyn Bridge in New York City | BBC News
+TEST_URL = "https://www.youtube.com/watch?v=ByreRudsyoc"
 
 
 def test_get_video_title():

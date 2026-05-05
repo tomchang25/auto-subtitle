@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # Video URL
-DEFAULT_URL = "https://www.youtube.com/watch?v=392JUMCBSQY"
+DEFAULT_URL = "https://www.youtube.com/watch?v=ByreRudsyoc"
 
 # ASR/NLP Models
 WHISPER_MODEL = "large-v3-turbo"
