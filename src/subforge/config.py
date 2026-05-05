@@ -28,3 +28,4 @@ OUTPUT_DIR = Path.home() / "Documents" / "SubForge"
 # Demucs output structure
 DEMUCS_MODEL = "htdemucs"
 DEMUCS_VOCALS_FILENAME = "vocals.mp3"
+DEMUCS_CHUNK_MINUTES = 30  # split audio into chunks of this length for demucs
