@@ -4,11 +4,12 @@ import logging
 import os
 import re
 import time
-from typing import List
-
-from google import genai
+from typing import TYPE_CHECKING, List
 
 from subforge.translation.base import SubtitleChunk, TranslatedChunk
+
+if TYPE_CHECKING:
+    from google import genai
 
 logger = logging.getLogger(__name__)
 
@@ -64,11 +65,13 @@ class GeminiTranslator:
         self.src_lang = src_lang
         self.tgt_lang = tgt_lang
         self._api_key = _resolve_api_key(api_key)
-        self._client: genai.Client | None = None
+        self._client: genai.Client | None = None  # type: ignore[name-defined]
 
     def _load(self):
         if self._client is None:
-            self._client = genai.Client(api_key=self._api_key)
+            from google import genai as _genai
+
+            self._client = _genai.Client(api_key=self._api_key)
 
     def _build_prompt(self, texts: list[str], src_name: str, tgt_name: str) -> str:
         numbered = "\n".join(f"{i + 1}. {t}" for i, t in enumerate(texts))
