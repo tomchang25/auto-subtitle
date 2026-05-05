@@ -21,5 +21,3 @@ pydub
 yt-dlp
 ffmpeg-python
 
-# Subtitle formatting
-pysubs2

@@ -5,6 +5,7 @@ from transformers import (
     pipeline,
 )
 import torch
+import re
 
 # --- MarianMT Setup ---
 _marian_model_name = "Helsinki-NLP/opus-mt-en-zh"
@@ -66,10 +67,6 @@ def _translate_nllb(texts, src_lang="eng_Latn", tgt_lang="zho_Hans", batch_size=
 
 
 # --- Qwen3-8B Setup ---
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
-import re
-
 _tokenizer_qwen = None
 _model_qwen = None
 
@@ -156,5 +153,3 @@ def translate_subtitles(chunks, method="marian", **kwargs):
         chunk["translation"] = zh
 
     return chunks
-
-
