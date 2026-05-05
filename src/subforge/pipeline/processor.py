@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 class PipelineCancelled(Exception):
     """Raised when the user cancels the pipeline between steps."""
 
+
 from subforge.downloader.youtube import (
     get_video_title,
     download_audio,
@@ -35,7 +36,6 @@ from subforge.config import (
 )
 from subforge.utils import get_bounds_and_text
 
-
 ProgressCallback = Callable[[str, str], None]
 
 
@@ -43,6 +43,7 @@ def _resolve_transcriber():
     from subforge.transcription.faster_whisper_transcriber import (
         transcribe_audio_word_level,
     )
+
     return transcribe_audio_word_level
 
 
@@ -146,7 +147,9 @@ class SubtitlePipeline:
 
         # Step 8: Split long segments
         self._emit("Split", "Splitting long segments by word count")
-        refined = split_long_sentences_by_length(refined, min_words=SOFT_LIMIT, max_words=MAX_WORDS)
+        refined = split_long_sentences_by_length(
+            refined, min_words=SOFT_LIMIT, max_words=MAX_WORDS
+        )
         self._check_cancel()
 
         # Step 9: Write SRT
@@ -155,6 +158,7 @@ class SubtitlePipeline:
         if self.translate_method:
             self._emit("Translate", f"method={self.translate_method}")
             from subforge.translation.factory import create_translator
+
             translator = create_translator(self.translate_method)
             en_sentences = translator.translate(en_sentences)
             self._check_cancel()

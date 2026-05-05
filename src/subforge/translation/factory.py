@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import importlib
-from typing import Optional
 
 from subforge.translation.base import Translator
 
 BACKENDS: dict[str, tuple[str, str]] = {
-    "marian": ("subforge.translation.marian_translator", "MarianTranslator"),
     "nllb": ("subforge.translation.nllb_translator", "NLLBTranslator"),
-    "qwen": ("subforge.translation.qwen_translator", "QwenTranslator"),
 }
 
 DEFAULT = "nllb"

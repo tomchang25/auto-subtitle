@@ -73,7 +73,9 @@ class PipelineWorker(QObject):
                 progress_callback=lambda step, detail: self.progress.emit(step, detail),
             )
             srt_path = self._pipeline.run()
-            video_path = str(self._pipeline.video_path) if self._pipeline.video_path else ""
+            video_path = (
+                str(self._pipeline.video_path) if self._pipeline.video_path else ""
+            )
             self.finished.emit(str(srt_path), video_path)
         except PipelineCancelled:
             self.cancelled.emit()
@@ -126,7 +128,9 @@ class MainWindow(QMainWindow):
 
         self.download_mp4_check = QCheckBox("Download MP4")
         self.download_mp4_check.setChecked(False)
-        self.download_mp4_check.setToolTip("Download video (with audio) for testing with SRT")
+        self.download_mp4_check.setToolTip(
+            "Download video (with audio) for testing with SRT"
+        )
         settings_row.addWidget(self.download_mp4_check)
 
         self.quality_combo = QComboBox()
