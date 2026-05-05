@@ -55,6 +55,7 @@ class SubtitlePipeline:
         use_demucs: bool = True,
         download_mp4: bool = False,
         video_quality: str = "1080p",
+        translate_method: Optional[str] = None,
         progress_callback: Optional[ProgressCallback] = None,
     ):
         self.url = url
@@ -63,6 +64,7 @@ class SubtitlePipeline:
         self.use_demucs = use_demucs
         self.download_mp4 = download_mp4
         self.video_quality = video_quality
+        self.translate_method = translate_method
         self.progress_callback = progress_callback
         self._cancelled = False
         self.project_dir = None
@@ -149,6 +151,14 @@ class SubtitlePipeline:
 
         # Step 9: Write SRT
         en_sentences = get_bounds_and_text(refined)
+
+        if self.translate_method:
+            self._emit("Translate", f"method={self.translate_method}")
+            from subforge.translation.factory import create_translator
+            translator = create_translator(self.translate_method)
+            en_sentences = translator.translate(en_sentences)
+            self._check_cancel()
+
         srt_path = self.project_dir / "output.srt"
         write_srt(en_sentences, srt_path)
         self._emit("Done", f"SRT written to {srt_path}")
