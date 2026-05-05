@@ -165,7 +165,17 @@ class SubtitlePipeline:
                 src_lang=TRANSLATE_SRC_LANG,
                 tgt_lang=TRANSLATE_TGT_LANG,
             )
-            en_sentences = translator.translate(en_sentences)
+            try:
+                en_sentences = translator.translate(en_sentences)
+            except Exception as exc:
+                err_msg = str(exc)
+                if "429" in err_msg or "quota" in err_msg.lower():
+                    self._emit("Translate", "FAILED: API quota exceeded. "
+                              "Free tier daily limit reached. "
+                              "Try again tomorrow or enable billing.")
+                else:
+                    self._emit("Translate", f"FAILED: {type(exc).__name__}: {exc}")
+                logger.warning("Translation failed, outputting English-only SRT: %s", exc)
             self._check_cancel()
 
         srt_path = self.project_dir / "output.srt"

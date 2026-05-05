@@ -34,3 +34,6 @@ htmlcov/
 # Misc
 *.tmp
 *.log
+
+# Environment
+.env

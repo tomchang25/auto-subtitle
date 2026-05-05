@@ -4,7 +4,9 @@ import logging
 import os
 import re
 import time
-from typing import List
+from typing import TYPE_CHECKING, List
+
+from google import genai
 
 from subforge.translation.base import SubtitleChunk, TranslatedChunk
 
@@ -49,29 +51,24 @@ def _resolve_api_key(explicit: str | None) -> str:
 
 
 class GeminiTranslator:
-    """Translate subtitle chunks via Gemini 2.0 Flash API."""
+    """Translate subtitle chunks via Google Gemini API (google-genai SDK)."""
 
-    MODEL = "gemini-2.0-flash"
+    MODEL = "gemini-2.5-flash"
 
     def __init__(
         self,
         src_lang: str = "eng_Latn",
         tgt_lang: str = "zho_Hant",
-        batch_size: int = 30,
         api_key: str | None = None,
     ):
         self.src_lang = src_lang
         self.tgt_lang = tgt_lang
-        self.batch_size = batch_size
         self._api_key = _resolve_api_key(api_key)
-        self._client = None
+        self._client: genai.Client | None = None
 
     def _load(self):
         if self._client is None:
-            import google.generativeai as genai
-
-            genai.configure(api_key=self._api_key)
-            self._client = genai.GenerativeModel(self.MODEL)
+            self._client = genai.Client(api_key=self._api_key)
 
     def _build_prompt(self, texts: list[str], src_name: str, tgt_name: str) -> str:
         numbered = "\n".join(f"{i + 1}. {t}" for i, t in enumerate(texts))
@@ -88,66 +85,79 @@ class GeminiTranslator:
 
     def _parse_response(self, text: str, expected: int) -> list[str] | None:
         lines = [l.strip() for l in text.strip().splitlines() if l.strip()]
-        translations = [_NUMBERING_RE.sub("", l) for l in lines if _NUMBERING_RE.match(l)]
+        translations = [
+            _NUMBERING_RE.sub("", l) for l in lines if _NUMBERING_RE.match(l)
+        ]
         return translations if len(translations) == expected else None
 
-    def _translate_one_by_one(
-        self, texts: list[str], src_name: str, tgt_name: str
-    ) -> list[str]:
-        results = []
-        for text in texts:
-            prompt = self._build_prompt([text], src_name, tgt_name)
-            try:
-                response = self._client.generate_content(prompt)
-                lines = [l.strip() for l in response.text.strip().splitlines() if l.strip()]
-                translated = _NUMBERING_RE.sub("", lines[0]) if lines else ""
-            except Exception as exc:
-                logger.warning("Per-sentence translation failed: %s", exc)
-                translated = ""
-            results.append(translated)
-        return results
-
-    def _translate_batch(
-        self, texts: list[str], src_name: str, tgt_name: str
-    ) -> list[str]:
-        prompt = self._build_prompt(texts, src_name, tgt_name)
-        for attempt in range(3):
-            try:
-                response = self._client.generate_content(prompt)
-                parsed = self._parse_response(response.text, len(texts))
-                if parsed is not None:
-                    return parsed
-                if attempt < 2:
-                    logger.warning(
-                        "Response count mismatch (attempt %d/3), retrying", attempt + 1
-                    )
-                else:
-                    logger.warning("Count mismatch after 3 retries, falling back to per-sentence")
-                    return self._translate_one_by_one(texts, src_name, tgt_name)
-            except Exception as exc:
-                is_rate_limit = "429" in str(exc) or "quota" in str(exc).lower()
-                if attempt < 2:
-                    wait = 2 ** (attempt + 1) if is_rate_limit else 2 ** attempt
-                    logger.warning(
-                        "API error (attempt %d/3), retrying in %ds: %s", attempt + 1, wait, exc
-                    )
-                    time.sleep(wait)
-                else:
-                    logger.error("API error after 3 attempts: %s", exc)
-                    return [""] * len(texts)
-        return [""] * len(texts)
+    def _call_api(self, prompt: str) -> str:
+        """Call Gemini API and return the response text."""
+        assert self._client is not None, "Call _load() before _call_api()"
+        response = self._client.models.generate_content(
+            model=self.MODEL,
+            contents=prompt,
+        )
+        if response.text is None:
+            raise RuntimeError("Gemini returned empty response (no text)")
+        return response.text
 
     def translate(self, chunks: List[SubtitleChunk]) -> List[TranslatedChunk]:
+        """Translate all chunks in a single API call."""
         if not chunks:
             return []
         self._load()
         src_name = LANG_MAP.get(self.src_lang, self.src_lang)
         tgt_name = LANG_MAP.get(self.tgt_lang, self.tgt_lang)
         texts = [c["segment"] for c in chunks]
-        translations: list[str] = []
 
-        for i in range(0, len(texts), self.batch_size):
-            batch = texts[i : i + self.batch_size]
-            translations.extend(self._translate_batch(batch, src_name, tgt_name))
+        prompt = self._build_prompt(texts, src_name, tgt_name)
 
-        return [{**c, "translation": t} for c, t in zip(chunks, translations)]
+        for attempt in range(3):
+            try:
+                response_text = self._call_api(prompt)
+                parsed = self._parse_response(response_text, len(texts))
+                if parsed is not None:
+                    return [{**c, "translation": t} for c, t in zip(chunks, parsed)]
+                if attempt < 2:
+                    logger.warning(
+                        "Response count mismatch (got lines, expected %d, attempt %d/3), retrying",
+                        len(texts),
+                        attempt + 1,
+                    )
+                else:
+                    logger.warning(
+                        "Count mismatch after 3 retries, returning partial results"
+                    )
+                    # Pad with empty strings if we got fewer translations
+                    lines = [
+                        l.strip()
+                        for l in response_text.strip().splitlines()
+                        if l.strip()
+                    ]
+                    translations = [
+                        _NUMBERING_RE.sub("", l)
+                        for l in lines
+                        if _NUMBERING_RE.match(l)
+                    ]
+                    # Pad or truncate to match input length
+                    translations = translations[: len(texts)]
+                    translations.extend([""] * (len(texts) - len(translations)))
+                    return [
+                        {**c, "translation": t} for c, t in zip(chunks, translations)
+                    ]
+            except Exception as exc:
+                is_rate_limit = "429" in str(exc) or "quota" in str(exc).lower()
+                if attempt < 2:
+                    wait = 30 if is_rate_limit else 2**attempt
+                    logger.warning(
+                        "API error (attempt %d/3), retrying in %.0fs",
+                        attempt + 1,
+                        wait,
+                    )
+                    time.sleep(wait)
+                else:
+                    raise RuntimeError(
+                        f"Translation failed after 3 attempts: {exc}"
+                    ) from exc
+
+        raise RuntimeError("Translation failed unexpectedly")
