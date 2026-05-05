@@ -1,6 +1,6 @@
 from pathlib import Path
-from youtube_subtitle_app.subtitle.formatter import format_srt
-from youtube_subtitle_app.subtitle.writer import write_srt
+from subforge.subtitle.formatter import format_srt
+from subforge.subtitle.writer import write_srt
 
 
 def dummy_segments():

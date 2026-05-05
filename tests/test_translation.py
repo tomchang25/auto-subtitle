@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from youtube_subtitle_app.translation.translator import (
+from subforge.translation.translator import (
     translate_subtitles,
 )
 

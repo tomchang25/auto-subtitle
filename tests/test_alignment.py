@@ -1,12 +1,12 @@
 from pathlib import Path
 import json
-from youtube_subtitle_app.nlp.text_semantically import split_to_sentences
-from youtube_subtitle_app.nlp.alignment import (
+from subforge.nlp.text_semantically import split_to_sentences
+from subforge.nlp.alignment import (
     align_sentences_with_timestamps,
     refine_sentences_by_timing,
 )
-from youtube_subtitle_app.nlp.segmentation import split_long_sentences_by_length
-from youtube_subtitle_app.utils import get_bounds_and_text, save_to_json
+from subforge.nlp.segmentation import split_long_sentences_by_length
+from subforge.utils import get_bounds_and_text, save_to_json
 
 
 def load_word_segments(path: Path):

@@ -1,4 +1,4 @@
-from youtube_subtitle_app.downloader.youtube import (
+from subforge.downloader.youtube import (
     get_video_title,
     download_audio,
     download_video,

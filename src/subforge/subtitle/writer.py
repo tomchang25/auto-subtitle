@@ -1,5 +1,5 @@
 from pathlib import Path
-from youtube_subtitle_app.subtitle.formatter import format_srt
+from subforge.subtitle.formatter import format_srt
 
 
 def write_srt(segments, output_path: Path):

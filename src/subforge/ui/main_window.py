@@ -18,13 +18,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from youtube_subtitle_app.config import (
+from subforge.config import (
     DEFAULT_URL,
     WHISPER_MODEL,
     OUTPUT_DIR,
 )
-from youtube_subtitle_app.pipeline.processor import SubtitlePipeline
-from youtube_subtitle_app.transcription.faster_whisper_transcriber import (
+from subforge.pipeline.processor import SubtitlePipeline
+from subforge.transcription.faster_whisper_transcriber import (
     SUPPORTED_MODELS as WHISPER_MODELS,
 )
 

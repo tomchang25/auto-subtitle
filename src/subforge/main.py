@@ -1,7 +1,7 @@
 import argparse
 
-from youtube_subtitle_app.pipeline.processor import SubtitlePipeline
-from youtube_subtitle_app.config import (
+from subforge.pipeline.processor import SubtitlePipeline
+from subforge.config import (
     WHISPER_MODEL,
     OUTPUT_DIR,
     DEFAULT_URL,

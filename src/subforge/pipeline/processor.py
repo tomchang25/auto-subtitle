@@ -1,39 +1,39 @@
 from pathlib import Path
 from typing import Callable, Optional
 
-from youtube_subtitle_app.downloader.youtube import (
+from subforge.downloader.youtube import (
     get_video_title,
     download_audio,
     download_video,
 )
 
-from youtube_subtitle_app.audio.preprocess import preprocess_audio
+from subforge.audio.preprocess import preprocess_audio
 
-from youtube_subtitle_app.nlp.text_semantically import (
+from subforge.nlp.text_semantically import (
     split_to_sentences,
 )
-from youtube_subtitle_app.nlp.alignment import (
+from subforge.nlp.alignment import (
     align_sentences_with_timestamps,
     refine_sentences_by_timing,
 )
-from youtube_subtitle_app.nlp.segmentation import split_long_sentences_by_length
+from subforge.nlp.segmentation import split_long_sentences_by_length
 
-from youtube_subtitle_app.subtitle.writer import write_srt
+from subforge.subtitle.writer import write_srt
 
-from youtube_subtitle_app.config import (
+from subforge.config import (
     WHISPER_MODEL,
     OUTPUT_DIR,
     MAX_WORDS,
     SOFT_LIMIT,
 )
-from youtube_subtitle_app.utils import get_bounds_and_text
+from subforge.utils import get_bounds_and_text
 
 
 ProgressCallback = Callable[[str, str], None]
 
 
 def _resolve_transcriber():
-    from youtube_subtitle_app.transcription.faster_whisper_transcriber import (
+    from subforge.transcription.faster_whisper_transcriber import (
         transcribe_audio_word_level,
     )
     return transcribe_audio_word_level

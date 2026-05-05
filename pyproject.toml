@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "subforge"
+version = "0.1.0"
+description = "Generate clean, accurate subtitles from YouTube videos."
+authors = [{name = "Greysuki"}]
+requires-python = ">=3.11"
+dependencies = [
+    "faster-whisper",
+    "PySide6-Essentials",
+    "spacy",
+    "demucs",
+    "pydub",
+    "yt-dlp",
+    "ffmpeg-python",
+    "pysubs2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+subforge = "subforge.ui.main_window:run"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]

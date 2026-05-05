@@ -1,28 +1,33 @@
-# Byte-compiled / cache
+# Python
 __pycache__/
 *.py[cod]
-*.egg
+*$py.class
 *.egg-info/
 dist/
 build/
-.pytest_cache
+*.egg
+tests/data
 
-# Virtual environments
+# Virtual environment
 venv/
-.env/
-fairseq
+.venv/
 
-# IDEs
+# Models (large files)
+models/
+
+# IDE
 .vscode/
 .idea/
 
+# OS
+.DS_Store
+Thumbs.db
 
-# Test data or logs
-tests/data
-logs/
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Backup
-.backup
-
-
-secrets
+# Misc
+*.tmp
+*.log

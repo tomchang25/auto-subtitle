@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from youtube_subtitle_app.audio.preprocess import preprocess_audio
+from subforge.audio.preprocess import preprocess_audio
 
 
 def test_preprocess_audio_creates_mono_wav(tmp_path):

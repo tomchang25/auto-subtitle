@@ -1,4 +1,4 @@
-from youtube_subtitle_app.nlp.text_semantically import split_to_sentences
+from subforge.nlp.text_semantically import split_to_sentences
 from pathlib import Path
 import json
 

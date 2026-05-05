@@ -1,6 +1,6 @@
 from pathlib import Path
 from pydub import AudioSegment
-from youtube_subtitle_app.audio.demucs_wrapper import run_demucs
+from subforge.audio.demucs_wrapper import run_demucs
 
 
 def preprocess_audio(audio_path: Path, project_dir: Path, use_demucs=True) -> Path:
