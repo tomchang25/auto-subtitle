@@ -1,5 +1,9 @@
+import logging
 from pathlib import Path
+
 from faster_whisper import WhisperModel
+
+logger = logging.getLogger(__name__)
 
 SUPPORTED_MODELS = (
     "tiny",
@@ -17,7 +21,7 @@ _loaded_models = {}
 
 def load_model(model_name: str) -> WhisperModel:
     if model_name not in _loaded_models:
-        print(f"[ASR] Loading faster-whisper model: {model_name}")
+        logger.info("Loading faster-whisper model: %s", model_name)
         _loaded_models[model_name] = WhisperModel(model_name)
     return _loaded_models[model_name]
 
@@ -28,7 +32,7 @@ def transcribe_audio_word_level(wav_path: Path, model_name: str) -> list:
 
     model = load_model(model_name)
 
-    print(f"[ASR] Transcribing with faster-whisper: {wav_path}")
+    logger.info("Transcribing with faster-whisper: %s", wav_path)
     segments_iter, _info = model.transcribe(
         str(wav_path),
         word_timestamps=True,
@@ -50,5 +54,5 @@ def transcribe_audio_word_level(wav_path: Path, model_name: str) -> list:
     if not segments:
         raise ValueError("faster-whisper did not return word-level timestamps")
 
-    print(f"[ASR] Transcription complete: {len(segments)} words")
+    logger.info("Transcription complete: %d words", len(segments))
     return segments

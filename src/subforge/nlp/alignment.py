@@ -1,4 +1,7 @@
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize(text):
@@ -14,16 +17,16 @@ def verify_word_order(word_segments, sentence_chunks, context=3):
     sc_words = [_normalize(w) for w in _flatten_chunks(sentence_chunks)]
 
     if len(ws_words) != len(sc_words):
-        print(
-            f"[Verify] Length mismatch: word_segments={len(ws_words)}, chunks={len(sc_words)}"
+        logger.warning(
+            "Length mismatch: word_segments=%d, chunks=%d", len(ws_words), len(sc_words)
         )
 
     for i, (w1, w2) in enumerate(zip(ws_words, sc_words)):
         if w1 != w2:
-            print(f"[Mismatch at {i}]: '{w1}' != '{w2}'")
+            logger.warning("Mismatch at %d: '%s' != '%s'", i, w1, w2)
             raise ValueError("Word order mismatch")
 
-    print("[Verify] Word order matches between ASR and NLP.")
+    logger.info("Word order matches between ASR and NLP.")
 
 
 def align_sentences_with_timestamps(word_segments, sentence_chunks):

@@ -1,6 +1,10 @@
-from pathlib import Path
-import demucs.separate
+import logging
 import os
+from pathlib import Path
+
+import demucs.separate
+
+logger = logging.getLogger(__name__)
 
 
 def run_demucs(input_path: Path, output_dir: Path) -> Path:
@@ -21,16 +25,16 @@ def run_demucs(input_path: Path, output_dir: Path) -> Path:
         str(input_path),
     ]
 
-    print(f"[Demucs] Processing: {input_path}")
+    logger.info("Processing: %s", input_path)
     try:
         demucs.separate.main(args)
         output_file = output_dir / "htdemucs" / input_path.stem / "vocals.mp3"
         if output_file.exists():
-            print(f"[Demucs] Vocal track saved: {output_file}")
+            logger.info("Vocal track saved: %s", output_file)
             return output_file
         else:
-            print(f"[Demucs] Expected output not found, using original.")
+            logger.info("Expected output not found, using original.")
             return input_path
     except Exception as e:
-        print(f"[Demucs] Error: {e}")
+        logger.error("Error: %s", e)
         return input_path

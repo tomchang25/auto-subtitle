@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 from subforge.pipeline.processor import SubtitlePipeline
 from subforge.config import (
@@ -32,6 +33,7 @@ def parse_args():
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(name)s - %(message)s")
     args = parse_args()
     url = args.url or input("Enter YouTube URL: ").strip() or DEFAULT_URL
 
@@ -45,10 +47,11 @@ def main():
         video_quality=args.video_quality,
     )
 
+    logger = logging.getLogger(__name__)
     srt_path = pipeline.run()
-    print(f"\nSRT file: {srt_path}")
+    logger.info("SRT file: %s", srt_path)
     if pipeline.video_path:
-        print(f"MP4 file: {pipeline.video_path}")
+        logger.info("MP4 file: %s", pipeline.video_path)
 
 
 if __name__ == "__main__":

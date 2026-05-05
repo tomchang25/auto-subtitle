@@ -1,5 +1,8 @@
+import logging
 from pathlib import Path
 from typing import Callable, Optional
+
+logger = logging.getLogger(__name__)
 
 from subforge.downloader.youtube import (
     get_video_title,
@@ -64,12 +67,12 @@ class SubtitlePipeline:
 
     def _emit(self, step: str, detail: str = ""):
         message = f"[{step}] {detail}" if detail else f"[{step}]"
-        print(message)
+        logger.info(message)
         if self.progress_callback is not None:
             try:
                 self.progress_callback(step, detail)
             except Exception as exc:
-                print(f"[Pipeline] progress_callback raised: {exc}")
+                logger.error("progress_callback raised: %s", exc)
 
     def run(self) -> Path:
         self._emit("Pipeline", "=== Starting Subtitle Pipeline ===")

@@ -1,6 +1,10 @@
-from pathlib import Path
-import yt_dlp
+import logging
 import re
+from pathlib import Path
+
+import yt_dlp
+
+logger = logging.getLogger(__name__)
 
 
 def sanitize_filename(title: str) -> str:
@@ -26,7 +30,7 @@ def download_video(
     video_path = output_path.with_suffix(".mp4")
 
     if not force and video_path.exists():
-        print(f"Video already exists: {video_path}")
+        logger.info("Video already exists: %s", video_path)
         return video_path
 
     format_string = f"bestvideo[height<={quality.replace('p', '')}][ext=mp4]+bestaudio[ext=m4a]/best[height<={quality.replace('p', '')}][ext=mp4]"
@@ -37,7 +41,7 @@ def download_video(
     }
 
     try:
-        print(f"Downloading video to: {video_path}")
+        logger.info("Downloading video to: %s", video_path)
         with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.download([url])
         return video_path
@@ -53,7 +57,7 @@ def download_audio(
     audio_path = output_path.with_suffix(f".{format}")
 
     if not force and audio_path.exists():
-        print(f"Audio already exists: {audio_path}")
+        logger.info("Audio already exists: %s", audio_path)
         return audio_path
 
     opts = {
@@ -72,7 +76,7 @@ def download_audio(
     }
 
     try:
-        print(f"Downloading audio to: {audio_path}")
+        logger.info("Downloading audio to: %s", audio_path)
         with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.download([url])
         return audio_path
