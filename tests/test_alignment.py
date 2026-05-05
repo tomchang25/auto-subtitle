@@ -6,7 +6,7 @@ from subforge.nlp.alignment import (
     refine_sentences_by_timing,
 )
 from subforge.nlp.segmentation import split_long_sentences_by_length
-from subforge.utils import get_bounds_and_text, save_to_json
+from subforge.utils import get_bounds_and_text
 
 
 def load_word_segments(path: Path):
