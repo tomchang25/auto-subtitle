@@ -2,6 +2,7 @@ from transformers import MarianMTModel, MarianTokenizer
 from transformers import (
     AutoTokenizer,
     AutoModelForSeq2SeqLM,
+    AutoModelForCausalLM,
     pipeline,
 )
 import torch

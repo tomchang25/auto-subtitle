@@ -70,29 +70,33 @@ def test_refine_sentences_by_timing():
 
     # 🔪 Show splits
     print("\n🔪 Split sentences:")
-    for orig_start, orig_end, orig_text in original_bounds:
+    for orig in original_bounds:
+        orig_start, orig_end, orig_text = orig["start"], orig["end"], orig["segment"]
         matching_refined = [
-            (start, end, text)
-            for start, end, text in refined_bounds
-            if orig_start <= start and end <= orig_end
+            r
+            for r in refined_bounds
+            if orig_start <= r["start"] and r["end"] <= orig_end
         ]
         if len(matching_refined) > 1:
-            print(f"\nOriginal: [{orig_start:.2f} - {orig_end:.2f}] {orig_text}")
-            for start, end, text in matching_refined:
-                print(f"  → [{start:.2f} - {end:.2f}] {text}")
+            print(
+                f"\nOriginal: [{orig_start:.2f} - {orig_end:.2f}] {orig_text}"
+            )
+            for r in matching_refined:
+                print(f"  → [{r['start']:.2f} - {r['end']:.2f}] {r['segment']}")
 
     # 🧩 Show merges
     print("\n🧩 Merged sentences:")
-    for new_start, new_end, new_text in refined_bounds:
+    for new in refined_bounds:
+        new_start, new_end, new_text = new["start"], new["end"], new["segment"]
         matching_original = [
-            (start, end, text)
-            for start, end, text in original_bounds
-            if start >= new_start and end <= new_end
+            o
+            for o in original_bounds
+            if o["start"] >= new_start and o["end"] <= new_end
         ]
         if len(matching_original) > 1:
             print(f"\nRefined: [{new_start:.2f} - {new_end:.2f}] {new_text}")
-            for start, end, text in matching_original:
-                print(f"  ← [{start:.2f} - {end:.2f}] {text}")
+            for o in matching_original:
+                print(f"  ← [{o['start']:.2f} - {o['end']:.2f}] {o['segment']}")
 
     # Structural checks
     assert isinstance(refined, list)

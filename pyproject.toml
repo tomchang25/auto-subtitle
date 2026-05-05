@@ -29,6 +29,8 @@ subforge-cli = "subforge.main:main"
 where = ["src"]
 
 [tool.pytest.ini_options]
+markers = ["slow: tests that download from network"]
+addopts = "-m 'not slow'"
 testpaths = ["tests"]
 
 [tool.black]
