@@ -13,7 +13,6 @@ setup(
         "faster-whisper",
         "PySide6-Essentials",
         "spacy",
-        "deepmultilingualpunctuation",
         "demucs",
         "pydub",
         "yt-dlp",
@@ -21,9 +20,6 @@ setup(
         "pysubs2",
     ],
     extras_require={
-        "experimental": [
-            "nemo_toolkit[asr]",
-        ],
         "dev": [
             "pytest",
         ],

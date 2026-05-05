@@ -21,9 +21,7 @@ from youtube_subtitle_app.nlp.segmentation import split_long_sentences_by_length
 from youtube_subtitle_app.subtitle.writer import write_srt
 
 from youtube_subtitle_app.config import (
-    DEFAULT_MODEL,
     WHISPER_MODEL,
-    ENGINE,
     OUTPUT_DIR,
     MAX_WORDS,
     SOFT_LIMIT,
@@ -34,26 +32,11 @@ from youtube_subtitle_app.utils import get_bounds_and_text
 ProgressCallback = Callable[[str, str], None]
 
 
-def _resolve_transcriber(engine: str):
-    if engine == "parakeet":
-        from youtube_subtitle_app.transcription.nemo_transcriber import (
-            transcribe_audio_word_level,
-        )
-        return transcribe_audio_word_level
-    if engine == "faster-whisper":
-        from youtube_subtitle_app.transcription.faster_whisper_transcriber import (
-            transcribe_audio_word_level,
-        )
-        return transcribe_audio_word_level
-    raise ValueError(f"Unknown transcription engine: {engine}")
-
-
-def _default_model_for(engine: str) -> str:
-    if engine == "parakeet":
-        return DEFAULT_MODEL
-    if engine == "faster-whisper":
-        return WHISPER_MODEL
-    raise ValueError(f"Unknown transcription engine: {engine}")
+def _resolve_transcriber():
+    from youtube_subtitle_app.transcription.faster_whisper_transcriber import (
+        transcribe_audio_word_level,
+    )
+    return transcribe_audio_word_level
 
 
 class SubtitlePipeline:
@@ -62,15 +45,13 @@ class SubtitlePipeline:
         url: str,
         model_name: Optional[str] = None,
         output_dir: Path = OUTPUT_DIR,
-        engine: str = ENGINE,
         use_demucs: bool = True,
         download_mp4: bool = False,
         video_quality: str = "1080p",
         progress_callback: Optional[ProgressCallback] = None,
     ):
         self.url = url
-        self.engine = engine
-        self.model_name = model_name or _default_model_for(engine)
+        self.model_name = model_name or WHISPER_MODEL
         self.output_dir = output_dir
         self.use_demucs = use_demucs
         self.download_mp4 = download_mp4
@@ -119,9 +100,9 @@ class SubtitlePipeline:
         # Step 4: Transcribe
         self._emit(
             "Transcribe",
-            f"engine={self.engine} model={self.model_name}",
+            f"model={self.model_name}",
         )
-        transcribe = _resolve_transcriber(self.engine)
+        transcribe = _resolve_transcriber()
         word_segments = transcribe(processed_audio, self.model_name)
         self._emit("Transcribe", f"{len(word_segments)} words")
 

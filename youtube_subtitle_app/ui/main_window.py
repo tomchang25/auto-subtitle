@@ -20,17 +20,13 @@ from PySide6.QtWidgets import (
 
 from youtube_subtitle_app.config import (
     DEFAULT_URL,
-    DEFAULT_MODEL,
     WHISPER_MODEL,
-    ENGINE,
     OUTPUT_DIR,
 )
 from youtube_subtitle_app.pipeline.processor import SubtitlePipeline
 from youtube_subtitle_app.transcription.faster_whisper_transcriber import (
     SUPPORTED_MODELS as WHISPER_MODELS,
 )
-
-ENGINES = ("faster-whisper", "parakeet")
 
 
 class PipelineWorker(QObject):
@@ -41,7 +37,6 @@ class PipelineWorker(QObject):
     def __init__(
         self,
         url: str,
-        engine: str,
         model_name: str,
         use_demucs: bool,
         download_mp4: bool = False,
@@ -49,7 +44,6 @@ class PipelineWorker(QObject):
     ):
         super().__init__()
         self.url = url
-        self.engine = engine
         self.model_name = model_name
         self.use_demucs = use_demucs
         self.download_mp4 = download_mp4
@@ -60,7 +54,6 @@ class PipelineWorker(QObject):
         try:
             pipeline = SubtitlePipeline(
                 url=self.url,
-                engine=self.engine,
                 model_name=self.model_name,
                 output_dir=OUTPUT_DIR,
                 use_demucs=self.use_demucs,
@@ -102,17 +95,7 @@ class MainWindow(QMainWindow):
 
         # Settings row
         settings_row = QHBoxLayout()
-        settings_row.addWidget(QLabel("Engine:"))
-        self.engine_combo = QComboBox()
-        self.engine_combo.addItems(ENGINES)
-        idx = self.engine_combo.findText(ENGINE)
-        if idx >= 0:
-            self.engine_combo.setCurrentIndex(idx)
-        self.engine_combo.currentTextChanged.connect(self._on_engine_changed)
-        settings_row.addWidget(self.engine_combo)
-
-        self.model_label = QLabel("Model:")
-        settings_row.addWidget(self.model_label)
+        settings_row.addWidget(QLabel("Model:"))
         self.model_combo = QComboBox()
         self.model_combo.addItems(WHISPER_MODELS)
         whisper_idx = self.model_combo.findText(WHISPER_MODEL)
@@ -155,13 +138,6 @@ class MainWindow(QMainWindow):
         result_row.addWidget(self.open_folder_button)
         layout.addLayout(result_row)
 
-        self._on_engine_changed(self.engine_combo.currentText())
-
-    def _on_engine_changed(self, engine: str):
-        is_whisper = engine == "faster-whisper"
-        self.model_label.setVisible(is_whisper)
-        self.model_combo.setVisible(is_whisper)
-
     def _append_log(self, line: str):
         self.log.appendPlainText(line)
 
@@ -171,23 +147,18 @@ class MainWindow(QMainWindow):
             return
 
         url = self.url_input.text().strip() or DEFAULT_URL
-        engine = self.engine_combo.currentText()
-        if engine == "faster-whisper":
-            model_name = self.model_combo.currentText()
-        else:
-            model_name = DEFAULT_MODEL
+        model_name = self.model_combo.currentText()
 
         self.start_button.setEnabled(False)
         self.open_folder_button.setEnabled(False)
         self.result_label.setText("Running…")
         self.log.clear()
         self._append_log(f"Starting: {url}")
-        self._append_log(f"Engine: {engine}  Model: {model_name}")
+        self._append_log(f"Model: {model_name}")
 
         self._thread = QThread(self)
         self._worker = PipelineWorker(
             url=url,
-            engine=engine,
             model_name=model_name,
             use_demucs=self.demucs_check.isChecked(),
             download_mp4=self.download_mp4_check.isChecked(),

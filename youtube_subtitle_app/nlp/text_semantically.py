@@ -1,8 +1,6 @@
 import spacy
-from deepmultilingualpunctuation import PunctuationModel
 
 _nlp_model = spacy.load("en_core_web_sm")
-_dmp_model = PunctuationModel()
 
 BREAK_WORD = ["so", "but"]
 
@@ -57,7 +55,6 @@ def split_to_sentences(text: str, punct_limit: int = 5):
     Split a sentence based on punctuation breaks and soft word limits.
     No hard max word enforcement anymore.
     """
-    text = _dmp_model.restore_punctuation(text)
     doc = _nlp_model(text)
     tokens = [
         {"text": t.text, "whitespace": t.whitespace_, "is_punct": t.is_punct}

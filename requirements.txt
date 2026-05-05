@@ -12,7 +12,6 @@ PySide6-Essentials
 
 # NLP / text processing
 spacy
-deepmultilingualpunctuation
 
 # Audio
 demucs

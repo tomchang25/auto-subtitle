@@ -7,8 +7,7 @@ Easily generate clean, accurate subtitles from any YouTube link — powered by s
 ## 🎯 What It Does
 
 - 🎧 Just paste a YouTube link — the app downloads audio and transcribes it
-- 🧠 Backed by NVIDIA’s top ASR model [`nvidia/parakeet-tdt-0.6b-v2`](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2)
-- ✍️ Automatically restores punctuation for natural reading
+- 🧠 Powered by [faster-whisper](https://github.com/SYSTRAN/faster-whisper) with built-in punctuation
 - 🧾 Splits overly long ASR output into sentence-like segments using NLP
 - 🔇 Fixes common loop/noise gibberish with background cleanup
 - 📝 Outputs a ready-to-use `.srt` subtitle file
@@ -83,17 +82,6 @@ pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-### Experimental: NeMo / Parakeet backend
-
-The default backend is `faster-whisper`. To opt into the larger NVIDIA NeMo
-Parakeet backend:
-
-```bash
-pip install -r requirements-experimental.txt
-# or, when installing the project itself:
-pip install -e ".[experimental]"
-```
-
 ---
 
 ## 🚀 Usage
@@ -105,9 +93,8 @@ python youtube_subtitle_app/main.py
 You’ll be prompted to paste a YouTube URL. The program will:
 
 1. Download the audio
-2. Transcribe it
-3. Restore punctuation
-4. Break into aligned subtitle chunks
+2. Transcribe it (with punctuation from faster-whisper)
+3. Break into aligned subtitle chunks
 5. Export an `.srt` file under `~/Documents/AutoSubtitle/<video title>/output.srt`
 
 ---
@@ -124,10 +111,9 @@ You’ll need test assets under `tests/data/` for some integration tests.
 
 ## 🧠 Credits
 
-- [NVIDIA NeMo](https://github.com/NVIDIA/NeMo) – speech recognition
+- [faster-whisper](https://github.com/SYSTRAN/faster-whisper) – speech recognition
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) – YouTube audio downloading
 - [spaCy](https://spacy.io) – NLP sentence processing
-- [DeepMultilingualPunctuation](https://huggingface.co/oliverguhr/fullstop-punctuation-multilang-large)
 
 ---
 
