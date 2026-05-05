@@ -9,17 +9,19 @@ description = "Generate clean, accurate subtitles from YouTube videos."
 authors = [{name = "Greysuki"}]
 requires-python = ">=3.11"
 dependencies = [
-    "faster-whisper",
-    "PySide6-Essentials",
     "spacy",
-    "demucs",
     "pydub",
-    "yt-dlp",
-    "ffmpeg-python",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+full = [
+    "faster-whisper",
+    "PySide6-Essentials",
+    "demucs",
+    "yt-dlp",
+    "ffmpeg-python",
+]
+dev = ["pytest", "ruff"]
 
 [project.scripts]
 subforge = "subforge.ui.main_window:run"
@@ -32,6 +34,10 @@ where = ["src"]
 markers = ["slow: tests that download from network"]
 addopts = "-m 'not slow'"
 testpaths = ["tests"]
+
+[tool.ruff.lint]
+select = ["F", "E"]
+ignore = ["E402"]
 
 [tool.black]
 line-length = 88
