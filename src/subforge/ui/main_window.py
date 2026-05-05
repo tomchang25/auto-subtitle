@@ -1,3 +1,4 @@
+import logging
 import sys
 from pathlib import Path
 
@@ -274,6 +275,8 @@ class MainWindow(QMainWindow):
 
 
 def run():
+    from subforge.config import LOG_LEVEL
+    logging.basicConfig(level=LOG_LEVEL, format="%(levelname)s - %(name)s - %(message)s")
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

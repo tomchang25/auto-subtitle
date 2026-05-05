@@ -36,6 +36,12 @@ def parse_args():
         default=False,
         help="Ignore cached results and re-run all steps from scratch.",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Enable DEBUG logging (shows full prompts/responses).",
+    )
     return parser.parse_args()
 
 
@@ -46,8 +52,10 @@ def main():
     from subforge.pipeline.processor import SubtitlePipeline
     from subforge.config import WHISPER_MODEL, OUTPUT_DIR, DEFAULT_URL
 
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(name)s - %(message)s")
+    from subforge.config import LOG_LEVEL
     args = parse_args()
+    log_level = logging.DEBUG if args.debug else LOG_LEVEL
+    logging.basicConfig(level=log_level, format="%(levelname)s - %(name)s - %(message)s")
     url = args.url or input("Enter YouTube URL: ").strip() or DEFAULT_URL
 
     model_name = args.model or WHISPER_MODEL

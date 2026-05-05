@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 _CORE_DEPS = {
     "faster_whisper": "faster-whisper",
     "yt_dlp": "yt-dlp",
-    "ffmpeg": "ffmpeg-python",
     "demucs": "demucs",
 }
 _GUI_DEPS = {

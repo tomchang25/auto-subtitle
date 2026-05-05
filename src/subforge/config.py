@@ -1,4 +1,8 @@
+import logging
 from pathlib import Path
+
+# Logging
+LOG_LEVEL = logging.DEBUG  # set to logging.DEBUG for full prompts/responses
 
 # Video URL
 DEFAULT_URL = "https://www.youtube.com/watch?v=ByreRudsyoc"

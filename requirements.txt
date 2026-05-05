@@ -15,11 +15,9 @@ spacy
 
 # Audio
 demucs
-pydub
 
 # Media / IO
 yt-dlp
-ffmpeg-python
 
 # Translation (Gemini)
 google-genai

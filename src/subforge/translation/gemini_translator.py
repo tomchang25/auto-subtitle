@@ -121,6 +121,12 @@ class GeminiTranslator:
         texts = [c["segment"] for c in chunks]
 
         prompt = self._build_prompt(texts, src_name, tgt_name)
+        logger.info(
+            "Translation request: %d chunks, %d chars total",
+            len(texts),
+            sum(len(t) for t in texts),
+        )
+        logger.debug("=== PROMPT START ===\n%s\n=== PROMPT END ===", prompt)
 
         last_exc: Exception | None = None
 
@@ -132,15 +138,35 @@ class GeminiTranslator:
             for attempt in range(3):
                 try:
                     response_text = self._call_api(prompt, model)
+                    logger.debug(
+                        "=== RESPONSE START (model=%s, attempt=%d) ===\n%s\n=== RESPONSE END ===",
+                        model, attempt + 1, response_text,
+                    )
                     parsed = self._parse_response(response_text, len(texts))
                     if parsed is not None:
+                        logger.info("Translation success: %d/%d chunks translated", len(parsed), len(texts))
                         return [{**c, "translation": t} for c, t in zip(chunks, parsed)]
+
+                    # Count mismatch — log details for debugging
+                    response_lines = [
+                        line.strip()
+                        for line in response_text.strip().splitlines()
+                        if line.strip()
+                    ]
+                    numbered_lines = [l for l in response_lines if _NUMBERING_RE.match(l)]
+                    logger.warning(
+                        "Response count mismatch: expected %d, got %d numbered lines "
+                        "(total lines: %d, model=%s, attempt %d/3)",
+                        len(texts), len(numbered_lines), len(response_lines),
+                        model, attempt + 1,
+                    )
+                    # Show first and last few lines for quick diagnosis
+                    if numbered_lines:
+                        preview = numbered_lines[:3] + (["..."] if len(numbered_lines) > 6 else []) + numbered_lines[-3:]
+                        logger.info("Response preview:\n  %s", "\n  ".join(preview))
+
                     if attempt < 2:
-                        logger.warning(
-                            "Response count mismatch (expected %d, attempt %d/3), retrying",
-                            len(texts),
-                            attempt + 1,
-                        )
+                        pass  # retry
                     else:
                         logger.warning(
                             "Count mismatch after 3 retries, returning partial results"
