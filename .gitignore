@@ -6,7 +6,8 @@ __pycache__/
 dist/
 build/
 *.egg
-tests/data
+tests/data/*.wav
+tests/data/*.mp3
 
 # Virtual environment
 venv/
