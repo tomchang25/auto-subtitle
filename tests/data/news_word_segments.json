@@ -1,0 +1,5063 @@
+[
+  {
+    "word": "Well,",
+    "start_offset": 2,
+    "end_offset": 4,
+    "start": 0.16,
+    "end": 0.32
+  },
+  {
+    "word": "we",
+    "start_offset": 5,
+    "end_offset": 7,
+    "start": 0.4,
+    "end": 0.56
+  },
+  {
+    "word": "start",
+    "start_offset": 7,
+    "end_offset": 9,
+    "start": 0.56,
+    "end": 0.72
+  },
+  {
+    "word": "in",
+    "start_offset": 9,
+    "end_offset": 12,
+    "start": 0.72,
+    "end": 0.96
+  },
+  {
+    "word": "the",
+    "start_offset": 12,
+    "end_offset": 15,
+    "start": 0.96,
+    "end": 1.2
+  },
+  {
+    "word": "United",
+    "start_offset": 15,
+    "end_offset": 21,
+    "start": 1.2,
+    "end": 1.68
+  },
+  {
+    "word": "States",
+    "start_offset": 21,
+    "end_offset": 25,
+    "start": 1.68,
+    "end": 2.0
+  },
+  {
+    "word": "and",
+    "start_offset": 26,
+    "end_offset": 29,
+    "start": 2.08,
+    "end": 2.32
+  },
+  {
+    "word": "two",
+    "start_offset": 29,
+    "end_offset": 31,
+    "start": 2.32,
+    "end": 2.48
+  },
+  {
+    "word": "people",
+    "start_offset": 31,
+    "end_offset": 34,
+    "start": 2.48,
+    "end": 2.72
+  },
+  {
+    "word": "have",
+    "start_offset": 34,
+    "end_offset": 36,
+    "start": 2.72,
+    "end": 2.88
+  },
+  {
+    "word": "died",
+    "start_offset": 36,
+    "end_offset": 39,
+    "start": 2.88,
+    "end": 3.12
+  },
+  {
+    "word": "and",
+    "start_offset": 41,
+    "end_offset": 43,
+    "start": 3.2800000000000002,
+    "end": 3.44
+  },
+  {
+    "word": "at",
+    "start_offset": 43,
+    "end_offset": 44,
+    "start": 3.44,
+    "end": 3.52
+  },
+  {
+    "word": "least",
+    "start_offset": 44,
+    "end_offset": 46,
+    "start": 3.52,
+    "end": 3.68
+  },
+  {
+    "word": "22",
+    "start_offset": 46,
+    "end_offset": 54,
+    "start": 3.68,
+    "end": 4.32
+  },
+  {
+    "word": "have",
+    "start_offset": 54,
+    "end_offset": 57,
+    "start": 4.32,
+    "end": 4.5600000000000005
+  },
+  {
+    "word": "been",
+    "start_offset": 57,
+    "end_offset": 59,
+    "start": 4.5600000000000005,
+    "end": 4.72
+  },
+  {
+    "word": "injured.",
+    "start_offset": 59,
+    "end_offset": 64,
+    "start": 4.72,
+    "end": 5.12
+  },
+  {
+    "word": "It's",
+    "start_offset": 67,
+    "end_offset": 70,
+    "start": 5.36,
+    "end": 5.6000000000000005
+  },
+  {
+    "word": "after",
+    "start_offset": 70,
+    "end_offset": 72,
+    "start": 5.6000000000000005,
+    "end": 5.76
+  },
+  {
+    "word": "a",
+    "start_offset": 72,
+    "end_offset": 74,
+    "start": 5.76,
+    "end": 5.92
+  },
+  {
+    "word": "Mexican",
+    "start_offset": 74,
+    "end_offset": 80,
+    "start": 5.92,
+    "end": 6.4
+  },
+  {
+    "word": "Navy",
+    "start_offset": 80,
+    "end_offset": 85,
+    "start": 6.4,
+    "end": 6.8
+  },
+  {
+    "word": "training",
+    "start_offset": 85,
+    "end_offset": 90,
+    "start": 6.8,
+    "end": 7.2
+  },
+  {
+    "word": "ship",
+    "start_offset": 90,
+    "end_offset": 94,
+    "start": 7.2,
+    "end": 7.5200000000000005
+  },
+  {
+    "word": "crashed",
+    "start_offset": 94,
+    "end_offset": 99,
+    "start": 7.5200000000000005,
+    "end": 7.92
+  },
+  {
+    "word": "into",
+    "start_offset": 99,
+    "end_offset": 102,
+    "start": 7.92,
+    "end": 8.16
+  },
+  {
+    "word": "New",
+    "start_offset": 102,
+    "end_offset": 105,
+    "start": 8.16,
+    "end": 8.4
+  },
+  {
+    "word": "York",
+    "start_offset": 105,
+    "end_offset": 108,
+    "start": 8.4,
+    "end": 8.64
+  },
+  {
+    "word": "City's",
+    "start_offset": 108,
+    "end_offset": 112,
+    "start": 8.64,
+    "end": 8.96
+  },
+  {
+    "word": "Brooklyn",
+    "start_offset": 112,
+    "end_offset": 120,
+    "start": 8.96,
+    "end": 9.6
+  },
+  {
+    "word": "Bridge.",
+    "start_offset": 120,
+    "end_offset": 124,
+    "start": 9.6,
+    "end": 9.92
+  },
+  {
+    "word": "It",
+    "start_offset": 127,
+    "end_offset": 129,
+    "start": 10.16,
+    "end": 10.32
+  },
+  {
+    "word": "was",
+    "start_offset": 129,
+    "end_offset": 131,
+    "start": 10.32,
+    "end": 10.48
+  },
+  {
+    "word": "during",
+    "start_offset": 131,
+    "end_offset": 134,
+    "start": 10.48,
+    "end": 10.72
+  },
+  {
+    "word": "a",
+    "start_offset": 134,
+    "end_offset": 135,
+    "start": 10.72,
+    "end": 10.8
+  },
+  {
+    "word": "festive",
+    "start_offset": 135,
+    "end_offset": 140,
+    "start": 10.8,
+    "end": 11.200000000000001
+  },
+  {
+    "word": "visit",
+    "start_offset": 140,
+    "end_offset": 144,
+    "start": 11.200000000000001,
+    "end": 11.52
+  },
+  {
+    "word": "to",
+    "start_offset": 144,
+    "end_offset": 146,
+    "start": 11.52,
+    "end": 11.68
+  },
+  {
+    "word": "the",
+    "start_offset": 146,
+    "end_offset": 148,
+    "start": 11.68,
+    "end": 11.84
+  },
+  {
+    "word": "country.",
+    "start_offset": 148,
+    "end_offset": 153,
+    "start": 11.84,
+    "end": 12.24
+  },
+  {
+    "word": "Footage",
+    "start_offset": 157,
+    "end_offset": 163,
+    "start": 12.56,
+    "end": 13.040000000000001
+  },
+  {
+    "word": "has",
+    "start_offset": 163,
+    "end_offset": 165,
+    "start": 13.040000000000001,
+    "end": 13.200000000000001
+  },
+  {
+    "word": "emerged",
+    "start_offset": 165,
+    "end_offset": 172,
+    "start": 13.200000000000001,
+    "end": 13.76
+  },
+  {
+    "word": "showing",
+    "start_offset": 172,
+    "end_offset": 176,
+    "start": 13.76,
+    "end": 14.08
+  },
+  {
+    "word": "towering",
+    "start_offset": 176,
+    "end_offset": 182,
+    "start": 14.08,
+    "end": 14.56
+  },
+  {
+    "word": "masts",
+    "start_offset": 182,
+    "end_offset": 187,
+    "start": 14.56,
+    "end": 14.96
+  },
+  {
+    "word": "of",
+    "start_offset": 187,
+    "end_offset": 189,
+    "start": 14.96,
+    "end": 15.120000000000001
+  },
+  {
+    "word": "the",
+    "start_offset": 189,
+    "end_offset": 190,
+    "start": 15.120000000000001,
+    "end": 15.200000000000001
+  },
+  {
+    "word": "ship",
+    "start_offset": 190,
+    "end_offset": 194,
+    "start": 15.200000000000001,
+    "end": 15.52
+  },
+  {
+    "word": "clipping",
+    "start_offset": 194,
+    "end_offset": 199,
+    "start": 15.52,
+    "end": 15.92
+  },
+  {
+    "word": "the",
+    "start_offset": 199,
+    "end_offset": 200,
+    "start": 15.92,
+    "end": 16.0
+  },
+  {
+    "word": "bridge",
+    "start_offset": 200,
+    "end_offset": 204,
+    "start": 16.0,
+    "end": 16.32
+  },
+  {
+    "word": "as",
+    "start_offset": 204,
+    "end_offset": 206,
+    "start": 16.32,
+    "end": 16.48
+  },
+  {
+    "word": "the",
+    "start_offset": 206,
+    "end_offset": 207,
+    "start": 16.48,
+    "end": 16.56
+  },
+  {
+    "word": "sailing",
+    "start_offset": 207,
+    "end_offset": 212,
+    "start": 16.56,
+    "end": 16.96
+  },
+  {
+    "word": "vessel",
+    "start_offset": 212,
+    "end_offset": 216,
+    "start": 16.96,
+    "end": 17.28
+  },
+  {
+    "word": "was",
+    "start_offset": 216,
+    "end_offset": 218,
+    "start": 17.28,
+    "end": 17.44
+  },
+  {
+    "word": "passing",
+    "start_offset": 218,
+    "end_offset": 223,
+    "start": 17.44,
+    "end": 17.84
+  },
+  {
+    "word": "under",
+    "start_offset": 223,
+    "end_offset": 226,
+    "start": 17.84,
+    "end": 18.080000000000002
+  },
+  {
+    "word": "the",
+    "start_offset": 226,
+    "end_offset": 228,
+    "start": 18.080000000000002,
+    "end": 18.240000000000002
+  },
+  {
+    "word": "famous",
+    "start_offset": 228,
+    "end_offset": 233,
+    "start": 18.240000000000002,
+    "end": 18.64
+  },
+  {
+    "word": "structure",
+    "start_offset": 233,
+    "end_offset": 239,
+    "start": 18.64,
+    "end": 19.12
+  },
+  {
+    "word": "on",
+    "start_offset": 239,
+    "end_offset": 241,
+    "start": 19.12,
+    "end": 19.28
+  },
+  {
+    "word": "Saturday",
+    "start_offset": 241,
+    "end_offset": 248,
+    "start": 19.28,
+    "end": 19.84
+  },
+  {
+    "word": "evening.",
+    "start_offset": 248,
+    "end_offset": 254,
+    "start": 19.84,
+    "end": 20.32
+  },
+  {
+    "word": "Parts",
+    "start_offset": 258,
+    "end_offset": 262,
+    "start": 20.64,
+    "end": 20.96
+  },
+  {
+    "word": "of",
+    "start_offset": 262,
+    "end_offset": 264,
+    "start": 20.96,
+    "end": 21.12
+  },
+  {
+    "word": "the",
+    "start_offset": 264,
+    "end_offset": 265,
+    "start": 21.12,
+    "end": 21.2
+  },
+  {
+    "word": "masts",
+    "start_offset": 265,
+    "end_offset": 271,
+    "start": 21.2,
+    "end": 21.68
+  },
+  {
+    "word": "reportedly",
+    "start_offset": 271,
+    "end_offset": 277,
+    "start": 21.68,
+    "end": 22.16
+  },
+  {
+    "word": "fell",
+    "start_offset": 277,
+    "end_offset": 280,
+    "start": 22.16,
+    "end": 22.400000000000002
+  },
+  {
+    "word": "onto",
+    "start_offset": 280,
+    "end_offset": 284,
+    "start": 22.400000000000002,
+    "end": 22.72
+  },
+  {
+    "word": "the",
+    "start_offset": 284,
+    "end_offset": 286,
+    "start": 22.72,
+    "end": 22.88
+  },
+  {
+    "word": "deck.",
+    "start_offset": 286,
+    "end_offset": 292,
+    "start": 22.88,
+    "end": 23.36
+  },
+  {
+    "word": "New",
+    "start_offset": 296,
+    "end_offset": 299,
+    "start": 23.68,
+    "end": 23.92
+  },
+  {
+    "word": "York",
+    "start_offset": 299,
+    "end_offset": 302,
+    "start": 23.92,
+    "end": 24.16
+  },
+  {
+    "word": "City's",
+    "start_offset": 302,
+    "end_offset": 307,
+    "start": 24.16,
+    "end": 24.560000000000002
+  },
+  {
+    "word": "emergency",
+    "start_offset": 307,
+    "end_offset": 314,
+    "start": 24.560000000000002,
+    "end": 25.12
+  },
+  {
+    "word": "management",
+    "start_offset": 314,
+    "end_offset": 321,
+    "start": 25.12,
+    "end": 25.68
+  },
+  {
+    "word": "said",
+    "start_offset": 321,
+    "end_offset": 323,
+    "start": 25.68,
+    "end": 25.84
+  },
+  {
+    "word": "it",
+    "start_offset": 323,
+    "end_offset": 325,
+    "start": 25.84,
+    "end": 26.0
+  },
+  {
+    "word": "was",
+    "start_offset": 325,
+    "end_offset": 327,
+    "start": 26.0,
+    "end": 26.16
+  },
+  {
+    "word": "responding",
+    "start_offset": 327,
+    "end_offset": 333,
+    "start": 26.16,
+    "end": 26.64
+  },
+  {
+    "word": "to",
+    "start_offset": 333,
+    "end_offset": 335,
+    "start": 26.64,
+    "end": 26.8
+  },
+  {
+    "word": "an",
+    "start_offset": 335,
+    "end_offset": 336,
+    "start": 26.8,
+    "end": 26.88
+  },
+  {
+    "word": "incident",
+    "start_offset": 336,
+    "end_offset": 342,
+    "start": 26.88,
+    "end": 27.36
+  },
+  {
+    "word": "without",
+    "start_offset": 342,
+    "end_offset": 346,
+    "start": 27.36,
+    "end": 27.68
+  },
+  {
+    "word": "giving",
+    "start_offset": 346,
+    "end_offset": 349,
+    "start": 27.68,
+    "end": 27.92
+  },
+  {
+    "word": "any",
+    "start_offset": 349,
+    "end_offset": 351,
+    "start": 27.92,
+    "end": 28.080000000000002
+  },
+  {
+    "word": "further",
+    "start_offset": 351,
+    "end_offset": 356,
+    "start": 28.080000000000002,
+    "end": 28.48
+  },
+  {
+    "word": "details.",
+    "start_offset": 356,
+    "end_offset": 370,
+    "start": 28.48,
+    "end": 29.6
+  },
+  {
+    "word": "Eyewitnesses",
+    "start_offset": 379,
+    "end_offset": 389,
+    "start": 30.32,
+    "end": 31.12
+  },
+  {
+    "word": "described",
+    "start_offset": 389,
+    "end_offset": 395,
+    "start": 31.12,
+    "end": 31.6
+  },
+  {
+    "word": "the",
+    "start_offset": 395,
+    "end_offset": 396,
+    "start": 31.6,
+    "end": 31.68
+  },
+  {
+    "word": "moment",
+    "start_offset": 396,
+    "end_offset": 400,
+    "start": 31.68,
+    "end": 32.0
+  },
+  {
+    "word": "the",
+    "start_offset": 400,
+    "end_offset": 402,
+    "start": 32.0,
+    "end": 32.160000000000004
+  },
+  {
+    "word": "boat",
+    "start_offset": 402,
+    "end_offset": 406,
+    "start": 32.160000000000004,
+    "end": 32.480000000000004
+  },
+  {
+    "word": "made",
+    "start_offset": 406,
+    "end_offset": 409,
+    "start": 32.480000000000004,
+    "end": 32.72
+  },
+  {
+    "word": "contact",
+    "start_offset": 409,
+    "end_offset": 414,
+    "start": 32.72,
+    "end": 33.12
+  },
+  {
+    "word": "with",
+    "start_offset": 414,
+    "end_offset": 416,
+    "start": 33.12,
+    "end": 33.28
+  },
+  {
+    "word": "the",
+    "start_offset": 416,
+    "end_offset": 418,
+    "start": 33.28,
+    "end": 33.44
+  },
+  {
+    "word": "bridge.",
+    "start_offset": 418,
+    "end_offset": 424,
+    "start": 33.44,
+    "end": 33.92
+  },
+  {
+    "word": "The",
+    "start_offset": 432,
+    "end_offset": 434,
+    "start": 34.56,
+    "end": 34.72
+  },
+  {
+    "word": "boat",
+    "start_offset": 434,
+    "end_offset": 439,
+    "start": 34.72,
+    "end": 35.12
+  },
+  {
+    "word": "kind",
+    "start_offset": 439,
+    "end_offset": 441,
+    "start": 35.12,
+    "end": 35.28
+  },
+  {
+    "word": "of",
+    "start_offset": 441,
+    "end_offset": 443,
+    "start": 35.28,
+    "end": 35.44
+  },
+  {
+    "word": "just",
+    "start_offset": 443,
+    "end_offset": 446,
+    "start": 35.44,
+    "end": 35.68
+  },
+  {
+    "word": "like",
+    "start_offset": 446,
+    "end_offset": 449,
+    "start": 35.68,
+    "end": 35.92
+  },
+  {
+    "word": "was",
+    "start_offset": 449,
+    "end_offset": 452,
+    "start": 35.92,
+    "end": 36.160000000000004
+  },
+  {
+    "word": "going",
+    "start_offset": 452,
+    "end_offset": 455,
+    "start": 36.160000000000004,
+    "end": 36.4
+  },
+  {
+    "word": "past",
+    "start_offset": 455,
+    "end_offset": 458,
+    "start": 36.4,
+    "end": 36.64
+  },
+  {
+    "word": "the",
+    "start_offset": 458,
+    "end_offset": 459,
+    "start": 36.64,
+    "end": 36.72
+  },
+  {
+    "word": "bridge",
+    "start_offset": 459,
+    "end_offset": 462,
+    "start": 36.72,
+    "end": 36.96
+  },
+  {
+    "word": "and",
+    "start_offset": 463,
+    "end_offset": 465,
+    "start": 37.04,
+    "end": 37.2
+  },
+  {
+    "word": "you",
+    "start_offset": 465,
+    "end_offset": 466,
+    "start": 37.2,
+    "end": 37.28
+  },
+  {
+    "word": "just",
+    "start_offset": 466,
+    "end_offset": 467,
+    "start": 37.28,
+    "end": 37.36
+  },
+  {
+    "word": "saw",
+    "start_offset": 467,
+    "end_offset": 470,
+    "start": 37.36,
+    "end": 37.6
+  },
+  {
+    "word": "the",
+    "start_offset": 470,
+    "end_offset": 472,
+    "start": 37.6,
+    "end": 37.76
+  },
+  {
+    "word": "top",
+    "start_offset": 472,
+    "end_offset": 474,
+    "start": 37.76,
+    "end": 37.92
+  },
+  {
+    "word": "of",
+    "start_offset": 475,
+    "end_offset": 476,
+    "start": 38.0,
+    "end": 38.08
+  },
+  {
+    "word": "it",
+    "start_offset": 477,
+    "end_offset": 478,
+    "start": 38.160000000000004,
+    "end": 38.24
+  },
+  {
+    "word": "snap",
+    "start_offset": 481,
+    "end_offset": 486,
+    "start": 38.480000000000004,
+    "end": 38.88
+  },
+  {
+    "word": "off",
+    "start_offset": 486,
+    "end_offset": 488,
+    "start": 38.88,
+    "end": 39.04
+  },
+  {
+    "word": "and",
+    "start_offset": 489,
+    "end_offset": 490,
+    "start": 39.12,
+    "end": 39.2
+  },
+  {
+    "word": "it",
+    "start_offset": 490,
+    "end_offset": 492,
+    "start": 39.2,
+    "end": 39.36
+  },
+  {
+    "word": "just",
+    "start_offset": 492,
+    "end_offset": 495,
+    "start": 39.36,
+    "end": 39.6
+  },
+  {
+    "word": "like",
+    "start_offset": 496,
+    "end_offset": 498,
+    "start": 39.68,
+    "end": 39.84
+  },
+  {
+    "word": "had",
+    "start_offset": 502,
+    "end_offset": 504,
+    "start": 40.160000000000004,
+    "end": 40.32
+  },
+  {
+    "word": "gone",
+    "start_offset": 505,
+    "end_offset": 508,
+    "start": 40.4,
+    "end": 40.64
+  },
+  {
+    "word": "snapping",
+    "start_offset": 508,
+    "end_offset": 513,
+    "start": 40.64,
+    "end": 41.04
+  },
+  {
+    "word": "and",
+    "start_offset": 515,
+    "end_offset": 517,
+    "start": 41.2,
+    "end": 41.36
+  },
+  {
+    "word": "there",
+    "start_offset": 517,
+    "end_offset": 518,
+    "start": 41.36,
+    "end": 41.44
+  },
+  {
+    "word": "was",
+    "start_offset": 518,
+    "end_offset": 520,
+    "start": 41.44,
+    "end": 41.6
+  },
+  {
+    "word": "I",
+    "start_offset": 527,
+    "end_offset": 528,
+    "start": 42.160000000000004,
+    "end": 42.24
+  },
+  {
+    "word": "think",
+    "start_offset": 528,
+    "end_offset": 530,
+    "start": 42.24,
+    "end": 42.4
+  },
+  {
+    "word": "it",
+    "start_offset": 530,
+    "end_offset": 532,
+    "start": 42.4,
+    "end": 42.56
+  },
+  {
+    "word": "was",
+    "start_offset": 532,
+    "end_offset": 534,
+    "start": 42.56,
+    "end": 42.72
+  },
+  {
+    "word": "a",
+    "start_offset": 534,
+    "end_offset": 536,
+    "start": 42.72,
+    "end": 42.88
+  },
+  {
+    "word": "person",
+    "start_offset": 536,
+    "end_offset": 539,
+    "start": 42.88,
+    "end": 43.12
+  },
+  {
+    "word": "dangling",
+    "start_offset": 542,
+    "end_offset": 548,
+    "start": 43.36,
+    "end": 43.84
+  },
+  {
+    "word": "their",
+    "start_offset": 582,
+    "end_offset": 583,
+    "start": 46.56,
+    "end": 46.64
+  },
+  {
+    "word": "ears",
+    "start_offset": 585,
+    "end_offset": 589,
+    "start": 46.800000000000004,
+    "end": 47.12
+  },
+  {
+    "word": "to",
+    "start_offset": 590,
+    "end_offset": 591,
+    "start": 47.2,
+    "end": 47.28
+  },
+  {
+    "word": "my",
+    "start_offset": 591,
+    "end_offset": 593,
+    "start": 47.28,
+    "end": 47.44
+  },
+  {
+    "word": "eyes",
+    "start_offset": 593,
+    "end_offset": 596,
+    "start": 47.44,
+    "end": 47.68
+  },
+  {
+    "word": "and",
+    "start_offset": 602,
+    "end_offset": 603,
+    "start": 48.160000000000004,
+    "end": 48.24
+  },
+  {
+    "word": "we",
+    "start_offset": 603,
+    "end_offset": 606,
+    "start": 48.24,
+    "end": 48.480000000000004
+  },
+  {
+    "word": "were",
+    "start_offset": 607,
+    "end_offset": 608,
+    "start": 48.56,
+    "end": 48.64
+  },
+  {
+    "word": "able",
+    "start_offset": 608,
+    "end_offset": 609,
+    "start": 48.64,
+    "end": 48.72
+  },
+  {
+    "word": "to",
+    "start_offset": 609,
+    "end_offset": 610,
+    "start": 48.72,
+    "end": 48.800000000000004
+  },
+  {
+    "word": "stand",
+    "start_offset": 616,
+    "end_offset": 618,
+    "start": 49.28,
+    "end": 49.44
+  },
+  {
+    "word": "on",
+    "start_offset": 619,
+    "end_offset": 620,
+    "start": 49.52,
+    "end": 49.6
+  },
+  {
+    "word": "our",
+    "start_offset": 620,
+    "end_offset": 621,
+    "start": 49.6,
+    "end": 49.68
+  },
+  {
+    "word": "phone",
+    "start_offset": 621,
+    "end_offset": 623,
+    "start": 49.68,
+    "end": 49.84
+  },
+  {
+    "word": "and",
+    "start_offset": 624,
+    "end_offset": 625,
+    "start": 49.92,
+    "end": 50.0
+  },
+  {
+    "word": "there",
+    "start_offset": 626,
+    "end_offset": 627,
+    "start": 50.08,
+    "end": 50.160000000000004
+  },
+  {
+    "word": "was",
+    "start_offset": 627,
+    "end_offset": 628,
+    "start": 50.160000000000004,
+    "end": 50.24
+  },
+  {
+    "word": "someone",
+    "start_offset": 629,
+    "end_offset": 632,
+    "start": 50.32,
+    "end": 50.56
+  },
+  {
+    "word": "dangling",
+    "start_offset": 632,
+    "end_offset": 638,
+    "start": 50.56,
+    "end": 51.04
+  },
+  {
+    "word": "from",
+    "start_offset": 638,
+    "end_offset": 640,
+    "start": 51.04,
+    "end": 51.2
+  },
+  {
+    "word": "the",
+    "start_offset": 640,
+    "end_offset": 641,
+    "start": 51.2,
+    "end": 51.28
+  },
+  {
+    "word": "harness",
+    "start_offset": 641,
+    "end_offset": 646,
+    "start": 51.28,
+    "end": 51.68
+  },
+  {
+    "word": "from",
+    "start_offset": 650,
+    "end_offset": 653,
+    "start": 52.0,
+    "end": 52.24
+  },
+  {
+    "word": "the",
+    "start_offset": 653,
+    "end_offset": 654,
+    "start": 52.24,
+    "end": 52.32
+  },
+  {
+    "word": "top",
+    "start_offset": 654,
+    "end_offset": 658,
+    "start": 52.32,
+    "end": 52.64
+  },
+  {
+    "word": "for",
+    "start_offset": 658,
+    "end_offset": 660,
+    "start": 52.64,
+    "end": 52.800000000000004
+  },
+  {
+    "word": "like",
+    "start_offset": 660,
+    "end_offset": 663,
+    "start": 52.800000000000004,
+    "end": 53.04
+  },
+  {
+    "word": "at",
+    "start_offset": 663,
+    "end_offset": 664,
+    "start": 53.04,
+    "end": 53.120000000000005
+  },
+  {
+    "word": "least",
+    "start_offset": 664,
+    "end_offset": 665,
+    "start": 53.120000000000005,
+    "end": 53.2
+  },
+  {
+    "word": "like",
+    "start_offset": 666,
+    "end_offset": 669,
+    "start": 53.28,
+    "end": 53.52
+  },
+  {
+    "word": "15",
+    "start_offset": 669,
+    "end_offset": 673,
+    "start": 53.52,
+    "end": 53.84
+  },
+  {
+    "word": "minutes",
+    "start_offset": 673,
+    "end_offset": 677,
+    "start": 53.84,
+    "end": 54.160000000000004
+  },
+  {
+    "word": "before",
+    "start_offset": 677,
+    "end_offset": 680,
+    "start": 54.160000000000004,
+    "end": 54.4
+  },
+  {
+    "word": "they",
+    "start_offset": 680,
+    "end_offset": 681,
+    "start": 54.4,
+    "end": 54.480000000000004
+  },
+  {
+    "word": "were",
+    "start_offset": 681,
+    "end_offset": 682,
+    "start": 54.480000000000004,
+    "end": 54.56
+  },
+  {
+    "word": "able",
+    "start_offset": 682,
+    "end_offset": 684,
+    "start": 54.56,
+    "end": 54.72
+  },
+  {
+    "word": "to",
+    "start_offset": 684,
+    "end_offset": 685,
+    "start": 54.72,
+    "end": 54.800000000000004
+  },
+  {
+    "word": "rescue",
+    "start_offset": 685,
+    "end_offset": 689,
+    "start": 54.800000000000004,
+    "end": 55.120000000000005
+  },
+  {
+    "word": "yeah",
+    "start_offset": 694,
+    "end_offset": 696,
+    "start": 55.52,
+    "end": 55.68
+  },
+  {
+    "word": "and",
+    "start_offset": 697,
+    "end_offset": 698,
+    "start": 55.76,
+    "end": 55.84
+  },
+  {
+    "word": "then",
+    "start_offset": 698,
+    "end_offset": 700,
+    "start": 55.84,
+    "end": 56.0
+  },
+  {
+    "word": "we",
+    "start_offset": 700,
+    "end_offset": 702,
+    "start": 56.0,
+    "end": 56.160000000000004
+  },
+  {
+    "word": "just",
+    "start_offset": 702,
+    "end_offset": 705,
+    "start": 56.160000000000004,
+    "end": 56.4
+  },
+  {
+    "word": "stayed",
+    "start_offset": 705,
+    "end_offset": 708,
+    "start": 56.4,
+    "end": 56.64
+  },
+  {
+    "word": "the",
+    "start_offset": 708,
+    "end_offset": 710,
+    "start": 56.64,
+    "end": 56.800000000000004
+  },
+  {
+    "word": "entire",
+    "start_offset": 710,
+    "end_offset": 714,
+    "start": 56.800000000000004,
+    "end": 57.120000000000005
+  },
+  {
+    "word": "time",
+    "start_offset": 714,
+    "end_offset": 715,
+    "start": 57.120000000000005,
+    "end": 57.2
+  },
+  {
+    "word": "on",
+    "start_offset": 719,
+    "end_offset": 720,
+    "start": 57.52,
+    "end": 57.6
+  },
+  {
+    "word": "National",
+    "start_offset": 721,
+    "end_offset": 723,
+    "start": 57.68,
+    "end": 57.84
+  },
+  {
+    "word": "Guard",
+    "start_offset": 727,
+    "end_offset": 729,
+    "start": 58.160000000000004,
+    "end": 58.32
+  },
+  {
+    "word": "came",
+    "start_offset": 730,
+    "end_offset": 732,
+    "start": 58.4,
+    "end": 58.56
+  },
+  {
+    "word": "I",
+    "start_offset": 734,
+    "end_offset": 736,
+    "start": 58.72,
+    "end": 58.88
+  },
+  {
+    "word": "think",
+    "start_offset": 736,
+    "end_offset": 738,
+    "start": 58.88,
+    "end": 59.04
+  },
+  {
+    "word": "the",
+    "start_offset": 740,
+    "end_offset": 742,
+    "start": 59.2,
+    "end": 59.36
+  },
+  {
+    "word": "firefight",
+    "start_offset": 742,
+    "end_offset": 748,
+    "start": 59.36,
+    "end": 59.84
+  },
+  {
+    "word": "everyone",
+    "start_offset": 752,
+    "end_offset": 756,
+    "start": 60.160000000000004,
+    "end": 60.480000000000004
+  },
+  {
+    "word": "just",
+    "start_offset": 756,
+    "end_offset": 759,
+    "start": 60.480000000000004,
+    "end": 60.72
+  },
+  {
+    "word": "they",
+    "start_offset": 766,
+    "end_offset": 768,
+    "start": 61.28,
+    "end": 61.44
+  },
+  {
+    "word": "were",
+    "start_offset": 768,
+    "end_offset": 771,
+    "start": 61.44,
+    "end": 61.68
+  },
+  {
+    "word": "someone",
+    "start_offset": 773,
+    "end_offset": 777,
+    "start": 61.84,
+    "end": 62.160000000000004
+  },
+  {
+    "word": "was",
+    "start_offset": 777,
+    "end_offset": 780,
+    "start": 62.160000000000004,
+    "end": 62.4
+  },
+  {
+    "word": "dangling",
+    "start_offset": 780,
+    "end_offset": 785,
+    "start": 62.4,
+    "end": 62.800000000000004
+  },
+  {
+    "word": "from",
+    "start_offset": 785,
+    "end_offset": 787,
+    "start": 62.800000000000004,
+    "end": 62.96
+  },
+  {
+    "word": "the",
+    "start_offset": 787,
+    "end_offset": 788,
+    "start": 62.96,
+    "end": 63.04
+  },
+  {
+    "word": "top",
+    "start_offset": 788,
+    "end_offset": 791,
+    "start": 63.04,
+    "end": 63.28
+  },
+  {
+    "word": "they",
+    "start_offset": 792,
+    "end_offset": 793,
+    "start": 63.36,
+    "end": 63.440000000000005
+  },
+  {
+    "word": "were",
+    "start_offset": 793,
+    "end_offset": 794,
+    "start": 63.440000000000005,
+    "end": 63.52
+  },
+  {
+    "word": "trying",
+    "start_offset": 794,
+    "end_offset": 796,
+    "start": 63.52,
+    "end": 63.68
+  },
+  {
+    "word": "to",
+    "start_offset": 796,
+    "end_offset": 797,
+    "start": 63.68,
+    "end": 63.76
+  },
+  {
+    "word": "pull",
+    "start_offset": 797,
+    "end_offset": 800,
+    "start": 63.76,
+    "end": 64.0
+  },
+  {
+    "word": "him",
+    "start_offset": 800,
+    "end_offset": 802,
+    "start": 64.0,
+    "end": 64.16
+  },
+  {
+    "word": "up",
+    "start_offset": 802,
+    "end_offset": 803,
+    "start": 64.16,
+    "end": 64.24
+  },
+  {
+    "word": "there",
+    "start_offset": 805,
+    "end_offset": 806,
+    "start": 64.4,
+    "end": 64.48
+  },
+  {
+    "word": "was",
+    "start_offset": 806,
+    "end_offset": 808,
+    "start": 64.48,
+    "end": 64.64
+  },
+  {
+    "word": "a",
+    "start_offset": 808,
+    "end_offset": 809,
+    "start": 64.64,
+    "end": 64.72
+  },
+  {
+    "word": "bunch",
+    "start_offset": 809,
+    "end_offset": 812,
+    "start": 64.72,
+    "end": 64.96000000000001
+  },
+  {
+    "word": "of",
+    "start_offset": 812,
+    "end_offset": 813,
+    "start": 64.96000000000001,
+    "end": 65.04
+  },
+  {
+    "word": "people",
+    "start_offset": 813,
+    "end_offset": 816,
+    "start": 65.04,
+    "end": 65.28
+  },
+  {
+    "word": "up",
+    "start_offset": 816,
+    "end_offset": 819,
+    "start": 65.28,
+    "end": 65.52
+  },
+  {
+    "word": "top",
+    "start_offset": 819,
+    "end_offset": 822,
+    "start": 65.52,
+    "end": 65.76
+  },
+  {
+    "word": "it",
+    "start_offset": 825,
+    "end_offset": 826,
+    "start": 66.0,
+    "end": 66.08
+  },
+  {
+    "word": "was",
+    "start_offset": 826,
+    "end_offset": 828,
+    "start": 66.08,
+    "end": 66.24
+  },
+  {
+    "word": "just",
+    "start_offset": 828,
+    "end_offset": 830,
+    "start": 66.24,
+    "end": 66.4
+  },
+  {
+    "word": "at",
+    "start_offset": 831,
+    "end_offset": 833,
+    "start": 66.48,
+    "end": 66.64
+  },
+  {
+    "word": "first",
+    "start_offset": 833,
+    "end_offset": 836,
+    "start": 66.64,
+    "end": 66.88
+  },
+  {
+    "word": "like",
+    "start_offset": 839,
+    "end_offset": 841,
+    "start": 67.12,
+    "end": 67.28
+  },
+  {
+    "word": "we",
+    "start_offset": 843,
+    "end_offset": 845,
+    "start": 67.44,
+    "end": 67.6
+  },
+  {
+    "word": "didn't",
+    "start_offset": 848,
+    "end_offset": 852,
+    "start": 67.84,
+    "end": 68.16
+  },
+  {
+    "word": "know",
+    "start_offset": 852,
+    "end_offset": 854,
+    "start": 68.16,
+    "end": 68.32000000000001
+  },
+  {
+    "word": "what",
+    "start_offset": 858,
+    "end_offset": 860,
+    "start": 68.64,
+    "end": 68.8
+  },
+  {
+    "word": "was",
+    "start_offset": 860,
+    "end_offset": 861,
+    "start": 68.8,
+    "end": 68.88
+  },
+  {
+    "word": "going",
+    "start_offset": 861,
+    "end_offset": 863,
+    "start": 68.88,
+    "end": 69.04
+  },
+  {
+    "word": "on",
+    "start_offset": 863,
+    "end_offset": 864,
+    "start": 69.04,
+    "end": 69.12
+  },
+  {
+    "word": "yeah",
+    "start_offset": 887,
+    "end_offset": 889,
+    "start": 70.96000000000001,
+    "end": 71.12
+  },
+  {
+    "word": "it",
+    "start_offset": 890,
+    "end_offset": 891,
+    "start": 71.2,
+    "end": 71.28
+  },
+  {
+    "word": "was",
+    "start_offset": 891,
+    "end_offset": 893,
+    "start": 71.28,
+    "end": 71.44
+  },
+  {
+    "word": "and",
+    "start_offset": 897,
+    "end_offset": 898,
+    "start": 71.76,
+    "end": 71.84
+  },
+  {
+    "word": "then",
+    "start_offset": 898,
+    "end_offset": 899,
+    "start": 71.84,
+    "end": 71.92
+  },
+  {
+    "word": "it",
+    "start_offset": 903,
+    "end_offset": 904,
+    "start": 72.24,
+    "end": 72.32000000000001
+  },
+  {
+    "word": "kept",
+    "start_offset": 904,
+    "end_offset": 907,
+    "start": 72.32000000000001,
+    "end": 72.56
+  },
+  {
+    "word": "getting",
+    "start_offset": 907,
+    "end_offset": 910,
+    "start": 72.56,
+    "end": 72.8
+  },
+  {
+    "word": "worse",
+    "start_offset": 910,
+    "end_offset": 917,
+    "start": 72.8,
+    "end": 73.36
+  },
+  {
+    "word": "well",
+    "start_offset": 945,
+    "end_offset": 948,
+    "start": 75.60000000000001,
+    "end": 75.84
+  },
+  {
+    "word": "our",
+    "start_offset": 949,
+    "end_offset": 951,
+    "start": 75.92,
+    "end": 76.08
+  },
+  {
+    "word": "reporter",
+    "start_offset": 951,
+    "end_offset": 956,
+    "start": 76.08,
+    "end": 76.48
+  },
+  {
+    "word": "Pratik",
+    "start_offset": 957,
+    "end_offset": 962,
+    "start": 76.56,
+    "end": 76.96000000000001
+  },
+  {
+    "word": "Shaqil",
+    "start_offset": 963,
+    "end_offset": 971,
+    "start": 77.04,
+    "end": 77.68
+  },
+  {
+    "word": "gave",
+    "start_offset": 974,
+    "end_offset": 976,
+    "start": 77.92,
+    "end": 78.08
+  },
+  {
+    "word": "us",
+    "start_offset": 976,
+    "end_offset": 978,
+    "start": 78.08,
+    "end": 78.24
+  },
+  {
+    "word": "this",
+    "start_offset": 978,
+    "end_offset": 980,
+    "start": 78.24,
+    "end": 78.4
+  },
+  {
+    "word": "update",
+    "start_offset": 980,
+    "end_offset": 985,
+    "start": 78.4,
+    "end": 78.8
+  },
+  {
+    "word": "from",
+    "start_offset": 985,
+    "end_offset": 987,
+    "start": 78.8,
+    "end": 78.96000000000001
+  },
+  {
+    "word": "the",
+    "start_offset": 987,
+    "end_offset": 990,
+    "start": 78.96000000000001,
+    "end": 79.2
+  },
+  {
+    "word": "scene",
+    "start_offset": 990,
+    "end_offset": 1001,
+    "start": 79.2,
+    "end": 80.08
+  },
+  {
+    "word": "I've",
+    "start_offset": 1009,
+    "end_offset": 1014,
+    "start": 80.72,
+    "end": 81.12
+  },
+  {
+    "word": "been",
+    "start_offset": 1014,
+    "end_offset": 1018,
+    "start": 81.12,
+    "end": 81.44
+  },
+  {
+    "word": "here",
+    "start_offset": 1018,
+    "end_offset": 1022,
+    "start": 81.44,
+    "end": 81.76
+  },
+  {
+    "word": "for",
+    "start_offset": 1022,
+    "end_offset": 1025,
+    "start": 81.76,
+    "end": 82.0
+  },
+  {
+    "word": "just",
+    "start_offset": 1029,
+    "end_offset": 1033,
+    "start": 82.32000000000001,
+    "end": 82.64
+  },
+  {
+    "word": "over",
+    "start_offset": 1033,
+    "end_offset": 1036,
+    "start": 82.64,
+    "end": 82.88
+  },
+  {
+    "word": "a",
+    "start_offset": 1038,
+    "end_offset": 1040,
+    "start": 83.04,
+    "end": 83.2
+  },
+  {
+    "word": "couple",
+    "start_offset": 1040,
+    "end_offset": 1044,
+    "start": 83.2,
+    "end": 83.52
+  },
+  {
+    "word": "of",
+    "start_offset": 1044,
+    "end_offset": 1046,
+    "start": 83.52,
+    "end": 83.68
+  },
+  {
+    "word": "hours",
+    "start_offset": 1046,
+    "end_offset": 1051,
+    "start": 83.68,
+    "end": 84.08
+  },
+  {
+    "word": "now",
+    "start_offset": 1051,
+    "end_offset": 1053,
+    "start": 84.08,
+    "end": 84.24
+  },
+  {
+    "word": "and",
+    "start_offset": 1055,
+    "end_offset": 1057,
+    "start": 84.4,
+    "end": 84.56
+  },
+  {
+    "word": "you",
+    "start_offset": 1057,
+    "end_offset": 1059,
+    "start": 84.56,
+    "end": 84.72
+  },
+  {
+    "word": "can",
+    "start_offset": 1059,
+    "end_offset": 1061,
+    "start": 84.72,
+    "end": 84.88
+  },
+  {
+    "word": "see",
+    "start_offset": 1061,
+    "end_offset": 1063,
+    "start": 84.88,
+    "end": 85.04
+  },
+  {
+    "word": "the",
+    "start_offset": 1063,
+    "end_offset": 1065,
+    "start": 85.04,
+    "end": 85.2
+  },
+  {
+    "word": "iconic",
+    "start_offset": 1065,
+    "end_offset": 1074,
+    "start": 85.2,
+    "end": 85.92
+  },
+  {
+    "word": "Brooklyn",
+    "start_offset": 1074,
+    "end_offset": 1083,
+    "start": 85.92,
+    "end": 86.64
+  },
+  {
+    "word": "Bridge",
+    "start_offset": 1083,
+    "end_offset": 1089,
+    "start": 86.64,
+    "end": 87.12
+  },
+  {
+    "word": "behind",
+    "start_offset": 1089,
+    "end_offset": 1095,
+    "start": 87.12,
+    "end": 87.60000000000001
+  },
+  {
+    "word": "me",
+    "start_offset": 1095,
+    "end_offset": 1099,
+    "start": 87.60000000000001,
+    "end": 87.92
+  },
+  {
+    "word": "pretty",
+    "start_offset": 1103,
+    "end_offset": 1106,
+    "start": 88.24,
+    "end": 88.48
+  },
+  {
+    "word": "dramatic",
+    "start_offset": 1107,
+    "end_offset": 1116,
+    "start": 88.56,
+    "end": 89.28
+  },
+  {
+    "word": "scenes",
+    "start_offset": 1116,
+    "end_offset": 1122,
+    "start": 89.28,
+    "end": 89.76
+  },
+  {
+    "word": "unfolded",
+    "start_offset": 1122,
+    "end_offset": 1132,
+    "start": 89.76,
+    "end": 90.56
+  },
+  {
+    "word": "here",
+    "start_offset": 1132,
+    "end_offset": 1135,
+    "start": 90.56,
+    "end": 90.8
+  },
+  {
+    "word": "just",
+    "start_offset": 1135,
+    "end_offset": 1138,
+    "start": 90.8,
+    "end": 91.04
+  },
+  {
+    "word": "a",
+    "start_offset": 1138,
+    "end_offset": 1140,
+    "start": 91.04,
+    "end": 91.2
+  },
+  {
+    "word": "few",
+    "start_offset": 1140,
+    "end_offset": 1143,
+    "start": 91.2,
+    "end": 91.44
+  },
+  {
+    "word": "hours",
+    "start_offset": 1143,
+    "end_offset": 1149,
+    "start": 91.44,
+    "end": 91.92
+  },
+  {
+    "word": "ago",
+    "start_offset": 1149,
+    "end_offset": 1154,
+    "start": 91.92,
+    "end": 92.32000000000001
+  },
+  {
+    "word": "we",
+    "start_offset": 1161,
+    "end_offset": 1164,
+    "start": 92.88,
+    "end": 93.12
+  },
+  {
+    "word": "believe",
+    "start_offset": 1164,
+    "end_offset": 1169,
+    "start": 93.12,
+    "end": 93.52
+  },
+  {
+    "word": "it",
+    "start_offset": 1169,
+    "end_offset": 1172,
+    "start": 93.52,
+    "end": 93.76
+  },
+  {
+    "word": "was",
+    "start_offset": 1172,
+    "end_offset": 1176,
+    "start": 93.76,
+    "end": 94.08
+  },
+  {
+    "word": "just",
+    "start_offset": 1176,
+    "end_offset": 1180,
+    "start": 94.08,
+    "end": 94.4
+  },
+  {
+    "word": "after",
+    "start_offset": 1180,
+    "end_offset": 1184,
+    "start": 94.4,
+    "end": 94.72
+  },
+  {
+    "word": "sunset",
+    "start_offset": 1184,
+    "end_offset": 1194,
+    "start": 94.72,
+    "end": 95.52
+  },
+  {
+    "word": "here",
+    "start_offset": 1194,
+    "end_offset": 1197,
+    "start": 95.52,
+    "end": 95.76
+  },
+  {
+    "word": "on",
+    "start_offset": 1197,
+    "end_offset": 1199,
+    "start": 95.76,
+    "end": 95.92
+  },
+  {
+    "word": "the",
+    "start_offset": 1199,
+    "end_offset": 1201,
+    "start": 95.92,
+    "end": 96.08
+  },
+  {
+    "word": "East",
+    "start_offset": 1201,
+    "end_offset": 1206,
+    "start": 96.08,
+    "end": 96.48
+  },
+  {
+    "word": "River",
+    "start_offset": 1206,
+    "end_offset": 1214,
+    "start": 96.48,
+    "end": 97.12
+  },
+  {
+    "word": "that",
+    "start_offset": 1218,
+    "end_offset": 1220,
+    "start": 97.44,
+    "end": 97.60000000000001
+  },
+  {
+    "word": "you",
+    "start_offset": 1220,
+    "end_offset": 1222,
+    "start": 97.60000000000001,
+    "end": 97.76
+  },
+  {
+    "word": "can",
+    "start_offset": 1222,
+    "end_offset": 1225,
+    "start": 97.76,
+    "end": 98.0
+  },
+  {
+    "word": "see",
+    "start_offset": 1225,
+    "end_offset": 1227,
+    "start": 98.0,
+    "end": 98.16
+  },
+  {
+    "word": "behind",
+    "start_offset": 1227,
+    "end_offset": 1234,
+    "start": 98.16,
+    "end": 98.72
+  },
+  {
+    "word": "me",
+    "start_offset": 1234,
+    "end_offset": 1237,
+    "start": 98.72,
+    "end": 98.96000000000001
+  },
+  {
+    "word": "when",
+    "start_offset": 1241,
+    "end_offset": 1243,
+    "start": 99.28,
+    "end": 99.44
+  },
+  {
+    "word": "this",
+    "start_offset": 1243,
+    "end_offset": 1247,
+    "start": 99.44,
+    "end": 99.76
+  },
+  {
+    "word": "incident",
+    "start_offset": 1247,
+    "end_offset": 1255,
+    "start": 99.76,
+    "end": 100.4
+  },
+  {
+    "word": "happened",
+    "start_offset": 1255,
+    "end_offset": 1261,
+    "start": 100.4,
+    "end": 100.88
+  },
+  {
+    "word": "the",
+    "start_offset": 1269,
+    "end_offset": 1273,
+    "start": 101.52,
+    "end": 101.84
+  },
+  {
+    "word": "vessel",
+    "start_offset": 1280,
+    "end_offset": 1288,
+    "start": 102.4,
+    "end": 103.04
+  },
+  {
+    "word": "supposed",
+    "start_offset": 1290,
+    "end_offset": 1295,
+    "start": 103.2,
+    "end": 103.60000000000001
+  },
+  {
+    "word": "to",
+    "start_offset": 1295,
+    "end_offset": 1297,
+    "start": 103.60000000000001,
+    "end": 103.76
+  },
+  {
+    "word": "be",
+    "start_offset": 1297,
+    "end_offset": 1299,
+    "start": 103.76,
+    "end": 103.92
+  },
+  {
+    "word": "a",
+    "start_offset": 1299,
+    "end_offset": 1301,
+    "start": 103.92,
+    "end": 104.08
+  },
+  {
+    "word": "Mexican",
+    "start_offset": 1301,
+    "end_offset": 1310,
+    "start": 104.08,
+    "end": 104.8
+  },
+  {
+    "word": "Navy",
+    "start_offset": 1310,
+    "end_offset": 1316,
+    "start": 104.8,
+    "end": 105.28
+  },
+  {
+    "word": "ship",
+    "start_offset": 1316,
+    "end_offset": 1320,
+    "start": 105.28,
+    "end": 105.60000000000001
+  },
+  {
+    "word": "a",
+    "start_offset": 1321,
+    "end_offset": 1323,
+    "start": 105.68,
+    "end": 105.84
+  },
+  {
+    "word": "Navy",
+    "start_offset": 1323,
+    "end_offset": 1328,
+    "start": 105.84,
+    "end": 106.24000000000001
+  },
+  {
+    "word": "sailship",
+    "start_offset": 1328,
+    "end_offset": 1337,
+    "start": 106.24000000000001,
+    "end": 106.96000000000001
+  },
+  {
+    "word": "carrying",
+    "start_offset": 1341,
+    "end_offset": 1351,
+    "start": 107.28,
+    "end": 108.08
+  },
+  {
+    "word": "277",
+    "start_offset": 1351,
+    "end_offset": 1373,
+    "start": 108.08,
+    "end": 109.84
+  },
+  {
+    "word": "Mexican",
+    "start_offset": 1376,
+    "end_offset": 1386,
+    "start": 110.08,
+    "end": 110.88
+  },
+  {
+    "word": "cadets",
+    "start_offset": 1386,
+    "end_offset": 1394,
+    "start": 110.88,
+    "end": 111.52
+  },
+  {
+    "word": "on",
+    "start_offset": 1394,
+    "end_offset": 1397,
+    "start": 111.52,
+    "end": 111.76
+  },
+  {
+    "word": "board",
+    "start_offset": 1397,
+    "end_offset": 1402,
+    "start": 111.76,
+    "end": 112.16
+  },
+  {
+    "word": "apparently",
+    "start_offset": 1409,
+    "end_offset": 1417,
+    "start": 112.72,
+    "end": 113.36
+  },
+  {
+    "word": "this",
+    "start_offset": 1420,
+    "end_offset": 1424,
+    "start": 113.60000000000001,
+    "end": 113.92
+  },
+  {
+    "word": "is",
+    "start_offset": 1424,
+    "end_offset": 1427,
+    "start": 113.92,
+    "end": 114.16
+  },
+  {
+    "word": "a",
+    "start_offset": 1430,
+    "end_offset": 1433,
+    "start": 114.4,
+    "end": 114.64
+  },
+  {
+    "word": "custom",
+    "start_offset": 1433,
+    "end_offset": 1440,
+    "start": 114.64,
+    "end": 115.2
+  },
+  {
+    "word": "it",
+    "start_offset": 1442,
+    "end_offset": 1444,
+    "start": 115.36,
+    "end": 115.52
+  },
+  {
+    "word": "happens",
+    "start_offset": 1444,
+    "end_offset": 1449,
+    "start": 115.52,
+    "end": 115.92
+  },
+  {
+    "word": "at",
+    "start_offset": 1449,
+    "end_offset": 1451,
+    "start": 115.92,
+    "end": 116.08
+  },
+  {
+    "word": "the",
+    "start_offset": 1451,
+    "end_offset": 1452,
+    "start": 116.08,
+    "end": 116.16
+  },
+  {
+    "word": "end",
+    "start_offset": 1452,
+    "end_offset": 1454,
+    "start": 116.16,
+    "end": 116.32000000000001
+  },
+  {
+    "word": "of",
+    "start_offset": 1454,
+    "end_offset": 1457,
+    "start": 116.32000000000001,
+    "end": 116.56
+  },
+  {
+    "word": "training",
+    "start_offset": 1457,
+    "end_offset": 1463,
+    "start": 116.56,
+    "end": 117.04
+  },
+  {
+    "word": "every",
+    "start_offset": 1465,
+    "end_offset": 1466,
+    "start": 117.2,
+    "end": 117.28
+  },
+  {
+    "word": "year",
+    "start_offset": 1468,
+    "end_offset": 1470,
+    "start": 117.44,
+    "end": 117.60000000000001
+  },
+  {
+    "word": "they",
+    "start_offset": 1471,
+    "end_offset": 1474,
+    "start": 117.68,
+    "end": 117.92
+  },
+  {
+    "word": "were",
+    "start_offset": 1474,
+    "end_offset": 1476,
+    "start": 117.92,
+    "end": 118.08
+  },
+  {
+    "word": "on",
+    "start_offset": 1476,
+    "end_offset": 1477,
+    "start": 118.08,
+    "end": 118.16
+  },
+  {
+    "word": "a",
+    "start_offset": 1477,
+    "end_offset": 1479,
+    "start": 118.16,
+    "end": 118.32000000000001
+  },
+  {
+    "word": "promotional",
+    "start_offset": 1479,
+    "end_offset": 1488,
+    "start": 118.32000000000001,
+    "end": 119.04
+  },
+  {
+    "word": "tour",
+    "start_offset": 1488,
+    "end_offset": 1496,
+    "start": 119.04,
+    "end": 119.68
+  },
+  {
+    "word": "there",
+    "start_offset": 1508,
+    "end_offset": 1510,
+    "start": 120.64,
+    "end": 120.8
+  },
+  {
+    "word": "are",
+    "start_offset": 1510,
+    "end_offset": 1513,
+    "start": 120.8,
+    "end": 121.04
+  },
+  {
+    "word": "reports",
+    "start_offset": 1513,
+    "end_offset": 1520,
+    "start": 121.04,
+    "end": 121.60000000000001
+  },
+  {
+    "word": "that",
+    "start_offset": 1520,
+    "end_offset": 1524,
+    "start": 121.60000000000001,
+    "end": 121.92
+  },
+  {
+    "word": "the",
+    "start_offset": 1524,
+    "end_offset": 1526,
+    "start": 121.92,
+    "end": 122.08
+  },
+  {
+    "word": "ship",
+    "start_offset": 1526,
+    "end_offset": 1531,
+    "start": 122.08,
+    "end": 122.48
+  },
+  {
+    "word": "may",
+    "start_offset": 1531,
+    "end_offset": 1534,
+    "start": 122.48,
+    "end": 122.72
+  },
+  {
+    "word": "have",
+    "start_offset": 1534,
+    "end_offset": 1537,
+    "start": 122.72,
+    "end": 122.96000000000001
+  },
+  {
+    "word": "lost",
+    "start_offset": 1537,
+    "end_offset": 1543,
+    "start": 122.96000000000001,
+    "end": 123.44
+  },
+  {
+    "word": "power",
+    "start_offset": 1543,
+    "end_offset": 1549,
+    "start": 123.44,
+    "end": 123.92
+  },
+  {
+    "word": "just",
+    "start_offset": 1552,
+    "end_offset": 1555,
+    "start": 124.16,
+    "end": 124.4
+  },
+  {
+    "word": "before",
+    "start_offset": 1555,
+    "end_offset": 1558,
+    "start": 124.4,
+    "end": 124.64
+  },
+  {
+    "word": "the",
+    "start_offset": 1558,
+    "end_offset": 1561,
+    "start": 124.64,
+    "end": 124.88000000000001
+  },
+  {
+    "word": "collision",
+    "start_offset": 1561,
+    "end_offset": 1569,
+    "start": 124.88000000000001,
+    "end": 125.52
+  },
+  {
+    "word": "and",
+    "start_offset": 1572,
+    "end_offset": 1574,
+    "start": 125.76,
+    "end": 125.92
+  },
+  {
+    "word": "that",
+    "start_offset": 1574,
+    "end_offset": 1578,
+    "start": 125.92,
+    "end": 126.24000000000001
+  },
+  {
+    "word": "may",
+    "start_offset": 1578,
+    "end_offset": 1581,
+    "start": 126.24000000000001,
+    "end": 126.48
+  },
+  {
+    "word": "have",
+    "start_offset": 1581,
+    "end_offset": 1585,
+    "start": 126.48,
+    "end": 126.8
+  },
+  {
+    "word": "caused",
+    "start_offset": 1585,
+    "end_offset": 1593,
+    "start": 126.8,
+    "end": 127.44
+  },
+  {
+    "word": "the",
+    "start_offset": 1596,
+    "end_offset": 1600,
+    "start": 127.68,
+    "end": 128.0
+  },
+  {
+    "word": "incident",
+    "start_offset": 1600,
+    "end_offset": 1609,
+    "start": 128.0,
+    "end": 128.72
+  },
+  {
+    "word": "dramatic",
+    "start_offset": 1615,
+    "end_offset": 1625,
+    "start": 129.2,
+    "end": 130.0
+  },
+  {
+    "word": "social",
+    "start_offset": 1625,
+    "end_offset": 1630,
+    "start": 130.0,
+    "end": 130.4
+  },
+  {
+    "word": "videos",
+    "start_offset": 1630,
+    "end_offset": 1637,
+    "start": 130.4,
+    "end": 130.96
+  },
+  {
+    "word": "that",
+    "start_offset": 1638,
+    "end_offset": 1640,
+    "start": 131.04,
+    "end": 131.2
+  },
+  {
+    "word": "social",
+    "start_offset": 1642,
+    "end_offset": 1646,
+    "start": 131.36,
+    "end": 131.68
+  },
+  {
+    "word": "media",
+    "start_offset": 1646,
+    "end_offset": 1650,
+    "start": 131.68,
+    "end": 132.0
+  },
+  {
+    "word": "videos",
+    "start_offset": 1650,
+    "end_offset": 1655,
+    "start": 132.0,
+    "end": 132.4
+  },
+  {
+    "word": "that",
+    "start_offset": 1655,
+    "end_offset": 1657,
+    "start": 132.4,
+    "end": 132.56
+  },
+  {
+    "word": "we've",
+    "start_offset": 1657,
+    "end_offset": 1661,
+    "start": 132.56,
+    "end": 132.88
+  },
+  {
+    "word": "been",
+    "start_offset": 1661,
+    "end_offset": 1663,
+    "start": 132.88,
+    "end": 133.04
+  },
+  {
+    "word": "seeing",
+    "start_offset": 1663,
+    "end_offset": 1667,
+    "start": 133.04,
+    "end": 133.36
+  },
+  {
+    "word": "show",
+    "start_offset": 1670,
+    "end_offset": 1673,
+    "start": 133.6,
+    "end": 133.84
+  },
+  {
+    "word": "us",
+    "start_offset": 1677,
+    "end_offset": 1681,
+    "start": 134.16,
+    "end": 134.48
+  },
+  {
+    "word": "how",
+    "start_offset": 1681,
+    "end_offset": 1685,
+    "start": 134.48,
+    "end": 134.8
+  },
+  {
+    "word": "it",
+    "start_offset": 1688,
+    "end_offset": 1690,
+    "start": 135.04,
+    "end": 135.2
+  },
+  {
+    "word": "slowly",
+    "start_offset": 1694,
+    "end_offset": 1705,
+    "start": 135.52,
+    "end": 136.4
+  },
+  {
+    "word": "went",
+    "start_offset": 1708,
+    "end_offset": 1714,
+    "start": 136.64000000000001,
+    "end": 137.12
+  },
+  {
+    "word": "towards",
+    "start_offset": 1714,
+    "end_offset": 1722,
+    "start": 137.12,
+    "end": 137.76
+  },
+  {
+    "word": "the",
+    "start_offset": 1722,
+    "end_offset": 1725,
+    "start": 137.76,
+    "end": 138.0
+  },
+  {
+    "word": "bridge",
+    "start_offset": 1725,
+    "end_offset": 1730,
+    "start": 138.0,
+    "end": 138.4
+  },
+  {
+    "word": "in",
+    "start_offset": 1735,
+    "end_offset": 1737,
+    "start": 138.8,
+    "end": 138.96
+  },
+  {
+    "word": "my",
+    "start_offset": 1739,
+    "end_offset": 1742,
+    "start": 139.12,
+    "end": 139.36
+  },
+  {
+    "word": "background",
+    "start_offset": 1742,
+    "end_offset": 1749,
+    "start": 139.36,
+    "end": 139.92000000000002
+  },
+  {
+    "word": "there",
+    "start_offset": 1750,
+    "end_offset": 1753,
+    "start": 140.0,
+    "end": 140.24
+  },
+  {
+    "word": "and",
+    "start_offset": 1755,
+    "end_offset": 1757,
+    "start": 140.4,
+    "end": 140.56
+  },
+  {
+    "word": "and",
+    "start_offset": 1759,
+    "end_offset": 1762,
+    "start": 140.72,
+    "end": 140.96
+  },
+  {
+    "word": "the",
+    "start_offset": 1762,
+    "end_offset": 1765,
+    "start": 140.96,
+    "end": 141.20000000000002
+  },
+  {
+    "word": "masts",
+    "start_offset": 1765,
+    "end_offset": 1774,
+    "start": 141.20000000000002,
+    "end": 141.92000000000002
+  },
+  {
+    "word": "grazed",
+    "start_offset": 1778,
+    "end_offset": 1787,
+    "start": 142.24,
+    "end": 142.96
+  },
+  {
+    "word": "the",
+    "start_offset": 1787,
+    "end_offset": 1789,
+    "start": 142.96,
+    "end": 143.12
+  },
+  {
+    "word": "very",
+    "start_offset": 1789,
+    "end_offset": 1792,
+    "start": 143.12,
+    "end": 143.36
+  },
+  {
+    "word": "bottom",
+    "start_offset": 1792,
+    "end_offset": 1801,
+    "start": 143.36,
+    "end": 144.08
+  },
+  {
+    "word": "of",
+    "start_offset": 1801,
+    "end_offset": 1804,
+    "start": 144.08,
+    "end": 144.32
+  },
+  {
+    "word": "that",
+    "start_offset": 1808,
+    "end_offset": 1812,
+    "start": 144.64000000000001,
+    "end": 144.96
+  },
+  {
+    "word": "bridge",
+    "start_offset": 1815,
+    "end_offset": 1822,
+    "start": 145.20000000000002,
+    "end": 145.76
+  },
+  {
+    "word": "with",
+    "start_offset": 1825,
+    "end_offset": 1828,
+    "start": 146.0,
+    "end": 146.24
+  },
+  {
+    "word": "some",
+    "start_offset": 1828,
+    "end_offset": 1830,
+    "start": 146.24,
+    "end": 146.4
+  },
+  {
+    "word": "debris",
+    "start_offset": 1830,
+    "end_offset": 1838,
+    "start": 146.4,
+    "end": 147.04
+  },
+  {
+    "word": "seen",
+    "start_offset": 1838,
+    "end_offset": 1843,
+    "start": 147.04,
+    "end": 147.44
+  },
+  {
+    "word": "falling",
+    "start_offset": 1845,
+    "end_offset": 1851,
+    "start": 147.6,
+    "end": 148.08
+  },
+  {
+    "word": "off",
+    "start_offset": 1851,
+    "end_offset": 1854,
+    "start": 148.08,
+    "end": 148.32
+  },
+  {
+    "word": "and",
+    "start_offset": 1856,
+    "end_offset": 1858,
+    "start": 148.48,
+    "end": 148.64000000000001
+  },
+  {
+    "word": "this",
+    "start_offset": 1858,
+    "end_offset": 1861,
+    "start": 148.64000000000001,
+    "end": 148.88
+  },
+  {
+    "word": "was",
+    "start_offset": 1861,
+    "end_offset": 1863,
+    "start": 148.88,
+    "end": 149.04
+  },
+  {
+    "word": "this",
+    "start_offset": 1865,
+    "end_offset": 1869,
+    "start": 149.20000000000002,
+    "end": 149.52
+  },
+  {
+    "word": "was",
+    "start_offset": 1869,
+    "end_offset": 1873,
+    "start": 149.52,
+    "end": 149.84
+  },
+  {
+    "word": "happening",
+    "start_offset": 1873,
+    "end_offset": 1881,
+    "start": 149.84,
+    "end": 150.48
+  },
+  {
+    "word": "at",
+    "start_offset": 1881,
+    "end_offset": 1884,
+    "start": 150.48,
+    "end": 150.72
+  },
+  {
+    "word": "a",
+    "start_offset": 1884,
+    "end_offset": 1887,
+    "start": 150.72,
+    "end": 150.96
+  },
+  {
+    "word": "time",
+    "start_offset": 1887,
+    "end_offset": 1890,
+    "start": 150.96,
+    "end": 151.20000000000002
+  },
+  {
+    "word": "when",
+    "start_offset": 1890,
+    "end_offset": 1893,
+    "start": 151.20000000000002,
+    "end": 151.44
+  },
+  {
+    "word": "the",
+    "start_offset": 1893,
+    "end_offset": 1896,
+    "start": 151.44,
+    "end": 151.68
+  },
+  {
+    "word": "bridge",
+    "start_offset": 1896,
+    "end_offset": 1902,
+    "start": 151.68,
+    "end": 152.16
+  },
+  {
+    "word": "was",
+    "start_offset": 1902,
+    "end_offset": 1906,
+    "start": 152.16,
+    "end": 152.48
+  },
+  {
+    "word": "busy",
+    "start_offset": 1906,
+    "end_offset": 1912,
+    "start": 152.48,
+    "end": 152.96
+  },
+  {
+    "word": "with",
+    "start_offset": 1912,
+    "end_offset": 1915,
+    "start": 152.96,
+    "end": 153.20000000000002
+  },
+  {
+    "word": "traffic",
+    "start_offset": 1915,
+    "end_offset": 1921,
+    "start": 153.20000000000002,
+    "end": 153.68
+  },
+  {
+    "word": "there",
+    "start_offset": 1924,
+    "end_offset": 1926,
+    "start": 153.92000000000002,
+    "end": 154.08
+  },
+  {
+    "word": "was",
+    "start_offset": 1926,
+    "end_offset": 1928,
+    "start": 154.08,
+    "end": 154.24
+  },
+  {
+    "word": "traffic",
+    "start_offset": 1928,
+    "end_offset": 1938,
+    "start": 154.24,
+    "end": 155.04
+  },
+  {
+    "word": "going",
+    "start_offset": 1938,
+    "end_offset": 1942,
+    "start": 155.04,
+    "end": 155.36
+  },
+  {
+    "word": "both",
+    "start_offset": 1942,
+    "end_offset": 1948,
+    "start": 155.36,
+    "end": 155.84
+  },
+  {
+    "word": "ways",
+    "start_offset": 1948,
+    "end_offset": 1953,
+    "start": 155.84,
+    "end": 156.24
+  },
+  {
+    "word": "it's",
+    "start_offset": 1957,
+    "end_offset": 1959,
+    "start": 156.56,
+    "end": 156.72
+  },
+  {
+    "word": "a",
+    "start_offset": 1959,
+    "end_offset": 1960,
+    "start": 156.72,
+    "end": 156.8
+  },
+  {
+    "word": "multi-lane",
+    "start_offset": 1960,
+    "end_offset": 1970,
+    "start": 156.8,
+    "end": 157.6
+  },
+  {
+    "word": "bridge",
+    "start_offset": 1970,
+    "end_offset": 1975,
+    "start": 157.6,
+    "end": 158.0
+  },
+  {
+    "word": "there's",
+    "start_offset": 1978,
+    "end_offset": 1982,
+    "start": 158.24,
+    "end": 158.56
+  },
+  {
+    "word": "also",
+    "start_offset": 1982,
+    "end_offset": 1986,
+    "start": 158.56,
+    "end": 158.88
+  },
+  {
+    "word": "a",
+    "start_offset": 1986,
+    "end_offset": 1990,
+    "start": 158.88,
+    "end": 159.20000000000002
+  },
+  {
+    "word": "subway",
+    "start_offset": 1990,
+    "end_offset": 1997,
+    "start": 159.20000000000002,
+    "end": 159.76
+  },
+  {
+    "word": "that",
+    "start_offset": 1997,
+    "end_offset": 2001,
+    "start": 159.76,
+    "end": 160.08
+  },
+  {
+    "word": "goes",
+    "start_offset": 2001,
+    "end_offset": 2007,
+    "start": 160.08,
+    "end": 160.56
+  },
+  {
+    "word": "there",
+    "start_offset": 2007,
+    "end_offset": 2010,
+    "start": 160.56,
+    "end": 160.8
+  },
+  {
+    "word": "but",
+    "start_offset": 2022,
+    "end_offset": 2025,
+    "start": 161.76,
+    "end": 162.0
+  },
+  {
+    "word": "then",
+    "start_offset": 2025,
+    "end_offset": 2028,
+    "start": 162.0,
+    "end": 162.24
+  },
+  {
+    "word": "in",
+    "start_offset": 2031,
+    "end_offset": 2033,
+    "start": 162.48,
+    "end": 162.64000000000001
+  },
+  {
+    "word": "the",
+    "start_offset": 2033,
+    "end_offset": 2035,
+    "start": 162.64000000000001,
+    "end": 162.8
+  },
+  {
+    "word": "aftermath",
+    "start_offset": 2035,
+    "end_offset": 2042,
+    "start": 162.8,
+    "end": 163.36
+  },
+  {
+    "word": "of",
+    "start_offset": 2044,
+    "end_offset": 2045,
+    "start": 163.52,
+    "end": 163.6
+  },
+  {
+    "word": "course",
+    "start_offset": 2045,
+    "end_offset": 2047,
+    "start": 163.6,
+    "end": 163.76
+  },
+  {
+    "word": "it",
+    "start_offset": 2050,
+    "end_offset": 2052,
+    "start": 164.0,
+    "end": 164.16
+  },
+  {
+    "word": "was",
+    "start_offset": 2052,
+    "end_offset": 2054,
+    "start": 164.16,
+    "end": 164.32
+  },
+  {
+    "word": "all",
+    "start_offset": 2054,
+    "end_offset": 2057,
+    "start": 164.32,
+    "end": 164.56
+  },
+  {
+    "word": "shut",
+    "start_offset": 2057,
+    "end_offset": 2061,
+    "start": 164.56,
+    "end": 164.88
+  },
+  {
+    "word": "down",
+    "start_offset": 2061,
+    "end_offset": 2063,
+    "start": 164.88,
+    "end": 165.04
+  },
+  {
+    "word": "and",
+    "start_offset": 2065,
+    "end_offset": 2067,
+    "start": 165.20000000000002,
+    "end": 165.36
+  },
+  {
+    "word": "new",
+    "start_offset": 2067,
+    "end_offset": 2068,
+    "start": 165.36,
+    "end": 165.44
+  },
+  {
+    "word": "yorkers",
+    "start_offset": 2070,
+    "end_offset": 2076,
+    "start": 165.6,
+    "end": 166.08
+  },
+  {
+    "word": "were",
+    "start_offset": 2076,
+    "end_offset": 2078,
+    "start": 166.08,
+    "end": 166.24
+  },
+  {
+    "word": "told",
+    "start_offset": 2078,
+    "end_offset": 2082,
+    "start": 166.24,
+    "end": 166.56
+  },
+  {
+    "word": "to",
+    "start_offset": 2082,
+    "end_offset": 2084,
+    "start": 166.56,
+    "end": 166.72
+  },
+  {
+    "word": "avoid",
+    "start_offset": 2084,
+    "end_offset": 2094,
+    "start": 166.72,
+    "end": 167.52
+  },
+  {
+    "word": "the",
+    "start_offset": 2094,
+    "end_offset": 2098,
+    "start": 167.52,
+    "end": 167.84
+  },
+  {
+    "word": "area",
+    "start_offset": 2098,
+    "end_offset": 2106,
+    "start": 167.84,
+    "end": 168.48
+  },
+  {
+    "word": "what",
+    "start_offset": 2114,
+    "end_offset": 2117,
+    "start": 169.12,
+    "end": 169.36
+  },
+  {
+    "word": "do",
+    "start_offset": 2117,
+    "end_offset": 2119,
+    "start": 169.36,
+    "end": 169.52
+  },
+  {
+    "word": "you",
+    "start_offset": 2119,
+    "end_offset": 2120,
+    "start": 169.52,
+    "end": 169.6
+  },
+  {
+    "word": "know",
+    "start_offset": 2120,
+    "end_offset": 2122,
+    "start": 169.6,
+    "end": 169.76
+  },
+  {
+    "word": "about",
+    "start_offset": 2122,
+    "end_offset": 2124,
+    "start": 169.76,
+    "end": 169.92000000000002
+  },
+  {
+    "word": "those",
+    "start_offset": 2124,
+    "end_offset": 2127,
+    "start": 169.92000000000002,
+    "end": 170.16
+  },
+  {
+    "word": "who've",
+    "start_offset": 2127,
+    "end_offset": 2131,
+    "start": 170.16,
+    "end": 170.48
+  },
+  {
+    "word": "been",
+    "start_offset": 2131,
+    "end_offset": 2133,
+    "start": 170.48,
+    "end": 170.64000000000001
+  },
+  {
+    "word": "killed",
+    "start_offset": 2133,
+    "end_offset": 2137,
+    "start": 170.64000000000001,
+    "end": 170.96
+  },
+  {
+    "word": "and",
+    "start_offset": 2137,
+    "end_offset": 2139,
+    "start": 170.96,
+    "end": 171.12
+  },
+  {
+    "word": "injured",
+    "start_offset": 2139,
+    "end_offset": 2154,
+    "start": 171.12,
+    "end": 172.32
+  },
+  {
+    "word": "very",
+    "start_offset": 2166,
+    "end_offset": 2169,
+    "start": 173.28,
+    "end": 173.52
+  },
+  {
+    "word": "scant",
+    "start_offset": 2171,
+    "end_offset": 2178,
+    "start": 173.68,
+    "end": 174.24
+  },
+  {
+    "word": "details",
+    "start_offset": 2178,
+    "end_offset": 2185,
+    "start": 174.24,
+    "end": 174.8
+  },
+  {
+    "word": "emerging",
+    "start_offset": 2185,
+    "end_offset": 2194,
+    "start": 174.8,
+    "end": 175.52
+  },
+  {
+    "word": "as",
+    "start_offset": 2194,
+    "end_offset": 2197,
+    "start": 175.52,
+    "end": 175.76
+  },
+  {
+    "word": "of",
+    "start_offset": 2197,
+    "end_offset": 2201,
+    "start": 175.76,
+    "end": 176.08
+  },
+  {
+    "word": "now",
+    "start_offset": 2201,
+    "end_offset": 2204,
+    "start": 176.08,
+    "end": 176.32
+  },
+  {
+    "word": "uh",
+    "start_offset": 2208,
+    "end_offset": 2209,
+    "start": 176.64000000000001,
+    "end": 176.72
+  },
+  {
+    "word": "all",
+    "start_offset": 2211,
+    "end_offset": 2215,
+    "start": 176.88,
+    "end": 177.20000000000002
+  },
+  {
+    "word": "that",
+    "start_offset": 2215,
+    "end_offset": 2218,
+    "start": 177.20000000000002,
+    "end": 177.44
+  },
+  {
+    "word": "we",
+    "start_offset": 2218,
+    "end_offset": 2221,
+    "start": 177.44,
+    "end": 177.68
+  },
+  {
+    "word": "have",
+    "start_offset": 2221,
+    "end_offset": 2224,
+    "start": 177.68,
+    "end": 177.92000000000002
+  },
+  {
+    "word": "heard",
+    "start_offset": 2224,
+    "end_offset": 2230,
+    "start": 177.92000000000002,
+    "end": 178.4
+  },
+  {
+    "word": "from",
+    "start_offset": 2230,
+    "end_offset": 2232,
+    "start": 178.4,
+    "end": 178.56
+  },
+  {
+    "word": "the",
+    "start_offset": 2232,
+    "end_offset": 2235,
+    "start": 178.56,
+    "end": 178.8
+  },
+  {
+    "word": "mayor",
+    "start_offset": 2235,
+    "end_offset": 2241,
+    "start": 178.8,
+    "end": 179.28
+  },
+  {
+    "word": "is",
+    "start_offset": 2245,
+    "end_offset": 2249,
+    "start": 179.6,
+    "end": 179.92000000000002
+  },
+  {
+    "word": "that",
+    "start_offset": 2249,
+    "end_offset": 2252,
+    "start": 179.92000000000002,
+    "end": 180.16
+  },
+  {
+    "word": "uh",
+    "start_offset": 2252,
+    "end_offset": 2253,
+    "start": 180.16,
+    "end": 180.24
+  },
+  {
+    "word": "nobody",
+    "start_offset": 2256,
+    "end_offset": 2262,
+    "start": 180.48,
+    "end": 180.96
+  },
+  {
+    "word": "seems",
+    "start_offset": 2266,
+    "end_offset": 2270,
+    "start": 181.28,
+    "end": 181.6
+  },
+  {
+    "word": "to",
+    "start_offset": 2270,
+    "end_offset": 2272,
+    "start": 181.6,
+    "end": 181.76
+  },
+  {
+    "word": "have",
+    "start_offset": 2272,
+    "end_offset": 2275,
+    "start": 181.76,
+    "end": 182.0
+  },
+  {
+    "word": "fallen",
+    "start_offset": 2275,
+    "end_offset": 2285,
+    "start": 182.0,
+    "end": 182.8
+  },
+  {
+    "word": "into",
+    "start_offset": 2285,
+    "end_offset": 2289,
+    "start": 182.8,
+    "end": 183.12
+  },
+  {
+    "word": "the",
+    "start_offset": 2289,
+    "end_offset": 2293,
+    "start": 183.12,
+    "end": 183.44
+  },
+  {
+    "word": "water",
+    "start_offset": 2293,
+    "end_offset": 2300,
+    "start": 183.44,
+    "end": 184.0
+  },
+  {
+    "word": "and",
+    "start_offset": 2304,
+    "end_offset": 2307,
+    "start": 184.32,
+    "end": 184.56
+  },
+  {
+    "word": "uh",
+    "start_offset": 2308,
+    "end_offset": 2310,
+    "start": 184.64000000000001,
+    "end": 184.8
+  },
+  {
+    "word": "there",
+    "start_offset": 2312,
+    "end_offset": 2316,
+    "start": 184.96,
+    "end": 185.28
+  },
+  {
+    "word": "were",
+    "start_offset": 2316,
+    "end_offset": 2319,
+    "start": 185.28,
+    "end": 185.52
+  },
+  {
+    "word": "a",
+    "start_offset": 2319,
+    "end_offset": 2322,
+    "start": 185.52,
+    "end": 185.76
+  },
+  {
+    "word": "couple",
+    "start_offset": 2322,
+    "end_offset": 2326,
+    "start": 185.76,
+    "end": 186.08
+  },
+  {
+    "word": "of",
+    "start_offset": 2326,
+    "end_offset": 2330,
+    "start": 186.08,
+    "end": 186.4
+  },
+  {
+    "word": "cadets",
+    "start_offset": 2330,
+    "end_offset": 2339,
+    "start": 186.4,
+    "end": 187.12
+  },
+  {
+    "word": "uh",
+    "start_offset": 2339,
+    "end_offset": 2342,
+    "start": 187.12,
+    "end": 187.36
+  },
+  {
+    "word": "reportedly",
+    "start_offset": 2342,
+    "end_offset": 2353,
+    "start": 187.36,
+    "end": 188.24
+  },
+  {
+    "word": "on",
+    "start_offset": 2356,
+    "end_offset": 2360,
+    "start": 188.48,
+    "end": 188.8
+  },
+  {
+    "word": "the",
+    "start_offset": 2360,
+    "end_offset": 2363,
+    "start": 188.8,
+    "end": 189.04
+  },
+  {
+    "word": "mast",
+    "start_offset": 2363,
+    "end_offset": 2368,
+    "start": 189.04,
+    "end": 189.44
+  },
+  {
+    "word": "we",
+    "start_offset": 2375,
+    "end_offset": 2378,
+    "start": 190.0,
+    "end": 190.24
+  },
+  {
+    "word": "still",
+    "start_offset": 2378,
+    "end_offset": 2381,
+    "start": 190.24,
+    "end": 190.48
+  },
+  {
+    "word": "don't",
+    "start_offset": 2381,
+    "end_offset": 2385,
+    "start": 190.48,
+    "end": 190.8
+  },
+  {
+    "word": "have",
+    "start_offset": 2385,
+    "end_offset": 2388,
+    "start": 190.8,
+    "end": 191.04
+  },
+  {
+    "word": "clarity",
+    "start_offset": 2388,
+    "end_offset": 2399,
+    "start": 191.04,
+    "end": 191.92000000000002
+  },
+  {
+    "word": "who",
+    "start_offset": 2403,
+    "end_offset": 2407,
+    "start": 192.24,
+    "end": 192.56
+  },
+  {
+    "word": "are",
+    "start_offset": 2407,
+    "end_offset": 2410,
+    "start": 192.56,
+    "end": 192.8
+  },
+  {
+    "word": "the",
+    "start_offset": 2410,
+    "end_offset": 2412,
+    "start": 192.8,
+    "end": 192.96
+  },
+  {
+    "word": "deceased",
+    "start_offset": 2412,
+    "end_offset": 2420,
+    "start": 192.96,
+    "end": 193.6
+  },
+  {
+    "word": "uh",
+    "start_offset": 2424,
+    "end_offset": 2426,
+    "start": 193.92000000000002,
+    "end": 194.08
+  },
+  {
+    "word": "how",
+    "start_offset": 2430,
+    "end_offset": 2434,
+    "start": 194.4,
+    "end": 194.72
+  },
+  {
+    "word": "did",
+    "start_offset": 2442,
+    "end_offset": 2445,
+    "start": 195.36,
+    "end": 195.6
+  },
+  {
+    "word": "this",
+    "start_offset": 2445,
+    "end_offset": 2448,
+    "start": 195.6,
+    "end": 195.84
+  },
+  {
+    "word": "happen",
+    "start_offset": 2448,
+    "end_offset": 2451,
+    "start": 195.84,
+    "end": 196.08
+  },
+  {
+    "word": "and",
+    "start_offset": 2452,
+    "end_offset": 2455,
+    "start": 196.16,
+    "end": 196.4
+  },
+  {
+    "word": "how",
+    "start_offset": 2455,
+    "end_offset": 2457,
+    "start": 196.4,
+    "end": 196.56
+  },
+  {
+    "word": "did",
+    "start_offset": 2457,
+    "end_offset": 2459,
+    "start": 196.56,
+    "end": 196.72
+  },
+  {
+    "word": "they",
+    "start_offset": 2459,
+    "end_offset": 2461,
+    "start": 196.72,
+    "end": 196.88
+  },
+  {
+    "word": "receive",
+    "start_offset": 2461,
+    "end_offset": 2466,
+    "start": 196.88,
+    "end": 197.28
+  },
+  {
+    "word": "their",
+    "start_offset": 2467,
+    "end_offset": 2470,
+    "start": 197.36,
+    "end": 197.6
+  },
+  {
+    "word": "very",
+    "start_offset": 2470,
+    "end_offset": 2473,
+    "start": 197.6,
+    "end": 197.84
+  },
+  {
+    "word": "serious",
+    "start_offset": 2473,
+    "end_offset": 2478,
+    "start": 197.84,
+    "end": 198.24
+  },
+  {
+    "word": "injuries",
+    "start_offset": 2478,
+    "end_offset": 2484,
+    "start": 198.24,
+    "end": 198.72
+  },
+  {
+    "word": "but",
+    "start_offset": 2488,
+    "end_offset": 2490,
+    "start": 199.04,
+    "end": 199.20000000000002
+  },
+  {
+    "word": "earlier",
+    "start_offset": 2490,
+    "end_offset": 2494,
+    "start": 199.20000000000002,
+    "end": 199.52
+  },
+  {
+    "word": "the",
+    "start_offset": 2495,
+    "end_offset": 2497,
+    "start": 199.6,
+    "end": 199.76
+  },
+  {
+    "word": "mayor",
+    "start_offset": 2497,
+    "end_offset": 2502,
+    "start": 199.76,
+    "end": 200.16
+  },
+  {
+    "word": "did",
+    "start_offset": 2502,
+    "end_offset": 2506,
+    "start": 200.16,
+    "end": 200.48000000000002
+  },
+  {
+    "word": "say",
+    "start_offset": 2506,
+    "end_offset": 2509,
+    "start": 200.48000000000002,
+    "end": 200.72
+  },
+  {
+    "word": "that",
+    "start_offset": 2509,
+    "end_offset": 2513,
+    "start": 200.72,
+    "end": 201.04
+  },
+  {
+    "word": "four",
+    "start_offset": 2513,
+    "end_offset": 2517,
+    "start": 201.04,
+    "end": 201.36
+  },
+  {
+    "word": "were",
+    "start_offset": 2517,
+    "end_offset": 2520,
+    "start": 201.36,
+    "end": 201.6
+  },
+  {
+    "word": "seriously",
+    "start_offset": 2520,
+    "end_offset": 2528,
+    "start": 201.6,
+    "end": 202.24
+  },
+  {
+    "word": "injured",
+    "start_offset": 2528,
+    "end_offset": 2537,
+    "start": 202.24,
+    "end": 202.96
+  },
+  {
+    "word": "uh",
+    "start_offset": 2541,
+    "end_offset": 2542,
+    "start": 203.28,
+    "end": 203.36
+  },
+  {
+    "word": "we",
+    "start_offset": 2544,
+    "end_offset": 2547,
+    "start": 203.52,
+    "end": 203.76
+  },
+  {
+    "word": "will",
+    "start_offset": 2547,
+    "end_offset": 2550,
+    "start": 203.76,
+    "end": 204.0
+  },
+  {
+    "word": "discover",
+    "start_offset": 2550,
+    "end_offset": 2557,
+    "start": 204.0,
+    "end": 204.56
+  },
+  {
+    "word": "soon",
+    "start_offset": 2557,
+    "end_offset": 2564,
+    "start": 204.56,
+    "end": 205.12
+  },
+  {
+    "word": "whether",
+    "start_offset": 2564,
+    "end_offset": 2569,
+    "start": 205.12,
+    "end": 205.52
+  },
+  {
+    "word": "the",
+    "start_offset": 2569,
+    "end_offset": 2571,
+    "start": 205.52,
+    "end": 205.68
+  },
+  {
+    "word": "two",
+    "start_offset": 2571,
+    "end_offset": 2573,
+    "start": 205.68,
+    "end": 205.84
+  },
+  {
+    "word": "of",
+    "start_offset": 2573,
+    "end_offset": 2575,
+    "start": 205.84,
+    "end": 206.0
+  },
+  {
+    "word": "the",
+    "start_offset": 2575,
+    "end_offset": 2576,
+    "start": 206.0,
+    "end": 206.08
+  },
+  {
+    "word": "deceased",
+    "start_offset": 2576,
+    "end_offset": 2584,
+    "start": 206.08,
+    "end": 206.72
+  },
+  {
+    "word": "are",
+    "start_offset": 2584,
+    "end_offset": 2586,
+    "start": 206.72,
+    "end": 206.88
+  },
+  {
+    "word": "among",
+    "start_offset": 2586,
+    "end_offset": 2592,
+    "start": 206.88,
+    "end": 207.36
+  },
+  {
+    "word": "those",
+    "start_offset": 2592,
+    "end_offset": 2596,
+    "start": 207.36,
+    "end": 207.68
+  },
+  {
+    "word": "who",
+    "start_offset": 2596,
+    "end_offset": 2599,
+    "start": 207.68,
+    "end": 207.92000000000002
+  },
+  {
+    "word": "were",
+    "start_offset": 2599,
+    "end_offset": 2601,
+    "start": 207.92000000000002,
+    "end": 208.08
+  },
+  {
+    "word": "seriously",
+    "start_offset": 2601,
+    "end_offset": 2608,
+    "start": 208.08,
+    "end": 208.64000000000001
+  },
+  {
+    "word": "injured",
+    "start_offset": 2608,
+    "end_offset": 2617,
+    "start": 208.64000000000001,
+    "end": 209.36
+  },
+  {
+    "word": "and",
+    "start_offset": 2621,
+    "end_offset": 2623,
+    "start": 209.68,
+    "end": 209.84
+  },
+  {
+    "word": "it",
+    "start_offset": 2623,
+    "end_offset": 2624,
+    "start": 209.84,
+    "end": 209.92000000000002
+  },
+  {
+    "word": "seems",
+    "start_offset": 2624,
+    "end_offset": 2628,
+    "start": 209.92000000000002,
+    "end": 210.24
+  },
+  {
+    "word": "from",
+    "start_offset": 2628,
+    "end_offset": 2630,
+    "start": 210.24,
+    "end": 210.4
+  },
+  {
+    "word": "the",
+    "start_offset": 2630,
+    "end_offset": 2631,
+    "start": 210.4,
+    "end": 210.48000000000002
+  },
+  {
+    "word": "pictures",
+    "start_offset": 2631,
+    "end_offset": 2637,
+    "start": 210.48000000000002,
+    "end": 210.96
+  },
+  {
+    "word": "we're",
+    "start_offset": 2637,
+    "end_offset": 2641,
+    "start": 210.96,
+    "end": 211.28
+  },
+  {
+    "word": "seeing",
+    "start_offset": 2641,
+    "end_offset": 2644,
+    "start": 211.28,
+    "end": 211.52
+  },
+  {
+    "word": "that",
+    "start_offset": 2644,
+    "end_offset": 2647,
+    "start": 211.52,
+    "end": 211.76
+  },
+  {
+    "word": "quite",
+    "start_offset": 2647,
+    "end_offset": 2651,
+    "start": 211.76,
+    "end": 212.08
+  },
+  {
+    "word": "a",
+    "start_offset": 2651,
+    "end_offset": 2652,
+    "start": 212.08,
+    "end": 212.16
+  },
+  {
+    "word": "lot",
+    "start_offset": 2652,
+    "end_offset": 2654,
+    "start": 212.16,
+    "end": 212.32
+  },
+  {
+    "word": "of",
+    "start_offset": 2654,
+    "end_offset": 2655,
+    "start": 212.32,
+    "end": 212.4
+  },
+  {
+    "word": "people",
+    "start_offset": 2655,
+    "end_offset": 2658,
+    "start": 212.4,
+    "end": 212.64000000000001
+  },
+  {
+    "word": "were",
+    "start_offset": 2658,
+    "end_offset": 2660,
+    "start": 212.64000000000001,
+    "end": 212.8
+  },
+  {
+    "word": "watching",
+    "start_offset": 2660,
+    "end_offset": 2665,
+    "start": 212.8,
+    "end": 213.20000000000002
+  },
+  {
+    "word": "as",
+    "start_offset": 2665,
+    "end_offset": 2667,
+    "start": 213.20000000000002,
+    "end": 213.36
+  },
+  {
+    "word": "this",
+    "start_offset": 2667,
+    "end_offset": 2670,
+    "start": 213.36,
+    "end": 213.6
+  },
+  {
+    "word": "accident",
+    "start_offset": 2670,
+    "end_offset": 2681,
+    "start": 213.6,
+    "end": 214.48000000000002
+  },
+  {
+    "word": "happened",
+    "start_offset": 2681,
+    "end_offset": 2689,
+    "start": 214.48000000000002,
+    "end": 215.12
+  },
+  {
+    "word": "that's",
+    "start_offset": 2705,
+    "end_offset": 2711,
+    "start": 216.4,
+    "end": 216.88
+  },
+  {
+    "word": "right",
+    "start_offset": 2711,
+    "end_offset": 2714,
+    "start": 216.88,
+    "end": 217.12
+  },
+  {
+    "word": "because",
+    "start_offset": 2718,
+    "end_offset": 2721,
+    "start": 217.44,
+    "end": 217.68
+  },
+  {
+    "word": "uh",
+    "start_offset": 2723,
+    "end_offset": 2724,
+    "start": 217.84,
+    "end": 217.92000000000002
+  },
+  {
+    "word": "remember",
+    "start_offset": 2726,
+    "end_offset": 2730,
+    "start": 218.08,
+    "end": 218.4
+  },
+  {
+    "word": "brooklyn",
+    "start_offset": 2732,
+    "end_offset": 2739,
+    "start": 218.56,
+    "end": 219.12
+  },
+  {
+    "word": "bridge",
+    "start_offset": 2739,
+    "end_offset": 2746,
+    "start": 219.12,
+    "end": 219.68
+  },
+  {
+    "word": "is",
+    "start_offset": 2746,
+    "end_offset": 2749,
+    "start": 219.68,
+    "end": 219.92000000000002
+  },
+  {
+    "word": "a",
+    "start_offset": 2749,
+    "end_offset": 2752,
+    "start": 219.92000000000002,
+    "end": 220.16
+  },
+  {
+    "word": "new",
+    "start_offset": 2752,
+    "end_offset": 2753,
+    "start": 220.16,
+    "end": 220.24
+  },
+  {
+    "word": "york",
+    "start_offset": 2755,
+    "end_offset": 2758,
+    "start": 220.4,
+    "end": 220.64000000000001
+  },
+  {
+    "word": "city",
+    "start_offset": 2758,
+    "end_offset": 2762,
+    "start": 220.64000000000001,
+    "end": 220.96
+  },
+  {
+    "word": "tourist",
+    "start_offset": 2762,
+    "end_offset": 2768,
+    "start": 220.96,
+    "end": 221.44
+  },
+  {
+    "word": "hotspot",
+    "start_offset": 2768,
+    "end_offset": 2775,
+    "start": 221.44,
+    "end": 222.0
+  },
+  {
+    "word": "it's",
+    "start_offset": 2778,
+    "end_offset": 2781,
+    "start": 222.24,
+    "end": 222.48000000000002
+  },
+  {
+    "word": "uh",
+    "start_offset": 2781,
+    "end_offset": 2783,
+    "start": 222.48000000000002,
+    "end": 222.64000000000001
+  },
+  {
+    "word": "famous",
+    "start_offset": 2783,
+    "end_offset": 2789,
+    "start": 222.64000000000001,
+    "end": 223.12
+  },
+  {
+    "word": "it's",
+    "start_offset": 2791,
+    "end_offset": 2795,
+    "start": 223.28,
+    "end": 223.6
+  },
+  {
+    "word": "on",
+    "start_offset": 2795,
+    "end_offset": 2798,
+    "start": 223.6,
+    "end": 223.84
+  },
+  {
+    "word": "every",
+    "start_offset": 2798,
+    "end_offset": 2801,
+    "start": 223.84,
+    "end": 224.08
+  },
+  {
+    "word": "tourist",
+    "start_offset": 2801,
+    "end_offset": 2807,
+    "start": 224.08,
+    "end": 224.56
+  },
+  {
+    "word": "guide",
+    "start_offset": 2807,
+    "end_offset": 2810,
+    "start": 224.56,
+    "end": 224.8
+  },
+  {
+    "word": "every",
+    "start_offset": 2812,
+    "end_offset": 2814,
+    "start": 224.96,
+    "end": 225.12
+  },
+  {
+    "word": "tourist",
+    "start_offset": 2814,
+    "end_offset": 2821,
+    "start": 225.12,
+    "end": 225.68
+  },
+  {
+    "word": "book",
+    "start_offset": 2821,
+    "end_offset": 2826,
+    "start": 225.68,
+    "end": 226.08
+  },
+  {
+    "word": "um",
+    "start_offset": 2830,
+    "end_offset": 2832,
+    "start": 226.4,
+    "end": 226.56
+  },
+  {
+    "word": "the",
+    "start_offset": 2834,
+    "end_offset": 2837,
+    "start": 226.72,
+    "end": 226.96
+  },
+  {
+    "word": "tourists",
+    "start_offset": 2837,
+    "end_offset": 2845,
+    "start": 226.96,
+    "end": 227.6
+  },
+  {
+    "word": "that",
+    "start_offset": 2845,
+    "end_offset": 2848,
+    "start": 227.6,
+    "end": 227.84
+  },
+  {
+    "word": "who",
+    "start_offset": 2848,
+    "end_offset": 2851,
+    "start": 227.84,
+    "end": 228.08
+  },
+  {
+    "word": "come",
+    "start_offset": 2851,
+    "end_offset": 2855,
+    "start": 228.08,
+    "end": 228.4
+  },
+  {
+    "word": "here",
+    "start_offset": 2855,
+    "end_offset": 2859,
+    "start": 228.4,
+    "end": 228.72
+  },
+  {
+    "word": "also",
+    "start_offset": 2859,
+    "end_offset": 2862,
+    "start": 228.72,
+    "end": 228.96
+  },
+  {
+    "word": "like",
+    "start_offset": 2863,
+    "end_offset": 2865,
+    "start": 229.04,
+    "end": 229.20000000000002
+  },
+  {
+    "word": "straddle",
+    "start_offset": 2867,
+    "end_offset": 2877,
+    "start": 229.36,
+    "end": 230.16
+  },
+  {
+    "word": "it",
+    "start_offset": 2877,
+    "end_offset": 2881,
+    "start": 230.16,
+    "end": 230.48000000000002
+  },
+  {
+    "word": "up",
+    "start_offset": 2881,
+    "end_offset": 2885,
+    "start": 230.48000000000002,
+    "end": 230.8
+  },
+  {
+    "word": "and",
+    "start_offset": 2885,
+    "end_offset": 2887,
+    "start": 230.8,
+    "end": 230.96
+  },
+  {
+    "word": "down",
+    "start_offset": 2887,
+    "end_offset": 2889,
+    "start": 230.96,
+    "end": 231.12
+  },
+  {
+    "word": "they",
+    "start_offset": 2891,
+    "end_offset": 2894,
+    "start": 231.28,
+    "end": 231.52
+  },
+  {
+    "word": "walk",
+    "start_offset": 2894,
+    "end_offset": 2899,
+    "start": 231.52,
+    "end": 231.92000000000002
+  },
+  {
+    "word": "the",
+    "start_offset": 2899,
+    "end_offset": 2901,
+    "start": 231.92000000000002,
+    "end": 232.08
+  },
+  {
+    "word": "bridge",
+    "start_offset": 2901,
+    "end_offset": 2907,
+    "start": 232.08,
+    "end": 232.56
+  },
+  {
+    "word": "to",
+    "start_offset": 2907,
+    "end_offset": 2910,
+    "start": 232.56,
+    "end": 232.8
+  },
+  {
+    "word": "see",
+    "start_offset": 2910,
+    "end_offset": 2913,
+    "start": 232.8,
+    "end": 233.04
+  },
+  {
+    "word": "panoramic",
+    "start_offset": 2913,
+    "end_offset": 2924,
+    "start": 233.04,
+    "end": 233.92000000000002
+  },
+  {
+    "word": "views",
+    "start_offset": 2924,
+    "end_offset": 2929,
+    "start": 233.92000000000002,
+    "end": 234.32
+  },
+  {
+    "word": "of",
+    "start_offset": 2929,
+    "end_offset": 2931,
+    "start": 234.32,
+    "end": 234.48000000000002
+  },
+  {
+    "word": "the",
+    "start_offset": 2931,
+    "end_offset": 2933,
+    "start": 234.48000000000002,
+    "end": 234.64000000000001
+  },
+  {
+    "word": "skyline",
+    "start_offset": 2933,
+    "end_offset": 2941,
+    "start": 234.64000000000001,
+    "end": 235.28
+  },
+  {
+    "word": "of",
+    "start_offset": 2941,
+    "end_offset": 2943,
+    "start": 235.28,
+    "end": 235.44
+  },
+  {
+    "word": "the",
+    "start_offset": 2943,
+    "end_offset": 2945,
+    "start": 235.44,
+    "end": 235.6
+  },
+  {
+    "word": "new",
+    "start_offset": 2945,
+    "end_offset": 2946,
+    "start": 235.6,
+    "end": 235.68
+  },
+  {
+    "word": "york",
+    "start_offset": 2948,
+    "end_offset": 2953,
+    "start": 235.84,
+    "end": 236.24
+  },
+  {
+    "word": "city",
+    "start_offset": 2953,
+    "end_offset": 2960,
+    "start": 236.24,
+    "end": 236.8
+  },
+  {
+    "word": "uh",
+    "start_offset": 2963,
+    "end_offset": 2966,
+    "start": 237.04,
+    "end": 237.28
+  },
+  {
+    "word": "very",
+    "start_offset": 2974,
+    "end_offset": 2977,
+    "start": 237.92000000000002,
+    "end": 238.16
+  },
+  {
+    "word": "beautiful",
+    "start_offset": 2979,
+    "end_offset": 2989,
+    "start": 238.32,
+    "end": 239.12
+  },
+  {
+    "word": "sunsets",
+    "start_offset": 2989,
+    "end_offset": 3002,
+    "start": 239.12,
+    "end": 240.16
+  },
+  {
+    "word": "and",
+    "start_offset": 3002,
+    "end_offset": 3005,
+    "start": 240.16,
+    "end": 240.4
+  },
+  {
+    "word": "sunrises",
+    "start_offset": 3005,
+    "end_offset": 3015,
+    "start": 240.4,
+    "end": 241.20000000000002
+  },
+  {
+    "word": "can",
+    "start_offset": 3015,
+    "end_offset": 3017,
+    "start": 241.20000000000002,
+    "end": 241.36
+  },
+  {
+    "word": "be",
+    "start_offset": 3017,
+    "end_offset": 3020,
+    "start": 241.36,
+    "end": 241.6
+  },
+  {
+    "word": "seen",
+    "start_offset": 3020,
+    "end_offset": 3026,
+    "start": 241.6,
+    "end": 242.08
+  },
+  {
+    "word": "here",
+    "start_offset": 3026,
+    "end_offset": 3030,
+    "start": 242.08,
+    "end": 242.4
+  },
+  {
+    "word": "um",
+    "start_offset": 3032,
+    "end_offset": 3035,
+    "start": 242.56,
+    "end": 242.8
+  },
+  {
+    "word": "brooklyn",
+    "start_offset": 3038,
+    "end_offset": 3046,
+    "start": 243.04,
+    "end": 243.68
+  },
+  {
+    "word": "bridge",
+    "start_offset": 3046,
+    "end_offset": 3051,
+    "start": 243.68,
+    "end": 244.08
+  },
+  {
+    "word": "itself",
+    "start_offset": 3051,
+    "end_offset": 3056,
+    "start": 244.08,
+    "end": 244.48000000000002
+  },
+  {
+    "word": "uh",
+    "start_offset": 3059,
+    "end_offset": 3063,
+    "start": 244.72,
+    "end": 245.04
+  },
+  {
+    "word": "a",
+    "start_offset": 3067,
+    "end_offset": 3069,
+    "start": 245.36,
+    "end": 245.52
+  },
+  {
+    "word": "very",
+    "start_offset": 3069,
+    "end_offset": 3073,
+    "start": 245.52,
+    "end": 245.84
+  },
+  {
+    "word": "old",
+    "start_offset": 3073,
+    "end_offset": 3077,
+    "start": 245.84,
+    "end": 246.16
+  },
+  {
+    "word": "bridge",
+    "start_offset": 3077,
+    "end_offset": 3081,
+    "start": 246.16,
+    "end": 246.48000000000002
+  },
+  {
+    "word": "it's",
+    "start_offset": 3082,
+    "end_offset": 3085,
+    "start": 246.56,
+    "end": 246.8
+  },
+  {
+    "word": "been",
+    "start_offset": 3085,
+    "end_offset": 3087,
+    "start": 246.8,
+    "end": 246.96
+  },
+  {
+    "word": "here",
+    "start_offset": 3087,
+    "end_offset": 3089,
+    "start": 246.96,
+    "end": 247.12
+  },
+  {
+    "word": "since",
+    "start_offset": 3089,
+    "end_offset": 3092,
+    "start": 247.12,
+    "end": 247.36
+  },
+  {
+    "word": "the",
+    "start_offset": 3092,
+    "end_offset": 3094,
+    "start": 247.36,
+    "end": 247.52
+  },
+  {
+    "word": "1800s",
+    "start_offset": 3094,
+    "end_offset": 3110,
+    "start": 247.52,
+    "end": 248.8
+  },
+  {
+    "word": "and",
+    "start_offset": 3110,
+    "end_offset": 3113,
+    "start": 248.8,
+    "end": 249.04
+  },
+  {
+    "word": "is",
+    "start_offset": 3113,
+    "end_offset": 3117,
+    "start": 249.04,
+    "end": 249.36
+  },
+  {
+    "word": "quite",
+    "start_offset": 3117,
+    "end_offset": 3122,
+    "start": 249.36,
+    "end": 249.76000000000002
+  },
+  {
+    "word": "majestic",
+    "start_offset": 3122,
+    "end_offset": 3136,
+    "start": 249.76000000000002,
+    "end": 250.88
+  },
+  {
+    "word": "looking",
+    "start_offset": 3137,
+    "end_offset": 3144,
+    "start": 250.96,
+    "end": 251.52
+  },
+  {
+    "word": "as",
+    "start_offset": 3146,
+    "end_offset": 3150,
+    "start": 251.68,
+    "end": 252.0
+  },
+  {
+    "word": "you",
+    "start_offset": 3150,
+    "end_offset": 3153,
+    "start": 252.0,
+    "end": 252.24
+  },
+  {
+    "word": "can",
+    "start_offset": 3153,
+    "end_offset": 3157,
+    "start": 252.24,
+    "end": 252.56
+  },
+  {
+    "word": "see",
+    "start_offset": 3157,
+    "end_offset": 3160,
+    "start": 252.56,
+    "end": 252.8
+  },
+  {
+    "word": "um",
+    "start_offset": 3164,
+    "end_offset": 3168,
+    "start": 253.12,
+    "end": 253.44
+  },
+  {
+    "word": "so",
+    "start_offset": 3172,
+    "end_offset": 3174,
+    "start": 253.76000000000002,
+    "end": 253.92000000000002
+  },
+  {
+    "word": "of",
+    "start_offset": 3176,
+    "end_offset": 3179,
+    "start": 254.08,
+    "end": 254.32
+  },
+  {
+    "word": "course",
+    "start_offset": 3179,
+    "end_offset": 3181,
+    "start": 254.32,
+    "end": 254.48000000000002
+  },
+  {
+    "word": "there",
+    "start_offset": 3183,
+    "end_offset": 3187,
+    "start": 254.64000000000001,
+    "end": 254.96
+  },
+  {
+    "word": "were",
+    "start_offset": 3187,
+    "end_offset": 3191,
+    "start": 254.96,
+    "end": 255.28
+  },
+  {
+    "word": "people",
+    "start_offset": 3191,
+    "end_offset": 3195,
+    "start": 255.28,
+    "end": 255.6
+  },
+  {
+    "word": "here",
+    "start_offset": 3195,
+    "end_offset": 3198,
+    "start": 255.6,
+    "end": 255.84
+  },
+  {
+    "word": "who",
+    "start_offset": 3198,
+    "end_offset": 3200,
+    "start": 255.84,
+    "end": 256.0
+  },
+  {
+    "word": "were",
+    "start_offset": 3200,
+    "end_offset": 3202,
+    "start": 256.0,
+    "end": 256.16
+  },
+  {
+    "word": "watching",
+    "start_offset": 3202,
+    "end_offset": 3208,
+    "start": 256.16,
+    "end": 256.64
+  },
+  {
+    "word": "this",
+    "start_offset": 3208,
+    "end_offset": 3211,
+    "start": 256.64,
+    "end": 256.88
+  },
+  {
+    "word": "unfold",
+    "start_offset": 3211,
+    "end_offset": 3217,
+    "start": 256.88,
+    "end": 257.36
+  },
+  {
+    "word": "as",
+    "start_offset": 3217,
+    "end_offset": 3219,
+    "start": 257.36,
+    "end": 257.52
+  },
+  {
+    "word": "it",
+    "start_offset": 3219,
+    "end_offset": 3222,
+    "start": 257.52,
+    "end": 257.76
+  },
+  {
+    "word": "happened",
+    "start_offset": 3222,
+    "end_offset": 3226,
+    "start": 257.76,
+    "end": 258.08
+  },
+  {
+    "word": "and",
+    "start_offset": 3230,
+    "end_offset": 3233,
+    "start": 258.4,
+    "end": 258.64
+  },
+  {
+    "word": "when",
+    "start_offset": 3233,
+    "end_offset": 3236,
+    "start": 258.64,
+    "end": 258.88
+  },
+  {
+    "word": "the",
+    "start_offset": 3236,
+    "end_offset": 3239,
+    "start": 258.88,
+    "end": 259.12
+  },
+  {
+    "word": "ship",
+    "start_offset": 3239,
+    "end_offset": 3245,
+    "start": 259.12,
+    "end": 259.6
+  },
+  {
+    "word": "seems",
+    "start_offset": 3245,
+    "end_offset": 3249,
+    "start": 259.6,
+    "end": 259.92
+  },
+  {
+    "word": "to",
+    "start_offset": 3249,
+    "end_offset": 3251,
+    "start": 259.92,
+    "end": 260.08
+  },
+  {
+    "word": "have",
+    "start_offset": 3251,
+    "end_offset": 3254,
+    "start": 260.08,
+    "end": 260.32
+  },
+  {
+    "word": "lost",
+    "start_offset": 3254,
+    "end_offset": 3259,
+    "start": 260.32,
+    "end": 260.72
+  },
+  {
+    "word": "slight",
+    "start_offset": 3259,
+    "end_offset": 3264,
+    "start": 260.72,
+    "end": 261.12
+  },
+  {
+    "word": "control",
+    "start_offset": 3264,
+    "end_offset": 3270,
+    "start": 261.12,
+    "end": 261.6
+  },
+  {
+    "word": "it",
+    "start_offset": 3272,
+    "end_offset": 3274,
+    "start": 261.76,
+    "end": 261.92
+  },
+  {
+    "word": "veered",
+    "start_offset": 3274,
+    "end_offset": 3281,
+    "start": 261.92,
+    "end": 262.48
+  },
+  {
+    "word": "towards",
+    "start_offset": 3281,
+    "end_offset": 3290,
+    "start": 262.48,
+    "end": 263.2
+  },
+  {
+    "word": "the",
+    "start_offset": 3290,
+    "end_offset": 3293,
+    "start": 263.2,
+    "end": 263.44
+  },
+  {
+    "word": "show",
+    "start_offset": 3293,
+    "end_offset": 3296,
+    "start": 263.44,
+    "end": 263.68
+  },
+  {
+    "word": "where",
+    "start_offset": 3301,
+    "end_offset": 3305,
+    "start": 264.08,
+    "end": 264.4
+  },
+  {
+    "word": "people",
+    "start_offset": 3305,
+    "end_offset": 3308,
+    "start": 264.4,
+    "end": 264.64
+  },
+  {
+    "word": "were",
+    "start_offset": 3308,
+    "end_offset": 3312,
+    "start": 264.64,
+    "end": 264.96
+  },
+  {
+    "word": "standing",
+    "start_offset": 3312,
+    "end_offset": 3318,
+    "start": 264.96,
+    "end": 265.44
+  },
+  {
+    "word": "and",
+    "start_offset": 3318,
+    "end_offset": 3322,
+    "start": 265.44,
+    "end": 265.76
+  },
+  {
+    "word": "watching",
+    "start_offset": 3322,
+    "end_offset": 3330,
+    "start": 265.76,
+    "end": 266.4
+  },
+  {
+    "word": "and",
+    "start_offset": 3338,
+    "end_offset": 3342,
+    "start": 267.04,
+    "end": 267.36
+  },
+  {
+    "word": "you",
+    "start_offset": 3342,
+    "end_offset": 3345,
+    "start": 267.36,
+    "end": 267.6
+  },
+  {
+    "word": "can",
+    "start_offset": 3345,
+    "end_offset": 3348,
+    "start": 267.6,
+    "end": 267.84000000000003
+  },
+  {
+    "word": "see",
+    "start_offset": 3348,
+    "end_offset": 3351,
+    "start": 267.84000000000003,
+    "end": 268.08
+  },
+  {
+    "word": "them",
+    "start_offset": 3351,
+    "end_offset": 3354,
+    "start": 268.08,
+    "end": 268.32
+  },
+  {
+    "word": "running",
+    "start_offset": 3354,
+    "end_offset": 3359,
+    "start": 268.32,
+    "end": 268.72
+  },
+  {
+    "word": "from",
+    "start_offset": 3359,
+    "end_offset": 3361,
+    "start": 268.72,
+    "end": 268.88
+  },
+  {
+    "word": "the",
+    "start_offset": 3361,
+    "end_offset": 3363,
+    "start": 268.88,
+    "end": 269.04
+  },
+  {
+    "word": "scene",
+    "start_offset": 3363,
+    "end_offset": 3368,
+    "start": 269.04,
+    "end": 269.44
+  },
+  {
+    "word": "after",
+    "start_offset": 3368,
+    "end_offset": 3371,
+    "start": 269.44,
+    "end": 269.68
+  },
+  {
+    "word": "that",
+    "start_offset": 3371,
+    "end_offset": 3373,
+    "start": 269.68,
+    "end": 269.84000000000003
+  }
+]

@@ -64,8 +64,8 @@ echo Activate the environment in a new shell with:
 echo     %VENV_DIR%\Scripts\activate
 echo.
 echo Then launch the app:
-echo     python gui.py
-echo     python youtube_subtitle_app\main.py
+echo     subforge
+echo     subforge-cli --url "https://..."
 echo.
 echo To install the experimental NeMo / Parakeet backend:
 echo     pip install -r requirements-experimental.txt

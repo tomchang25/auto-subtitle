@@ -3,6 +3,7 @@ from subforge.downloader.youtube import (
     download_audio,
     download_video,
 )
+import pytest
 
 TEST_URL = "https://www.youtube.com/watch?v=ByreRudsyoc"
 
@@ -14,6 +15,7 @@ def test_get_video_title():
     print(f"Retrieved video title: {title}")
 
 
+@pytest.mark.slow
 def test_download_audio(tmp_path):
     output_path = tmp_path / "test_audio"
     audio_file = download_audio(TEST_URL, output_path, format="mp3", force=True)
@@ -22,6 +24,7 @@ def test_download_audio(tmp_path):
     print(f"Audio downloaded to: {audio_file}")
 
 
+@pytest.mark.slow
 def test_download_video(tmp_path):
     output_path = tmp_path / "test_video"
     video_file = download_video(TEST_URL, output_path, quality="1080p", force=True)

@@ -55,12 +55,12 @@ an existing venv is safe.
 
 ```bat
 :: Windows
-setup.bat
+scripts/setup.bat
 ```
 
 ```bash
 # macOS / Linux
-./setup.sh
+./scripts/setup.sh
 ```
 
 ### Manual install
@@ -80,6 +80,7 @@ pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
 
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
+pip install -e .
 ```
 
 ---
@@ -87,7 +88,12 @@ python -m spacy download en_core_web_sm
 ## 🚀 Usage
 
 ```bash
-python youtube_subtitle_app/main.py
+# GUI
+subforge
+
+# CLI
+subforge-cli --url "https://www.youtube.com/watch?v=..."
+subforge-cli --url "..." --model large-v3 --download-video --video-quality 720p
 ```
 
 You’ll be prompted to paste a YouTube URL. The program will:

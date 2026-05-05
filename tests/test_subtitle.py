@@ -1,4 +1,3 @@
-from pathlib import Path
 from subforge.subtitle.formatter import format_srt
 from subforge.subtitle.writer import write_srt
 
