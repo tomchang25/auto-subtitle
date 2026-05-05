@@ -3,7 +3,14 @@ from pathlib import Path
 
 import demucs.separate
 
+from subforge.config import DEMUCS_MODEL, DEMUCS_VOCALS_FILENAME
+
 logger = logging.getLogger(__name__)
+
+
+def get_demucs_vocals_path(output_dir: Path) -> Path:
+    """Canonical path where demucs vocals are expected."""
+    return output_dir / DEMUCS_MODEL / DEMUCS_VOCALS_FILENAME
 
 
 def run_demucs(input_path: Path, output_dir: Path) -> Path:
@@ -27,13 +34,14 @@ def run_demucs(input_path: Path, output_dir: Path) -> Path:
     logger.info("Processing: %s", input_path)
     try:
         demucs.separate.main(args)
-        output_file = output_dir / "htdemucs" / input_path.stem / "vocals.mp3"
-        if output_file.exists():
-            logger.info("Vocal track saved: %s", output_file)
-            return output_file
-        else:
-            logger.info("Expected output not found, using original.")
-            return input_path
+        expected = get_demucs_vocals_path(output_dir)
+        if expected.exists():
+            logger.info("Vocal track saved: %s", expected)
+            return expected
+        logger.warning(
+            "Demucs output not found at %s. Using original.", expected
+        )
+        return input_path
     except Exception as e:
         logger.error("Error: %s", e)
         return input_path

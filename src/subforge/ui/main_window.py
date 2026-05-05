@@ -44,6 +44,7 @@ class PipelineWorker(QObject):
         download_mp4: bool = False,
         video_quality: str = "1080p",
         translate_method: str | None = None,
+        force: bool = False,
     ):
         super().__init__()
         self.url = url
@@ -52,6 +53,7 @@ class PipelineWorker(QObject):
         self.download_mp4 = download_mp4
         self.video_quality = video_quality
         self.translate_method = translate_method
+        self.force = force
         self._pipeline: SubtitlePipeline | None = None
 
     def cancel(self):
@@ -71,6 +73,7 @@ class PipelineWorker(QObject):
                 video_quality=self.video_quality,
                 translate_method=self.translate_method,
                 progress_callback=lambda step, detail: self.progress.emit(step, detail),
+                force=self.force,
             )
             srt_path = self._pipeline.run()
             video_path = (
@@ -86,7 +89,7 @@ class PipelineWorker(QObject):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Auto Subtitle")
+        self.setWindowTitle("SubForge")
         self.resize(720, 560)
 
         self._thread: QThread | None = None
@@ -146,6 +149,11 @@ class MainWindow(QMainWindow):
         self.translate_combo.setToolTip("Translation backend (none = disabled)")
         settings_row.addWidget(self.translate_combo)
 
+        self.force_check = QCheckBox("Force Re-run")
+        self.force_check.setChecked(False)
+        self.force_check.setToolTip("Ignore all cached results and re-run from scratch")
+        settings_row.addWidget(self.force_check)
+
         settings_row.addStretch(1)
         layout.addLayout(settings_row)
 
@@ -194,6 +202,7 @@ class MainWindow(QMainWindow):
             download_mp4=self.download_mp4_check.isChecked(),
             video_quality=self.quality_combo.currentText(),
             translate_method=None if translate_text == "none" else translate_text,
+            force=self.force_check.isChecked(),
         )
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)

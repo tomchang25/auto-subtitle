@@ -26,20 +26,27 @@ def load_model(model_name: str) -> WhisperModel:
     return _loaded_models[model_name]
 
 
-def transcribe_audio_word_level(wav_path: Path, model_name: str) -> list:
+def transcribe_audio_word_level(
+    wav_path: Path,
+    model_name: str,
+    progress_callback=None,
+) -> list:
     if not wav_path.exists():
         raise FileNotFoundError(f"Audio file does not exist: {wav_path}")
 
     model = load_model(model_name)
 
     logger.info("Transcribing with faster-whisper: %s", wav_path)
-    segments_iter, _info = model.transcribe(
+    segments_iter, info = model.transcribe(
         str(wav_path),
         word_timestamps=True,
         vad_filter=True,
     )
 
+    duration = info.duration  # total audio duration in seconds
     segments = []
+    last_reported = 0
+
     for segment in segments_iter:
         if not segment.words:
             continue
@@ -50,6 +57,21 @@ def transcribe_audio_word_level(wav_path: Path, model_name: str) -> list:
             segments.append(
                 {"word": text, "start": float(w.start), "end": float(w.end)}
             )
+
+        # Report progress every 60 seconds of audio processed
+        current_time = segment.end
+        if duration > 0 and current_time - last_reported >= 60:
+            pct = min(100, int(current_time / duration * 100))
+            logger.info(
+                "Transcription progress: %d%% (%d/%ds, %d words so far)",
+                pct, int(current_time), int(duration), len(segments),
+            )
+            if progress_callback:
+                progress_callback(
+                    "Transcribe",
+                    f"{pct}% ({int(current_time)}/{int(duration)}s)",
+                )
+            last_reported = current_time
 
     if not segments:
         raise ValueError("faster-whisper did not return word-level timestamps")

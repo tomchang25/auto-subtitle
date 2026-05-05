@@ -19,4 +19,8 @@ TRANSLATE_SRC_LANG = "eng_Latn"  # NLLB language code
 TRANSLATE_TGT_LANG = "zho_Hant"  # FLORES language code
 
 # Paths
-OUTPUT_DIR = Path.home() / "Documents" / "AutoSubtitle"
+OUTPUT_DIR = Path.home() / "Documents" / "SubForge"
+
+# Demucs output structure
+DEMUCS_MODEL = "htdemucs"
+DEMUCS_VOCALS_FILENAME = "vocals.mp3"

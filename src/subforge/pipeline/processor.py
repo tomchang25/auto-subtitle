@@ -34,7 +34,7 @@ from subforge.config import (
     MAX_WORDS,
     SOFT_LIMIT,
 )
-from subforge.utils import get_bounds_and_text
+from subforge.utils import get_bounds_and_text, save_word_segments
 
 ProgressCallback = Callable[[str, str], None]
 
@@ -58,6 +58,7 @@ class SubtitlePipeline:
         video_quality: str = "1080p",
         translate_method: Optional[str] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        force: bool = False,
     ):
         self.url = url
         self.model_name = model_name or WHISPER_MODEL
@@ -67,6 +68,7 @@ class SubtitlePipeline:
         self.video_quality = video_quality
         self.translate_method = translate_method
         self.progress_callback = progress_callback
+        self.force = force
         self._cancelled = False
         self.project_dir = None
         self.title = None
@@ -129,18 +131,32 @@ class SubtitlePipeline:
             f"Preparing WAV (demucs={'on' if self.use_demucs else 'off'})",
         )
         processed_audio = preprocess_audio(
-            self.audio_path, self.project_dir, use_demucs=self.use_demucs
+            self.audio_path, self.project_dir,
+            use_demucs=self.use_demucs, force=self.force,
         )
         self._check_cancel()
 
-        # Step 4: Transcribe
-        self._emit(
-            "Transcribe",
-            f"model={self.model_name}",
-        )
-        transcribe = _resolve_transcriber()
-        word_segments = transcribe(processed_audio, self.model_name)
-        self._emit("Transcribe", f"{len(word_segments)} words")
+        # Step 4: Transcribe (with checkpoint)
+        word_segments_path = self.project_dir / "word_segments.json"
+        if not self.force and word_segments_path.exists():
+            import json
+            self._emit("Transcribe", "Loading cached word segments")
+            with open(word_segments_path, "r", encoding="utf-8") as f:
+                word_segments = json.load(f)
+            self._emit("Transcribe", f"{len(word_segments)} words (from cache)")
+        else:
+            self._emit(
+                "Transcribe",
+                f"model={self.model_name}",
+            )
+            transcribe = _resolve_transcriber()
+            word_segments = transcribe(
+                processed_audio,
+                self.model_name,
+                progress_callback=self.progress_callback,
+            )
+            save_word_segments(word_segments, word_segments_path)
+            self._emit("Transcribe", f"{len(word_segments)} words (saved checkpoint)")
         self._check_cancel()
 
         # Step 5: NLP sentence splitting

@@ -30,6 +30,12 @@ def parse_args():
         choices=BACKEND_NAMES,
         help="Enable translation and choose backend (default: disabled).",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="Ignore cached results and re-run all steps from scratch.",
+    )
     return parser.parse_args()
 
 
@@ -53,6 +59,7 @@ def main():
         download_mp4=args.download_video,
         video_quality=args.video_quality,
         translate_method=args.translate,
+        force=args.force,
     )
 
     logger = logging.getLogger(__name__)

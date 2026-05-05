@@ -100,7 +100,7 @@ The program will:
 1. Download the audio
 2. Transcribe it (with punctuation from faster-whisper)
 3. Break into aligned subtitle chunks
-4. Export an `.srt` file under `~/Documents/AutoSubtitle/<video title>/output.srt`
+4. Export an `.srt` file under `~/Documents/SubForge/<video title>/output.srt`
 
 ---
 

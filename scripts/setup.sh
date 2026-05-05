@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-click installer for auto-subtitle on macOS / Linux.
+# One-click installer for SubForge on macOS / Linux.
 # Creates a venv, installs the right torch build for the host (CUDA on Linux,
 # MPS on macOS), then installs the base requirements and the spaCy model.
 # Safe to re-run.
@@ -10,7 +10,7 @@ VENV_DIR="venv"
 TORCH_INDEX_LINUX="https://download.pytorch.org/whl/cu124"
 
 echo
-echo "=== auto-subtitle setup ==="
+echo "=== SubForge setup ==="
 echo
 
 if command -v python3 >/dev/null 2>&1; then
@@ -32,19 +32,19 @@ esac
 echo "Detected platform: $PLATFORM ($OS)"
 
 if [ ! -f "$VENV_DIR/bin/activate" ]; then
-    echo "[1/5] Creating virtual environment in $VENV_DIR..."
+    echo "[1/6] Creating virtual environment in $VENV_DIR..."
     "$PYTHON" -m venv "$VENV_DIR"
 else
-    echo "[1/5] Reusing existing virtual environment in $VENV_DIR."
+    echo "[1/6] Reusing existing virtual environment in $VENV_DIR."
 fi
 
 # shellcheck source=/dev/null
 . "$VENV_DIR/bin/activate"
 
-echo "[2/5] Upgrading pip..."
+echo "[2/6] Upgrading pip..."
 python -m pip install --upgrade pip
 
-echo "[3/5] Installing torch + torchaudio..."
+echo "[3/6] Installing torch + torchaudio..."
 if [ "$PLATFORM" = "mac" ]; then
     # macOS wheels ship with MPS support built in; no special index needed.
     pip install torch torchaudio
@@ -57,10 +57,13 @@ else
     pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
 fi
 
-echo "[4/5] Installing base requirements..."
+echo "[4/6] Installing base requirements..."
 pip install -r requirements.txt
 
-echo "[5/5] Downloading spaCy English model..."
+echo "[5/6] Installing subforge (editable)..."
+pip install -e ".[full]"
+
+echo "[6/6] Downloading spaCy English model..."
 python -m spacy download en_core_web_sm
 
 echo
