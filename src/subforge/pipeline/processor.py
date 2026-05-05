@@ -73,9 +73,18 @@ class SubtitlePipeline:
         self.audio_path = None
         self.video_path = None
 
+    _AUDIO_EXTENSIONS = {".mp3", ".wav", ".flac", ".m4a", ".ogg", ".opus", ".wma", ".aac"}
+
     def cancel(self):
         """Request cancellation. The pipeline will stop before the next step."""
         self._cancelled = True
+
+    def _find_existing_audio(self, folder: Path) -> Optional[Path]:
+        """Return the first audio file found directly in *folder*, or None."""
+        for f in sorted(folder.iterdir()):
+            if f.is_file() and f.suffix.lower() in self._AUDIO_EXTENSIONS:
+                return f
+        return None
 
     def _check_cancel(self):
         if self._cancelled:
@@ -101,12 +110,17 @@ class SubtitlePipeline:
         self._emit("Title", f"Project directory: {self.project_dir}")
         self._check_cancel()
 
-        # Step 2: Download audio
-        self._emit("Download", "Downloading audio")
+        # Step 2: Download audio (skip if audio file already exists in folder)
         output_base = self.project_dir / self.title
-        self.audio_path = download_audio(
-            self.url, output_base, format="mp3", force=False
-        )
+        existing_audio = self._find_existing_audio(self.project_dir)
+        if existing_audio:
+            self._emit("Download", f"Skipped (found existing: {existing_audio.name})")
+            self.audio_path = existing_audio
+        else:
+            self._emit("Download", "Downloading audio")
+            self.audio_path = download_audio(
+                self.url, output_base, format="mp3", force=False
+            )
         self._check_cancel()
 
         # Step 3: Preprocess audio

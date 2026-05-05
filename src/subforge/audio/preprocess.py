@@ -19,7 +19,14 @@ def preprocess_audio(audio_path: Path, project_dir: Path, use_demucs=True) -> Pa
     logger.info("Starting on %s", audio_path)
 
     if use_demucs:
-        audio_path = run_demucs(audio_path, project_dir / "demucs_output")
+        demucs_out_dir = project_dir / "demucs_output"
+        # Check if Demucs output already exists
+        expected_vocals = demucs_out_dir / "htdemucs" / "vocals.mp3"
+        if expected_vocals.exists():
+            logger.info("Demucs output already exists, skipping: %s", expected_vocals)
+            audio_path = expected_vocals
+        else:
+            audio_path = run_demucs(audio_path, demucs_out_dir)
 
     # Convert to mono WAV
     mono_output_dir = project_dir / "mono_wav"
