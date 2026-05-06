@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, List, Optional, Protocol
+from typing import Callable, Protocol
 from typing_extensions import TypedDict
 
 ProgressCallback = Callable[[str, str], None]
@@ -21,8 +21,8 @@ class TranslatedChunk(TypedDict):
 class Translator(Protocol):
     def translate(
         self,
-        chunks: List[SubtitleChunk],
+        chunks: list[SubtitleChunk],
         cache_dir: Path | None = None,
         force: bool = False,
-        progress_callback: Optional[ProgressCallback] = None,
-    ) -> List[TranslatedChunk]: ...
+        progress_callback: ProgressCallback | None = None,
+    ) -> list[TranslatedChunk]: ...

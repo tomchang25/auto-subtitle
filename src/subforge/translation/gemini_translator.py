@@ -4,7 +4,7 @@ import logging
 import re
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from subforge.translation.base import ProgressCallback, SubtitleChunk, TranslatedChunk
 
@@ -32,7 +32,7 @@ _NUMBERING_RE = re.compile(r"^\d+[\.\)]\s*")
 _NUMBERED_LINE_RE = re.compile(r"^(\d+)[\.\)]\s*(.*)")
 
 # Delimiters for block-based translation
-_SENTENCE_DELIM = " ||| "       # between sentences within a block
+_SENTENCE_DELIM = " ||| "  # between sentences within a block
 _SENTENCE_DELIM_STRIP = "|||"
 _BLOCK_DELIM = "\n\n===BLOCK===\n\n"  # between blocks
 _BLOCK_DELIM_STRIP = "===BLOCK==="
@@ -47,8 +47,6 @@ BLOCK_TARGET_SIZE = 50
 
 # Minimum timestamp gap (seconds) to consider as a block boundary
 BLOCK_GAP_THRESHOLD = 1.5
-
-
 
 
 def _split_into_blocks(
@@ -124,6 +122,7 @@ class GeminiTranslator:
     def _load(self):
         if self._client is None:
             from google import genai as _genai
+
             self._client = _genai.Client(api_key=self._api_key)
 
     # ------------------------------------------------------------------
@@ -195,7 +194,8 @@ class GeminiTranslator:
         if len(response_blocks) != len(blocks):
             logger.warning(
                 "Block count mismatch: expected %d, got %d",
-                len(blocks), len(response_blocks),
+                len(blocks),
+                len(response_blocks),
             )
             return None
 
@@ -215,7 +215,9 @@ class GeminiTranslator:
                 # Realign this block only
                 logger.info(
                     "Block %d: ||| mismatch (%d vs %d), realigning",
-                    block_idx + 1, len(segments), expected,
+                    block_idx + 1,
+                    len(segments),
+                    expected,
                 )
                 aligned = realign(src_block, segments)
                 all_translations.extend(aligned)
@@ -224,7 +226,8 @@ class GeminiTranslator:
         if blocks_realigned > 0:
             logger.info(
                 "Parsed %d blocks, %d needed realignment",
-                len(blocks), blocks_realigned,
+                len(blocks),
+                blocks_realigned,
             )
         else:
             logger.info("All %d blocks parsed perfectly", len(blocks))
@@ -287,7 +290,9 @@ class GeminiTranslator:
                     response_text = self._call_api(prompt, model)
                     logger.debug(
                         "=== RESPONSE (model=%s, attempt=%d) ===\n%s\n=== END ===",
-                        model, attempt + 1, response_text,
+                        model,
+                        attempt + 1,
+                        response_text,
                     )
 
                     parsed = self._parse_blocked_response(response_text, blocks)
@@ -298,7 +303,8 @@ class GeminiTranslator:
                     best_response = response_text
                     logger.warning(
                         "Block structure mismatch (model=%s, attempt %d/3)",
-                        model, attempt + 1,
+                        model,
+                        attempt + 1,
                     )
 
                 except Exception as exc:
@@ -318,16 +324,20 @@ class GeminiTranslator:
                         )
                         break
                     elif attempt < 2:
-                        wait = 2 ** attempt
+                        wait = 2**attempt
                         logger.warning(
                             "API error (model=%s, attempt %d/3), retrying in %ds: %s",
-                            model, attempt + 1, wait, exc_str,
+                            model,
+                            attempt + 1,
+                            wait,
+                            exc_str,
                         )
                         time.sleep(wait)
                     else:
                         logger.warning(
                             "Model %s failed after 3 attempts, switching: %s",
-                            model, exc_str,
+                            model,
+                            exc_str,
                         )
                         break
 
@@ -347,9 +357,7 @@ class GeminiTranslator:
                 return realign(texts, all_segments)
 
         logger.error("Batch translation failed: all models exhausted")
-        raise RuntimeError(
-            "Translation failed: all models exhausted"
-        ) from last_exc
+        raise RuntimeError("Translation failed: all models exhausted") from last_exc
 
     # ------------------------------------------------------------------
     # Public API -- batched translation
@@ -357,11 +365,11 @@ class GeminiTranslator:
 
     def translate(
         self,
-        chunks: List[SubtitleChunk],
+        chunks: list[SubtitleChunk],
         cache_dir: Path | None = None,
         force: bool = False,
         progress_callback: ProgressCallback | None = None,
-    ) -> List[TranslatedChunk]:
+    ) -> list[TranslatedChunk]:
         """Translate all chunks, splitting into batches for long inputs.
 
         If cache_dir is provided, each batch result is saved/loaded as JSON.
@@ -380,10 +388,12 @@ class GeminiTranslator:
         num_batches = (total + self.batch_size - 1) // self.batch_size
         logger.info(
             "Translation: %d chunks, batch_size=%d, %d batch(es)",
-            total, self.batch_size, num_batches,
+            total,
+            self.batch_size,
+            num_batches,
         )
 
-        all_results: List[TranslatedChunk] = []
+        all_results: list[TranslatedChunk] = []
 
         for batch_idx in range(num_batches):
             start = batch_idx * self.batch_size
@@ -402,7 +412,8 @@ class GeminiTranslator:
                     if len(cached) == len(batch_chunks):
                         logger.info(
                             "Batch %d/%d: loaded from cache",
-                            batch_idx + 1, num_batches,
+                            batch_idx + 1,
+                            num_batches,
                         )
                         all_results.extend(cached)
                         if progress_callback:
@@ -416,13 +427,20 @@ class GeminiTranslator:
                         continue
                     logger.warning(
                         "Batch %d/%d: cache size mismatch (%d vs %d), re-translating",
-                        batch_idx + 1, num_batches, len(cached), len(batch_chunks),
+                        batch_idx + 1,
+                        num_batches,
+                        len(cached),
+                        len(batch_chunks),
                     )
 
             batch_texts = [c["segment"] for c in batch_chunks]
             logger.info(
                 "Batch %d/%d: chunks %d-%d (%d items)",
-                batch_idx + 1, num_batches, start + 1, end, len(batch_texts),
+                batch_idx + 1,
+                num_batches,
+                start + 1,
+                end,
+                len(batch_texts),
             )
 
             translations = self._translate_batch(
@@ -446,7 +464,10 @@ class GeminiTranslator:
             pct = done * 100 // total
             logger.info(
                 "Batch %d/%d complete (%d/%d total)",
-                batch_idx + 1, num_batches, done, total,
+                batch_idx + 1,
+                num_batches,
+                done,
+                total,
             )
             if progress_callback:
                 progress_callback(

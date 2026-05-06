@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List
 
 from subforge.translation.base import ProgressCallback, SubtitleChunk, TranslatedChunk
 
@@ -37,11 +36,11 @@ class NLLBTranslator:
 
     def translate(
         self,
-        chunks: List[SubtitleChunk],
+        chunks: list[SubtitleChunk],
         cache_dir: Path | None = None,
         force: bool = False,
         progress_callback: ProgressCallback | None = None,
-    ) -> List[TranslatedChunk]:
+    ) -> list[TranslatedChunk]:
         self._load()
         import torch
 

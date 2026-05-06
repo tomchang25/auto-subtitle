@@ -3,7 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-SAMPLE_CHUNKS = [
+from subforge.translation.base import SubtitleChunk
+
+SAMPLE_CHUNKS: list[SubtitleChunk] = [
     {"start": 0.0, "end": 1.0, "segment": "Hello world."},
     {"start": 1.0, "end": 2.0, "segment": "How are you?"},
 ]
@@ -11,29 +13,37 @@ SAMPLE_CHUNKS = [
 
 # --- Factory ---
 
+
 def test_factory_unknown_backend():
     from subforge.translation.factory import create_translator
+
     with pytest.raises(ValueError, match="Unknown translation backend"):
         create_translator("nonexistent")
 
 
 def test_factory_known_backends_listed():
     from subforge.translation.factory import BACKEND_NAMES
+
     assert "nllb" in BACKEND_NAMES
 
 
 # --- NLLBTranslator ---
 
+
 def test_nllb_translate_output_shape():
     mock_tf = MagicMock()
     mock_torch = MagicMock()
     mock_torch.cuda.is_available.return_value = False
-    mock_torch.device.return_value = "cpu"
+    mock_device = MagicMock()
+    mock_device.type = "cpu"
+    mock_torch.device.return_value = mock_device
 
     # Mock tokenizer
     mock_tokenizer = MagicMock()
     mock_tokenizer.convert_tokens_to_ids.return_value = 256047  # fake id
-    mock_tokenizer.return_value = MagicMock(to=MagicMock(return_value={"input_ids": None}))
+    mock_tokenizer.return_value = MagicMock(
+        to=MagicMock(return_value={"input_ids": None})
+    )
     mock_tokenizer.batch_decode.return_value = ["你好世界。", "你好嗎？"]
     mock_tf.AutoTokenizer.from_pretrained.return_value = mock_tokenizer
 
@@ -44,6 +54,7 @@ def test_nllb_translate_output_shape():
 
     with patch.dict(sys.modules, {"transformers": mock_tf, "torch": mock_torch}):
         from subforge.translation.nllb_translator import NLLBTranslator
+
         t = NLLBTranslator()
         result = t.translate(SAMPLE_CHUNKS)
 
@@ -55,9 +66,13 @@ def test_nllb_translate_output_shape():
 
 # --- formatter bilingual support ---
 
+
 def test_format_srt_bilingual():
     from subforge.subtitle.formatter import format_srt
-    segments = [{"start": 0.16, "end": 2.0, "segment": "Hello.", "translation": "你好。"}]
+
+    segments = [
+        {"start": 0.16, "end": 2.0, "segment": "Hello.", "translation": "你好。"}
+    ]
     output = format_srt(segments)
     assert "Hello." in output
     assert "你好。" in output
@@ -65,6 +80,7 @@ def test_format_srt_bilingual():
 
 def test_format_srt_monolingual_unchanged():
     from subforge.subtitle.formatter import format_srt
+
     segments = [{"start": 0.0, "end": 1.0, "segment": "Hello."}]
     output = format_srt(segments)
     non_empty = [line for line in output.strip().splitlines() if line.strip()]
@@ -74,6 +90,7 @@ def test_format_srt_monolingual_unchanged():
 
 def test_format_srt_empty_translation_ignored():
     from subforge.subtitle.formatter import format_srt
+
     segments = [{"start": 0.0, "end": 1.0, "segment": "Hello.", "translation": ""}]
     output = format_srt(segments)
     non_empty = [line for line in output.strip().splitlines() if line.strip()]

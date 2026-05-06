@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import Protocol, List, Dict
+from typing import Protocol
 
 
-WordSegment = Dict[str, object]
+WordSegment = dict[str, object]
 
 
 class WordLevelTranscriber(Protocol):
@@ -16,4 +16,4 @@ class WordLevelTranscriber(Protocol):
     Timestamps are seconds from the start of the audio.
     """
 
-    def __call__(self, wav_path: Path, model_name: str) -> List[WordSegment]: ...
+    def __call__(self, wav_path: Path, model_name: str) -> list[WordSegment]: ...

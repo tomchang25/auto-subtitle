@@ -2,7 +2,7 @@ import hashlib
 import logging
 import shutil
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -66,17 +66,17 @@ class SubtitlePipeline:
     def __init__(
         self,
         url: str = "",
-        model_name: Optional[str] = None,
+        model_name: str | None = None,
         output_dir: Path = OUTPUT_DIR,
         use_demucs: bool = True,
         use_punctuation: bool = USE_LLM_PUNCTUATION,
         download_mp4: bool = False,
         video_quality: str = "1080p",
-        translate_method: Optional[str] = None,
+        translate_method: str | None = None,
         target_lang: str = TRANSLATE_TGT_LANG,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: ProgressCallback | None = None,
         force: bool = False,
-        local_file: Optional[str] = None,
+        local_file: str | None = None,
     ):
         self.url = url
         self.local_file = Path(local_file) if local_file else None
@@ -125,7 +125,7 @@ class SubtitlePipeline:
         """Request cancellation. The pipeline will stop before the next step."""
         self._cancelled = True
 
-    def _find_existing_audio(self, folder: Path) -> Optional[Path]:
+    def _find_existing_audio(self, folder: Path) -> Path | None:
         """Return the first audio file found directly in *folder*, or None."""
         for f in sorted(folder.iterdir()):
             if f.is_file() and f.suffix.lower() in self._AUDIO_EXTENSIONS:
