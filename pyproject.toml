@@ -21,6 +21,7 @@ full = [
 ]
 gemini = ["google-genai>=1.0", "python-dotenv>=1.0"]
 funasr = ["funasr"]
+fireredasr = ["fireredasr"]
 dev = ["pytest", "ruff"]
 
 [project.scripts]
