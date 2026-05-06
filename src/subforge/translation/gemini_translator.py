@@ -28,20 +28,31 @@ LANG_MAP: dict[str, str] = {
     "eng_Latn": "English",
 }
 
-# Matches "1. text" or "1) text" — captures the number and the rest
+# Matches "1. text" or "1) text" -- captures the number and the rest
 _NUMBERING_RE = re.compile(r"^\d+[\.\)]\s*")
 _NUMBERED_LINE_RE = re.compile(r"^(\d+)[\.\)]\s*(.*)")
 
+# Delimiters for block-based translation
+_SENTENCE_DELIM = " ||| "       # between sentences within a block
+_SENTENCE_DELIM_STRIP = "|||"
+_BLOCK_DELIM = "\n\n===BLOCK===\n\n"  # between blocks
+_BLOCK_DELIM_STRIP = "===BLOCK==="
+
 MODEL_FALLBACK: list[str] = [
     "gemini-3.1-flash-lite-preview",  # 500 RPD
-    "gemini-3-flash-preview",  # 20  RPD
-    "gemini-2.5-flash-lite",  # 20  RPD
-    "gemini-2.5-flash",  # 20  RPD
+    "gemini-3-flash-preview",         # 20  RPD
+    "gemini-2.5-flash-lite",          # 20  RPD
+    "gemini-2.5-flash",               # 20  RPD
 ]
 
-# Max chunks per API request — keeps output within token limits
-# Gemini flash-lite handles ~1500 lines reliably; 500 is a safe middle ground
-BATCH_SIZE = 300
+# Max chunks per API request
+BATCH_SIZE = 500
+
+# Target block size (sentences per block). Blocks are split at timestamp gaps.
+BLOCK_TARGET_SIZE = 50
+
+# Minimum timestamp gap (seconds) to consider as a block boundary
+BLOCK_GAP_THRESHOLD = 1.5
 
 
 def _resolve_api_key(explicit: str | None) -> str:
@@ -63,6 +74,58 @@ def _resolve_api_key(explicit: str | None) -> str:
         "Gemini API key not found. Provide it via the api_key parameter, "
         "the GEMINI_API_KEY environment variable, or a .env file."
     )
+
+
+def _split_into_blocks(
+    chunks: list[SubtitleChunk],
+    target_size: int = BLOCK_TARGET_SIZE,
+    gap_threshold: float = BLOCK_GAP_THRESHOLD,
+) -> list[list[int]]:
+    """Split chunk indices into blocks based on timestamp gaps.
+
+    Returns list of blocks, where each block is a list of chunk indices.
+    Prefers splitting at large timestamp gaps; falls back to target_size.
+    """
+    if not chunks:
+        return []
+
+    n = len(chunks)
+    if n <= target_size:
+        return [list(range(n))]
+
+    # Find all gaps between consecutive chunks
+    gaps: list[tuple[float, int]] = []  # (gap_seconds, index_after_gap)
+    for i in range(1, n):
+        gap = chunks[i]["start"] - chunks[i - 1]["end"]
+        if gap >= gap_threshold:
+            gaps.append((gap, i))
+
+    # Sort gaps by size (largest first) to pick best split points
+    gaps.sort(reverse=True)
+
+    # Pick split points: want blocks of roughly target_size
+    num_blocks_wanted = max(1, n // target_size)
+    split_points = sorted(set(g[1] for g in gaps[: num_blocks_wanted - 1]))
+
+    # If not enough natural gaps, add evenly-spaced splits
+    if len(split_points) < num_blocks_wanted - 1:
+        even_splits = set()
+        for i in range(1, num_blocks_wanted):
+            pos = i * n // num_blocks_wanted
+            even_splits.add(pos)
+        split_points = sorted(set(split_points) | even_splits)
+
+    # Build blocks from split points
+    blocks = []
+    prev = 0
+    for sp in split_points:
+        if sp > prev:
+            blocks.append(list(range(prev, sp)))
+            prev = sp
+    if prev < n:
+        blocks.append(list(range(prev, n)))
+
+    return blocks
 
 
 class GeminiTranslator:
@@ -93,43 +156,106 @@ class GeminiTranslator:
     # Prompt / parse helpers
     # ------------------------------------------------------------------
 
-    def _build_prompt(self, texts: list[str], src_name: str, tgt_name: str) -> str:
-        n = len(texts)
-        numbered = "\n".join(f"{i + 1}. {t}" for i, t in enumerate(texts))
+    def _build_prompt_blocked(
+        self, blocks: list[list[str]], src_name: str, tgt_name: str
+    ) -> str:
+        """Build a prompt with block structure.
+
+        Each block's sentences are joined by |||.
+        Blocks are separated by ===BLOCK===.
+        """
+        num_blocks = len(blocks)
+        total_sentences = sum(len(b) for b in blocks)
+
+        block_strs = []
+        for block in blocks:
+            block_strs.append(_SENTENCE_DELIM.join(block))
+
+        joined = _BLOCK_DELIM.join(block_strs)
+
         return (
             f"You are a professional subtitle translator.\n"
-            f"Translate the following {n} {src_name} subtitles into {tgt_name}.\n"
+            f"Translate the following {src_name} subtitles into {tgt_name}.\n"
+            f"The text is organized into {num_blocks} blocks separated by ===BLOCK===.\n"
+            f"Within each block, sentences are separated by ||| delimiters.\n\n"
             f"Rules:\n"
-            f"- Output EXACTLY {n} lines, numbered 1 to {n}\n"
-            f"- One translation per line — do NOT merge or split lines\n"
-            f"- Even if a line is very short or seems incomplete, translate it as-is on its own line\n"
+            f"- Preserve ALL ===BLOCK=== separators (exactly {num_blocks - 1})\n"
+            f"- Within each block, preserve ALL ||| delimiters\n"
+            f"- Do NOT add or remove any ===BLOCK=== or ||| delimiter\n"
+            f"- Translate each sentence between ||| independently\n"
+            f"- Even very short segments (single words) must be translated as-is\n"
             f"- Keep translations concise (suitable for subtitles)\n"
-            f"- Output ONLY the numbered translations, no explanations\n\n"
-            f"{numbered}"
+            f"- Output ONLY the translated text with all delimiters preserved\n\n"
+            f"{joined}"
         )
 
-    def _parse_response_strict(self, text: str, expected: int) -> list[str] | None:
-        """Parse response expecting exact count match (fast path)."""
-        lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
-        translations = [
-            _NUMBERING_RE.sub("", line) for line in lines if _NUMBERING_RE.match(line)
-        ]
-        return translations if len(translations) == expected else None
+    def _parse_blocked_response(
+        self, text: str, blocks: list[list[str]]
+    ) -> list[str] | None:
+        """Parse a block-structured response.
 
-    def _parse_response_by_number(self, text: str, expected: int) -> list[str]:
-        """Parse response by matching line numbers, filling gaps with empty strings."""
-        result = [""] * expected
-        matched = 0
-        for line in text.strip().splitlines():
-            m = _NUMBERED_LINE_RE.match(line.strip())
-            if not m:
-                continue
-            idx = int(m.group(1)) - 1  # 0-based
-            if 0 <= idx < expected:
-                result[idx] = m.group(2).strip()
-                matched += 1
-        logger.info("Number-based parse: matched %d/%d lines", matched, expected)
-        return result
+        Returns flat list of translations if ALL blocks have correct count.
+        Returns None only if block-level structure is wrong.
+        If individual blocks have wrong ||| count, realigns per-block.
+        """
+        from subforge.translation.aligner import realign
+
+        cleaned = text.strip()
+        # Strip markdown fences if present
+        if cleaned.startswith("```"):
+            lines = cleaned.splitlines()
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            cleaned = "\n".join(lines).strip()
+
+        # Split into blocks
+        response_blocks = cleaned.split(_BLOCK_DELIM_STRIP)
+        response_blocks = [b.strip() for b in response_blocks]
+
+        # Remove empty trailing blocks
+        while response_blocks and not response_blocks[-1]:
+            response_blocks.pop()
+
+        if len(response_blocks) != len(blocks):
+            logger.warning(
+                "Block count mismatch: expected %d, got %d",
+                len(blocks), len(response_blocks),
+            )
+            return None
+
+        # Parse each block individually
+        all_translations: list[str] = []
+        blocks_realigned = 0
+
+        for block_idx, (src_block, resp_block) in enumerate(
+            zip(blocks, response_blocks)
+        ):
+            expected = len(src_block)
+            segments = [s.strip() for s in resp_block.split(_SENTENCE_DELIM_STRIP)]
+
+            if len(segments) == expected:
+                all_translations.extend(segments)
+            else:
+                # Realign this block only
+                logger.info(
+                    "Block %d: ||| mismatch (%d vs %d), realigning",
+                    block_idx + 1, len(segments), expected,
+                )
+                aligned = realign(src_block, segments)
+                all_translations.extend(aligned)
+                blocks_realigned += 1
+
+        if blocks_realigned > 0:
+            logger.info(
+                "Parsed %d blocks, %d needed realignment",
+                len(blocks), blocks_realigned,
+            )
+        else:
+            logger.info("All %d blocks parsed perfectly", len(blocks))
+
+        return all_translations
 
     def _call_api(self, prompt: str, model: str) -> str:
         """Call Gemini API with specified model and return the response text."""
@@ -147,75 +273,64 @@ class GeminiTranslator:
     # ------------------------------------------------------------------
 
     def _translate_batch(
-        self, texts: list[str], src_name: str, tgt_name: str
+        self,
+        texts: list[str],
+        chunks: list[SubtitleChunk],
+        src_name: str,
+        tgt_name: str,
     ) -> list[str]:
-        """Translate a single batch of texts. Returns list of translations."""
-        prompt = self._build_prompt(texts, src_name, tgt_name)
+        """Translate a single batch using block-based approach.
+
+        Splits texts into blocks based on timestamp gaps, sends as one API call,
+        and realigns per-block if needed.
+        """
+        from subforge.translation.aligner import realign
+
+        # Split into blocks based on timestamps
+        block_indices = _split_into_blocks(chunks)
+        blocks: list[list[str]] = [[texts[i] for i in bi] for bi in block_indices]
+
+        logger.info(
+            "Batch: %d sentences -> %d blocks (sizes: %s)",
+            len(texts),
+            len(blocks),
+            [len(b) for b in blocks],
+        )
+
+        prompt = self._build_prompt_blocked(blocks, src_name, tgt_name)
         logger.debug("=== PROMPT START ===\n%s\n=== PROMPT END ===", prompt)
 
         last_exc: Exception | None = None
+        best_response: str | None = None
 
         for model_idx, model in enumerate(self._models):
             logger.info(
                 "Trying model: %s (%d/%d)", model, model_idx + 1, len(self._models)
             )
 
-            best_response: str | None = None
-            best_match_count: int = 0
-
             for attempt in range(3):
                 try:
                     response_text = self._call_api(prompt, model)
                     logger.debug(
-                        "=== RESPONSE START (model=%s, attempt=%d) ===\n%s\n=== RESPONSE END ===",
+                        "=== RESPONSE (model=%s, attempt=%d) ===\n%s\n=== END ===",
                         model, attempt + 1, response_text,
                     )
 
-                    # Fast path: exact count match
-                    parsed = self._parse_response_strict(response_text, len(texts))
+                    parsed = self._parse_blocked_response(response_text, blocks)
                     if parsed is not None:
                         return parsed
 
-                    # Count mismatch — log details
-                    response_lines = [
-                        line.strip()
-                        for line in response_text.strip().splitlines()
-                        if line.strip()
-                    ]
-                    numbered_lines = [
-                        l for l in response_lines if _NUMBERING_RE.match(l)
-                    ]
+                    # Block-level mismatch -- save for fallback realign
+                    best_response = response_text
                     logger.warning(
-                        "Response count mismatch: expected %d, got %d numbered lines "
-                        "(total lines: %d, model=%s, attempt %d/3)",
-                        len(texts), len(numbered_lines), len(response_lines),
+                        "Block structure mismatch (model=%s, attempt %d/3)",
                         model, attempt + 1,
                     )
-                    if numbered_lines:
-                        preview = (
-                            numbered_lines[:3]
-                            + (["..."] if len(numbered_lines) > 6 else [])
-                            + numbered_lines[-3:]
-                        )
-                        logger.info(
-                            "Response preview:\n  %s", "\n  ".join(preview)
-                        )
-
-                    # Track best response across retries
-                    if len(numbered_lines) > best_match_count:
-                        best_match_count = len(numbered_lines)
-                        best_response = response_text
 
                 except Exception as exc:
                     last_exc = exc
                     exc_str = str(exc)
                     is_rate_limit = "429" in exc_str or "quota" in exc_str.lower()
-
-                    error_code = None
-                    code_match = re.search(r"\b([45]\d{2})\b", exc_str)
-                    if code_match:
-                        error_code = code_match.group(1)
-
                     is_unavailable = "503" in exc_str or "UNAVAILABLE" in exc_str
 
                     if is_rate_limit or is_unavailable:
@@ -225,37 +340,37 @@ class GeminiTranslator:
                             else "unavailable (high demand)"
                         )
                         logger.warning(
-                            "Model %s %s (code=%s), switching to next model: %s",
-                            model, reason, error_code or "unknown", exc_str,
+                            "Model %s %s, switching: %s", model, reason, exc_str
                         )
-                        break  # → next model immediately
+                        break
                     elif attempt < 2:
-                        wait = 2**attempt
+                        wait = 2 ** attempt
                         logger.warning(
-                            "API error (model=%s, attempt %d/3, code=%s), retrying in %ds: %s",
-                            model, attempt + 1, error_code or "unknown", wait, exc_str,
+                            "API error (model=%s, attempt %d/3), retrying in %ds: %s",
+                            model, attempt + 1, wait, exc_str,
                         )
                         time.sleep(wait)
                     else:
                         logger.warning(
-                            "Model %s failed after 3 attempts (code=%s), switching: %s",
-                            model, error_code or "unknown", exc_str,
+                            "Model %s failed after 3 attempts, switching: %s",
+                            model, exc_str,
                         )
-                        break  # → next model
+                        break
 
-            # After retries: fall back to number-based parse of best response
-            if best_response is not None:
-                logger.warning(
-                    "Using best response (%d/%d lines) with number-based alignment",
-                    best_match_count, len(texts),
-                )
-                translations = self._parse_response_by_number(
-                    best_response, len(texts)
-                )
-                missing = [i + 1 for i, t in enumerate(translations) if not t]
-                if missing:
-                    logger.warning("Missing translations for lines: %s", missing)
-                return translations
+        # Fallback: if we have any response, do a full realign
+        if best_response is not None:
+            logger.warning("All block-parse attempts failed, doing full realign")
+            # Extract whatever segments we can from the response
+            cleaned = best_response.strip()
+            # Try to split by any delimiter present
+            all_segments = []
+            for block_text in cleaned.split(_BLOCK_DELIM_STRIP):
+                for seg in block_text.split(_SENTENCE_DELIM_STRIP):
+                    seg = seg.strip()
+                    if seg:
+                        all_segments.append(seg)
+            if all_segments:
+                return realign(texts, all_segments)
 
         logger.error("Batch translation failed: all models exhausted")
         raise RuntimeError(
@@ -263,7 +378,7 @@ class GeminiTranslator:
         ) from last_exc
 
     # ------------------------------------------------------------------
-    # Public API — batched translation
+    # Public API -- batched translation
     # ------------------------------------------------------------------
 
     def translate(
@@ -307,11 +422,13 @@ class GeminiTranslator:
                 batch_cache = cache_dir / f"batch_{batch_idx:03d}.json"
                 if not force and batch_cache.exists():
                     import json
+
                     with open(batch_cache, "r", encoding="utf-8") as f:
                         cached = json.load(f)
                     if len(cached) == len(batch_chunks):
                         logger.info(
-                            "Batch %d/%d: loaded from cache", batch_idx + 1, num_batches
+                            "Batch %d/%d: loaded from cache",
+                            batch_idx + 1, num_batches,
                         )
                         all_results.extend(cached)
                         if progress_callback:
@@ -319,7 +436,8 @@ class GeminiTranslator:
                             pct = done * 100 // total
                             progress_callback(
                                 "Translate",
-                                f"{pct}% ({done}/{total} chunks, batch {batch_idx + 1}/{num_batches} cached)",
+                                f"{pct}% ({done}/{total} chunks, "
+                                f"batch {batch_idx + 1}/{num_batches} cached)",
                             )
                         continue
                     logger.warning(
@@ -329,13 +447,15 @@ class GeminiTranslator:
 
             batch_texts = [c["segment"] for c in batch_chunks]
             logger.info(
-                "Batch %d/%d: chunks %d–%d (%d items)",
+                "Batch %d/%d: chunks %d-%d (%d items)",
                 batch_idx + 1, num_batches, start + 1, end, len(batch_texts),
             )
 
-            translations = self._translate_batch(batch_texts, src_name, tgt_name)
+            translations = self._translate_batch(
+                batch_texts, batch_chunks, src_name, tgt_name
+            )
 
-            batch_results = [
+            batch_results: list[TranslatedChunk] = [
                 {**chunk, "translation": t}
                 for chunk, t in zip(batch_chunks, translations)
             ]
@@ -344,6 +464,7 @@ class GeminiTranslator:
             # Save batch cache
             if batch_cache is not None:
                 import json
+
                 with open(batch_cache, "w", encoding="utf-8") as f:
                     json.dump(batch_results, f, ensure_ascii=False, indent=2)
 
@@ -356,7 +477,8 @@ class GeminiTranslator:
             if progress_callback:
                 progress_callback(
                     "Translate",
-                    f"{pct}% ({done}/{total} chunks, batch {batch_idx + 1}/{num_batches})",
+                    f"{pct}% ({done}/{total} chunks, "
+                    f"batch {batch_idx + 1}/{num_batches})",
                 )
 
         return all_results

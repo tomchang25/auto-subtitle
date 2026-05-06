@@ -4,13 +4,14 @@ import logging
 
 def parse_args():
     from subforge.translation.factory import BACKEND_NAMES
+    from subforge.config import WHISPER_MODEL
 
     parser = argparse.ArgumentParser(description="Generate subtitles from a YouTube URL.")
     parser.add_argument("--url", help="YouTube URL (prompted if omitted).")
     parser.add_argument(
         "--model",
         default=None,
-        help="Whisper model name (default: %(default)s).",
+        help=f"Whisper model name (default: {WHISPER_MODEL}).",
     )
     parser.add_argument(
         "--download-video",
