@@ -1,8 +1,10 @@
 import logging
+import subprocess
 import sys
+import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot, QUrl, QMimeData, Qt
+from PySide6.QtCore import QObject, QThread, Signal, Slot, QUrl, QMimeData
 from PySide6.QtGui import QDesktopServices, QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
     QApplication,
@@ -15,6 +17,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPlainTextEdit,
+    QProgressDialog,
     QPushButton,
     QStackedWidget,
     QVBoxLayout,
@@ -23,23 +26,49 @@ from PySide6.QtWidgets import (
 
 from subforge.config import (
     DEFAULT_URL,
-    WHISPER_MODEL,
+    MODEL_TIER,
+    MODEL_TIERS,
+    SOURCE_LANGUAGES,
     OUTPUT_DIR,
     TARGET_LANGUAGES,
     TRANSLATE_TGT_LANG,
+    ASR_BACKEND,
+    ASR_SOURCE_LANGUAGE,
 )
 from subforge.pipeline.processor import SubtitlePipeline, PipelineCancelled
-from subforge.transcription.faster_whisper_transcriber import (
-    SUPPORTED_MODELS as WHISPER_MODELS,
-)
+from subforge.transcription.factory import BACKEND_NAMES as ASR_BACKEND_NAMES
 from subforge.translation.factory import BACKEND_NAMES
+
+
+class _DepInstaller(QObject):
+    """Runs ``pip install <package>`` in a background thread."""
+
+    finished = Signal(bool, str)  # (success, output)
+
+    def __init__(self, pip_pkg: str):
+        super().__init__()
+        self.pip_pkg = pip_pkg
+
+    @Slot()
+    def run(self):
+        cmd = [sys.executable, "-m", "pip", "install", self.pip_pkg]
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=600,
+            )
+            ok = result.returncode == 0
+            output = result.stdout if ok else result.stderr
+            self.finished.emit(ok, output)
+        except Exception as exc:
+            self.finished.emit(False, str(exc))
 
 
 class PipelineWorker(QObject):
     progress = Signal(str, str)
-    finished = Signal(str, str)  # srt_path, video_path (or empty)
+    finished = Signal(str, str, str)  # srt_path, video_path, fallback_from (or empty)
     failed = Signal(str)
     cancelled = Signal()
+    install_prompt = Signal(str, str, str)  # (backend, extra, pip_pkg) — ask UI to install
 
     def __init__(
         self,
@@ -53,6 +82,8 @@ class PipelineWorker(QObject):
         target_lang: str = TRANSLATE_TGT_LANG,
         force: bool = False,
         local_file: str | None = None,
+        asr_backend: str = ASR_BACKEND,
+        source_language: str = ASR_SOURCE_LANGUAGE,
     ):
         super().__init__()
         self.url = url
@@ -65,12 +96,30 @@ class PipelineWorker(QObject):
         self.target_lang = target_lang
         self.force = force
         self.local_file = local_file
+        self.asr_backend = asr_backend
+        self.source_language = source_language
         self._pipeline: SubtitlePipeline | None = None
+        # Used to pause the worker thread while the UI handles installation
+        self._install_event = threading.Event()
+        self._install_ok = False
 
     def cancel(self):
         """Request pipeline cancellation (thread-safe: sets an atomic bool)."""
         if self._pipeline is not None:
             self._pipeline.cancel()
+
+    def _handle_missing_backend(self, backend: str, extra: str, pip_pkg: str) -> bool:
+        """Called from the worker thread — blocks until the UI responds."""
+        self._install_event.clear()
+        self._install_ok = False
+        self.install_prompt.emit(backend, extra, pip_pkg)
+        self._install_event.wait()  # blocks worker thread
+        return self._install_ok
+
+    def resolve_install(self, success: bool):
+        """Called from the main thread to unblock the worker."""
+        self._install_ok = success
+        self._install_event.set()
 
     @Slot()
     def run(self):
@@ -88,12 +137,16 @@ class PipelineWorker(QObject):
                 progress_callback=lambda step, detail: self.progress.emit(step, detail),
                 force=self.force,
                 local_file=self.local_file,
+                asr_backend=self.asr_backend,
+                source_language=self.source_language,
+                missing_backend_handler=self._handle_missing_backend,
             )
             srt_path = self._pipeline.run()
             video_path = (
                 str(self._pipeline.video_path) if self._pipeline.video_path else ""
             )
-            self.finished.emit(str(srt_path), video_path)
+            fallback_from = self._pipeline.fallback_from or ""
+            self.finished.emit(str(srt_path), video_path, fallback_from)
         except PipelineCancelled:
             self.cancelled.emit()
         except Exception as exc:
@@ -173,12 +226,26 @@ class MainWindow(QMainWindow):
 
         # Settings row
         settings_row = QHBoxLayout()
+
+        settings_row.addWidget(QLabel("ASR:"))
+        self.asr_backend_combo = QComboBox()
+        self.asr_backend_combo.addItems(ASR_BACKEND_NAMES)
+        self.asr_backend_combo.setCurrentText(ASR_BACKEND)
+        settings_row.addWidget(self.asr_backend_combo)
+
+        self.source_lang_combo = QComboBox()
+        for display, code in SOURCE_LANGUAGES.items():
+            self.source_lang_combo.addItem(display, userData=code)
+        self.source_lang_combo.setToolTip("Source language (used to route the ASR backend)")
+        settings_row.addWidget(self.source_lang_combo)
+
         settings_row.addWidget(QLabel("Model:"))
         self.model_combo = QComboBox()
-        self.model_combo.addItems(WHISPER_MODELS)
-        whisper_idx = self.model_combo.findText(WHISPER_MODEL)
-        if whisper_idx >= 0:
-            self.model_combo.setCurrentIndex(whisper_idx)
+        self.model_combo.addItems(MODEL_TIERS)
+        tier_idx = self.model_combo.findText(MODEL_TIER)
+        if tier_idx >= 0:
+            self.model_combo.setCurrentIndex(tier_idx)
+        self.model_combo.setToolTip("Abstract model size (large / medium / small)")
         settings_row.addWidget(self.model_combo)
 
         self.demucs_check = QCheckBox("Use Demucs")
@@ -363,6 +430,8 @@ class MainWindow(QMainWindow):
             url = self.url_input.text().strip() or DEFAULT_URL
 
         model_name = self.model_combo.currentText()
+        asr_backend = self.asr_backend_combo.currentText()
+        source_language = self.source_lang_combo.currentData() or ASR_SOURCE_LANGUAGE
 
         self.start_button.setEnabled(False)
         self.cancel_button.setEnabled(True)
@@ -374,7 +443,7 @@ class MainWindow(QMainWindow):
             self._append_log(f"Starting: {Path(local_file).name} (local file)")
         else:
             self._append_log(f"Starting: {url}")
-        self._append_log(f"Model: {model_name}")
+        self._append_log(f"ASR: {asr_backend}, Model: {model_name}")
 
         translate_text = self.translate_combo.currentText()
         target_lang = self.target_lang_combo.currentData() or TRANSLATE_TGT_LANG
@@ -390,6 +459,8 @@ class MainWindow(QMainWindow):
             target_lang=target_lang,
             force=self.force_check.isChecked(),
             local_file=local_file,
+            asr_backend=asr_backend,
+            source_language=source_language,
         )
         thread = self._thread
         worker = self._worker
@@ -399,7 +470,8 @@ class MainWindow(QMainWindow):
         worker.finished.connect(self._on_finished)
         worker.failed.connect(self._on_failed)
         worker.cancelled.connect(self._on_cancelled)
-        worker.finished.connect(lambda *_: thread.quit())
+        worker.install_prompt.connect(self._on_install_prompt)
+        worker.finished.connect(lambda *_a: thread.quit())
         worker.failed.connect(thread.quit)
         worker.cancelled.connect(thread.quit)
         thread.finished.connect(self._cleanup_thread)
@@ -412,8 +484,8 @@ class MainWindow(QMainWindow):
         else:
             self._append_log(f"[{step}]")
 
-    @Slot(str, str)
-    def _on_finished(self, srt_path: str, video_path: str):
+    @Slot(str, str, str)
+    def _on_finished(self, srt_path: str, video_path: str, fallback_from: str):
         self._last_srt = Path(srt_path)
         result_text = f"SRT: {srt_path}"
         if video_path:
@@ -428,6 +500,62 @@ class MainWindow(QMainWindow):
         self.result_label.setText("Failed.")
         self._append_log(f"ERROR: {message}")
         QMessageBox.critical(self, "Pipeline failed", message)
+
+    # ------------------------------------------------------------------
+    # On-demand dependency installation (mid-pipeline)
+    # ------------------------------------------------------------------
+
+    @Slot(str, str, str)
+    def _on_install_prompt(self, backend: str, extra: str, pip_pkg: str):
+        """Worker thread is paused — ask the user whether to install."""
+        reply = QMessageBox.question(
+            self,
+            "Missing backend",
+            f"'{backend}' is required but not installed.\n\n"
+            f"Install it now?  (pip install {pip_pkg})\n\n"
+            f"If you choose No, whisper will be used instead.",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            self._install_pkg_and_resume(pip_pkg)
+        else:
+            self._append_log(f"Skipped {backend} installation — using whisper.")
+            self._worker.resolve_install(False)
+
+    def _install_pkg_and_resume(self, pip_pkg: str):
+        self._append_log(f"Installing {pip_pkg} …")
+
+        self._install_progress = QProgressDialog(
+            f"Installing {pip_pkg}…\nThis may take a few minutes.",
+            None,  # no cancel button
+            0, 0,  # indeterminate
+            self,
+        )
+        self._install_progress.setWindowTitle("Installing dependency")
+        self._install_progress.setMinimumDuration(0)
+        self._install_progress.show()
+
+        self._dep_thread = QThread(self)
+        self._dep_worker = _DepInstaller(pip_pkg)
+        self._dep_worker.moveToThread(self._dep_thread)
+        self._dep_thread.started.connect(self._dep_worker.run)
+        self._dep_worker.finished.connect(self._on_install_finished)
+        self._dep_worker.finished.connect(self._dep_thread.quit)
+        self._dep_thread.finished.connect(self._dep_thread.deleteLater)
+        self._dep_thread.start()
+
+    @Slot(bool, str)
+    def _on_install_finished(self, success: bool, output: str):
+        self._install_progress.close()
+        self._install_progress = None
+
+        if success:
+            self._append_log("Installation successful — resuming pipeline.")
+        else:
+            self._append_log(f"Installation failed — falling back to whisper.\n{output}")
+
+        # Unblock the worker thread so the pipeline continues
+        self._worker.resolve_install(success)
 
     @Slot()
     def _on_cancel(self):

@@ -16,14 +16,44 @@ SUPPORTED_MODELS = (
     "distil-large-v3",
 )
 
+DEFAULT_MODEL = "large-v3-turbo"
+
 _loaded_models = {}
 
 
 def load_model(model_name: str) -> WhisperModel:
+    if model_name not in SUPPORTED_MODELS:
+        logger.warning(
+            "faster-whisper: unrecognized model %r, falling back to %r",
+            model_name,
+            DEFAULT_MODEL,
+        )
+        model_name = DEFAULT_MODEL
     if model_name not in _loaded_models:
         logger.info("Loading faster-whisper model: %s", model_name)
         _loaded_models[model_name] = WhisperModel(model_name)
     return _loaded_models[model_name]
+
+
+def detect_language(wav_path: Path, model_name: str = DEFAULT_MODEL) -> tuple[str, float]:
+    """Fast language detection using Whisper on the first ~30 s of audio.
+
+    Returns (iso_639_1_code, probability). The segment iterator from
+    model.transcribe() is intentionally not consumed — language detection is
+    performed eagerly before any segments are emitted.
+    """
+    if not wav_path.exists():
+        raise FileNotFoundError(f"Audio file does not exist: {wav_path}")
+    model = load_model(model_name)
+    _segments_iter, info = model.transcribe(
+        str(wav_path),
+        beam_size=1,
+        vad_filter=False,
+    )
+    lang = info.language
+    prob = info.language_probability
+    logger.info("Language detection: %s (probability %.2f)", lang, prob)
+    return lang, prob
 
 
 def transcribe_audio_word_level(

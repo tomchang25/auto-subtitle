@@ -1,6 +1,5 @@
 import hashlib
 import logging
-import shutil
 from pathlib import Path
 from typing import Callable
 
@@ -32,36 +31,32 @@ from subforge.nlp.segmentation import split_long_sentences_by_length, merge_shor
 from subforge.subtitle.writer import write_srt
 
 from subforge.config import (
-    WHISPER_MODEL,
+    MODEL_TIER,
+    WHISPER_TIER_MAP,
     OUTPUT_DIR,
     MAX_GAP,
     MIN_DURATION,
     BREATH_GAP,
     MIN_WORDS_FOR_BREATH_SPLIT,
-    SEG_MIN_WORDS,
-    SEG_SOFT_WORDS,
-    SEG_HARD_WORDS,
     SEG_PAUSE_THRESHOLD,
-    MERGE_MAX_WORDS,
     MERGE_MAX_DURATION,
     MERGE_MAX_GAP,
     USE_LLM_PUNCTUATION,
     TRANSLATE_TGT_LANG,
     TRANSLATE_SRC_LANG,
     TARGET_LANG_SHORT,
+    ASR_BACKEND,
+    ASR_SOURCE_LANGUAGE,
 )
-from subforge.nlp.lang_profile import LanguageProfile, get_profile, DEFAULT as DEFAULT_PROFILE
+from subforge.nlp.lang_profile import get_profile
 from subforge.utils import get_bounds_and_text, save_word_segments
 
 ProgressCallback = Callable[[str, str], None]
 
 
-def _resolve_transcriber():
-    from subforge.transcription.faster_whisper_transcriber import (
-        transcribe_audio_word_level,
-    )
-
-    return transcribe_audio_word_level
+def _resolve_transcriber(backend: str, source_language: str):
+    from subforge.transcription.factory import get_transcriber
+    return get_transcriber(backend, source_language)  # (fn, actual_backend)
 
 
 class SubtitlePipeline:
@@ -79,10 +74,13 @@ class SubtitlePipeline:
         progress_callback: ProgressCallback | None = None,
         force: bool = False,
         local_file: str | None = None,
+        asr_backend: str = ASR_BACKEND,
+        source_language: str = ASR_SOURCE_LANGUAGE,
+        missing_backend_handler: Callable[[str, str, str], bool] | None = None,
     ):
         self.url = url
         self.local_file = Path(local_file) if local_file else None
-        self.model_name = model_name or WHISPER_MODEL
+        self.model_name = model_name or MODEL_TIER
         self.output_dir = output_dir
         self.use_demucs = use_demucs
         self.use_punctuation = use_punctuation
@@ -92,11 +90,20 @@ class SubtitlePipeline:
         self.target_lang = target_lang
         self.progress_callback = progress_callback
         self.force = force
+        self.asr_backend = asr_backend
+        self.source_language = source_language
+        self.missing_backend_handler = missing_backend_handler
         self._cancelled = False
+        self._fallback_from: str | None = None
         self.project_dir = None
         self.title = None
         self.audio_path = None
         self.video_path = None
+
+    @property
+    def fallback_from(self) -> str | None:
+        """Backend that was requested but unavailable (``None`` = no fallback)."""
+        return self._fallback_from
 
     _AUDIO_EXTENSIONS = {
         ".mp3",
@@ -149,7 +156,6 @@ class SubtitlePipeline:
 
     def _extract_audio_from_video(self, video_path: Path, output_path: Path) -> Path:
         """Extract audio track from a video file using ffmpeg."""
-        import shutil
         import subprocess
 
         from subforge.audio.preprocess import _find_ffmpeg
@@ -266,14 +272,57 @@ class SubtitlePipeline:
             detected_lang = lang_path.read_text().strip() if lang_path.exists() else "en"
             self._emit("Transcribe", f"{len(word_segments)} words, lang={detected_lang} (from cache)")
         else:
-            self._emit(
-                "Transcribe",
-                f"model={self.model_name}",
+            from subforge.transcription.factory import resolve_backend, resolve_model
+
+            effective_language = self.source_language
+
+            # Pre-transcription language detection when both backend and language are auto
+            if self.asr_backend == "auto" and self.source_language == "auto":
+                self._emit("Detect", "Running language detection…")
+                from subforge.transcription.faster_whisper_transcriber import detect_language
+                detect_model = WHISPER_TIER_MAP["large"]
+                detected_hint, prob = detect_language(processed_audio, detect_model)
+                self._emit("Detect", f"lang={detected_hint} (probability={prob:.2f})")
+                effective_language = detected_hint
+
+            requested_backend = resolve_backend(self.asr_backend, effective_language)
+
+            # Give the caller (GUI / CLI) a chance to install a missing backend
+            from subforge.transcription.factory import (
+                is_backend_available, _BACKEND_EXTRA, _BACKEND_RUNTIME_PKG, DEFAULT_BACKEND,
             )
-            transcribe = _resolve_transcriber()
+            if (
+                not is_backend_available(requested_backend)
+                and requested_backend != DEFAULT_BACKEND
+            ):
+                extra = _BACKEND_EXTRA.get(requested_backend, requested_backend)
+                pkg = _BACKEND_RUNTIME_PKG.get(requested_backend, requested_backend)
+                if self.missing_backend_handler:
+                    self.missing_backend_handler(requested_backend, extra, pkg)
+                    # Handler may have installed the package; get_transcriber
+                    # will re-check and fallback if still unavailable.
+
+            transcribe, concrete_backend = _resolve_transcriber(
+                requested_backend, effective_language,
+            )
+
+            if concrete_backend != requested_backend:
+                self._emit(
+                    "Fallback",
+                    f"{requested_backend} is not installed — falling back to {concrete_backend}",
+                )
+                self._fallback_from = requested_backend
+
+            concrete_model = resolve_model(self.model_name, concrete_backend)
+
+            self._emit(
+                "Engine",
+                f"backend={concrete_backend}, model={concrete_model}, lang={effective_language}",
+            )
+
             word_segments, detected_lang = transcribe(
                 processed_audio,
-                self.model_name,
+                concrete_model,
                 progress_callback=self.progress_callback,
             )
             save_word_segments(word_segments, word_segments_path)

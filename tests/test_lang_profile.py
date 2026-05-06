@@ -3,8 +3,6 @@
 from subforge.nlp.lang_profile import (
     CHINESE,
     ENGLISH,
-    JAPANESE,
-    KOREAN,
     get_profile,
     detect_profile_from_text,
 )

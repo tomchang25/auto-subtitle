@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from subforge.translation.base import ProgressCallback, SubtitleChunk, TranslatedChunk
 
 if TYPE_CHECKING:
-    from google import genai
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +138,6 @@ class GeminiTranslator:
         Blocks are separated by ===BLOCK===.
         """
         num_blocks = len(blocks)
-        total_sentences = sum(len(b) for b in blocks)
 
         block_strs = []
         for block in blocks:

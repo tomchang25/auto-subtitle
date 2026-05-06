@@ -25,20 +25,20 @@ SubForge bridges the gap between **raw ASR output** and **human-edited subtitles
 
 ### How SubForge Compares
 
-| Capability              | Typical SaaS Tools    | LLM-based Tools                     | SubForge                         |
-| ----------------------- | --------------------- | ----------------------------------- | -------------------------------- |
-| Speech recognition      | Whisper / proprietary | Whisper                             | Whisper (faster-whisper)         |
-| Smart segmentation      | ❌ Raw ASR segments   | ✅ LLM-based (requires API)         | ✅ NLP rule-based (offline)      |
-| Punctuation restoration | ❌                    | ✅ Via LLM                          | ✅ Local transformer model       |
-| Vocal isolation         | ❌                    | ✅ Optional                         | ✅ Demucs built-in               |
-| Translation             | Machine translation   | LLM / Bing / Google                 | NLLB (local) / Gemini (API)      |
-| Fully offline           | ❌                    | ❌ (needs LLM API for segmentation) | ✅ Core pipeline is 100% offline |
-| Deterministic output    | N/A                   | ❌ (LLM variance)                   | ✅ Same input → same output      |
-| Cost per run            | Per-minute pricing    | API token cost                      | Free (local compute only)        |
+| Capability              | Typical SaaS Tools    | LLM-based Tools                     | SubForge                          |
+| ----------------------- | --------------------- | ----------------------------------- | --------------------------------- |
+| Speech recognition      | Whisper / proprietary | Whisper / proprietary               | Whisper (faster-whisper) / FunASR |
+| Smart segmentation      | ❌ Raw ASR segments   | ✅ LLM-based (requires API)         | ✅ NLP rule-based (offline)       |
+| Punctuation restoration | ❌                    | ✅ Via LLM                          | ✅ Local transformer model        |
+| Vocal isolation         | ❌                    | ✅ Optional                         | ✅ Demucs built-in                |
+| Translation             | Machine translation   | LLM / Bing / Google                 | NLLB (local) / Gemini (API)       |
+| Fully offline           | ❌                    | ❌ (needs LLM API for segmentation) | ✅ Core pipeline is 100% offline  |
+| Deterministic output    | N/A                   | ❌ (LLM variance)                   | ✅ Same input → same output       |
+| Cost per run            | Per-minute pricing    | API token cost                      | Free (local compute only)         |
 
 ## Features
 
-- **Intelligent Segmentation** — NLP-driven sentence splitting using spaCy with timing-aware heuristics: breath gaps, pause detection, break-word boundaries, and soft/hard word-count limits. No LLM required.
+- **Intelligent Segmentation** — NLP-driven sentence splitting with timing-aware heuristics: breath gaps, pause detection, break-word boundaries, and soft/hard limits. Supports English (spaCy), Chinese, Japanese, and Korean with per-language profiles. No LLM required.
 - **Timestamp Alignment** — Word-level timestamps from faster-whisper are preserved through every pipeline stage. Segments split and merge without losing sync.
 - **Vocal Isolation** — Built-in Demucs integration separates vocals from background music/noise before transcription. Automatically chunks long files to manage memory.
 - **Punctuation Restoration** — A local transformer model adds missing punctuation where Whisper didn't, while preserving Whisper's own punctuation where it's more accurate.
@@ -49,20 +49,18 @@ SubForge bridges the gap between **raw ASR output** and **human-edited subtitles
 
 ## Language Support
 
-> **Current scope:** SubForge is optimized for **English-language audio**. The NLP pipeline
-> (spaCy sentence splitting, break-word rules) is English-only. Non-English transcription
-> is on the [roadmap](#roadmap).
+SubForge includes **language-specific NLP profiles** with per-language segmentation thresholds, break-word lists, and punctuation sets. Each profile is defined in `src/subforge/nlp/lang_profile.py`.
 
-| Pipeline Stage          | Language Support         | Notes                                            |
-| ----------------------- | ------------------------ | ------------------------------------------------ |
-| Transcription (Whisper) | English ¹                | Whisper supports 99+ languages; others untested   |
-| Punctuation Restoration | Multilingual             | fullstop-punctuation-multilang-large              |
-| Sentence Splitting      | **English only**         | Hardcoded to spaCy `en_core_web_sm`               |
-| Segmentation            | English only             | Break-word list is English-specific               |
-| Translation (NLLB)      | → 11 target languages ² | Sentence-level — quality is limited               |
-| Translation (Gemini)    | → 11 target languages ² | Block-level — better quality, may misalign output |
+| Pipeline Stage          | Language Support                     | Notes                                                        |
+| ----------------------- | ------------------------------------ | ------------------------------------------------------------ |
+| Transcription           | English, Chinese, Japanese, Korean ¹ | Whisper or FunASR backend; auto-detection supported          |
+| Punctuation Restoration | Multilingual                         | fullstop-punctuation-multilang-large; skipped for CJK        |
+| Sentence Splitting      | English, Chinese, Japanese, Korean   | spaCy for English; character-based splitting for CJK         |
+| Segmentation            | English, Chinese, Japanese, Korean   | Per-language break words, thresholds, and char/word counting |
+| Translation (NLLB)      | → 11 target languages ²              | Sentence-level — quality is limited                          |
+| Translation (Gemini)    | → 11 target languages ²              | Block-level — better quality, may misalign output            |
 
-¹ Other languages may work but are not tested or officially supported.  
+¹ Other Whisper-supported languages fall back to the English profile.
 ² Target languages: Traditional Chinese, Simplified Chinese, Japanese, Korean, French, German, Spanish, Portuguese, Vietnamese, Thai, English.
 
 ## How It Works
@@ -216,32 +214,37 @@ Output is saved to `~/Documents/SubForge/<video title>/output.srt`.
 
 ## Configuration
 
-Core parameters are in `src/subforge/config.py`:
+Global parameters are in `src/subforge/config.py`. Language-specific segmentation thresholds (word/character counts, break words) are in `src/subforge/nlp/lang_profile.py`.
 
-**Segmentation**
+**Segmentation (config.py)**
 
-| Parameter             | Default | Description                                     |
-| --------------------- | ------- | ----------------------------------------------- |
-| `SEG_MIN_WORDS`       | 4       | Never create a segment shorter than this        |
-| `SEG_SOFT_WORDS`      | 8       | After this count, cut at next punctuation/pause |
-| `SEG_HARD_WORDS`      | 15      | Hard cut regardless                             |
-| `SEG_PAUSE_THRESHOLD` | 0.25s   | Timing gap treated as a cut opportunity         |
+| Parameter             | Default | Description                             |
+| --------------------- | ------- | --------------------------------------- |
+| `SEG_PAUSE_THRESHOLD` | 0.25s   | Timing gap treated as a cut opportunity |
 
-**Merge**
+**Merge (config.py)**
 
 | Parameter            | Default | Description                                      |
 | -------------------- | ------- | ------------------------------------------------ |
-| `MERGE_MAX_WORDS`    | 12      | Don't merge if combined word count exceeds this  |
 | `MERGE_MAX_DURATION` | 4.0s    | Don't merge if combined duration exceeds this    |
 | `MERGE_MAX_GAP`      | 1.0s    | Don't merge if gap between segments exceeds this |
 
-**Refinement**
+**Refinement (config.py)**
 
 | Parameter                    | Default | Description                                     |
 | ---------------------------- | ------- | ----------------------------------------------- |
 | `BREATH_GAP`                 | 0.3s    | Breathing pause threshold for splitting         |
 | `MIN_WORDS_FOR_BREATH_SPLIT` | 8       | Only split at breath gaps if chunk is this long |
 | `MIN_DURATION`               | 1.5s    | Minimum segment duration before merging         |
+
+**Language Profiles (lang_profile.py)**
+
+| Parameter   | English | Chinese | Japanese | Korean | Description                             |
+| ----------- | ------- | ------- | -------- | ------ | --------------------------------------- |
+| `seg_min`   | 4       | 6       | 6        | 4      | Minimum segment length (words or chars) |
+| `seg_soft`  | 8       | 15      | 15       | 8      | Soft cut threshold                      |
+| `seg_hard`  | 15      | 30      | 30       | 15     | Hard cut threshold                      |
+| `merge_max` | 12      | 25      | 25       | 12     | Max length after merge                  |
 
 ## Project Structure
 
@@ -270,7 +273,7 @@ src/subforge/
 - [ ] Improve translation quality (reduce segment misalignment)
 - [ ] Japanese speech recognition model support
 - [ ] Speaker diarization
-- [ ] Language-specific segmentation configs (break words, punctuation sets)
+- [x] Language-specific segmentation configs (break words, punctuation sets)
 - [ ] Web UI alternative
 - [ ] SRT style/formatting options (ASS/VTT export)
 

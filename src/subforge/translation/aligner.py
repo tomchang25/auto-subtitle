@@ -82,7 +82,7 @@ def realign(
     # Scale expected lengths to match actual total
     if total_expected > 0:
         scale = total_actual / total_expected
-        expected_lengths = [max(1, int(l * scale)) for l in expected_lengths]
+        expected_lengths = [max(1, int(length * scale)) for length in expected_lengths]
 
     logger.debug(
         "Realign: %d en segments, %d zh segments, ratio=%.3f",
@@ -152,8 +152,8 @@ def _split_proportional(
     # Compute cumulative expected positions
     cum_expected = []
     running = 0
-    for l in expected_lengths:
-        running += l
+    for length in expected_lengths:
+        running += length
         cum_expected.append(running)
 
     # Scale to actual length
