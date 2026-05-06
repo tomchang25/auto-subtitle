@@ -6,8 +6,13 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_MODELS = ("iic/SenseVoiceSmall",)
-DEFAULT_MODEL = "iic/SenseVoiceSmall"
+SUPPORTED_MODELS = ("iic/SenseVoiceSmall", "FunAudioLLM/SenseVoiceSmall")
+DEFAULT_MODEL = "FunAudioLLM/SenseVoiceSmall"
+
+# Map legacy ModelScope IDs to HuggingFace equivalents.
+_HF_MODEL_MAP = {
+    "iic/SenseVoiceSmall": "FunAudioLLM/SenseVoiceSmall",
+}
 
 # SenseVoice prefixes each utterance with emotion / language / event tokens,
 # e.g. "<|zh|><|NEUTRAL|><|Speech|><|woitn|>".  Strip all before processing.
@@ -24,6 +29,8 @@ def load_model(model_name: str):
             DEFAULT_MODEL,
         )
         model_name = DEFAULT_MODEL
+    # Remap ModelScope IDs to HuggingFace equivalents.
+    model_name = _HF_MODEL_MAP.get(model_name, model_name)
     if model_name not in _loaded_models:
         try:
             from funasr import AutoModel
@@ -64,7 +71,6 @@ def transcribe_audio_word_level(
         res = model.generate(
             input=str(wav_path),
             batch_size_s=300,
-            pred_timestamp=True,
         )
     except KeyError as exc:
         logger.warning(

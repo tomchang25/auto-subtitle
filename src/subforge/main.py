@@ -59,8 +59,7 @@ def parse_args():
         help=(
             f"ASR backend to use (default: {ASR_BACKEND}). "
             "'auto' always selects whisper. "
-            "Use 'funasr' (Paraformer) or 'sensevoice' for legacy CJK experiments. "
-            "Use 'fireredasr' for FireRedASR-AED-L benchmarks."
+            "Use 'funasr' (Paraformer) or 'sensevoice' for legacy CJK experiments."
         ),
     )
     parser.add_argument(

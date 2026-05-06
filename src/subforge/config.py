@@ -30,17 +30,10 @@ SENSEVOICE_TIER_MAP: dict[str, str] = {
     "medium": "iic/SenseVoiceSmall",
     "small": "iic/SenseVoiceSmall",
 }
-FIREREDASR_TIER_MAP: dict[str, str] = {
-    "accuracy": "FireRedASR-AED-L",
-    "large": "FireRedASR-AED-L",
-    "medium": "FireRedASR-AED-L",
-    "small": "FireRedASR-AED-L",
-}
-
 SPACY_MODEL = "en_core_web_sm"
 
 # ASR backend selection
-ASR_BACKEND = "auto"          # "auto" | "whisper" | "funasr" | "sensevoice" | "fireredasr"
+ASR_BACKEND = "auto"          # "auto" | "whisper" | "funasr" | "sensevoice"
 ASR_SOURCE_LANGUAGE = "auto"  # ISO 639-1 source language hint, or "auto"
 
 # Source language options for the GUI dropdown (display name → ISO 639-1 code)

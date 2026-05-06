@@ -7,7 +7,6 @@ from subforge.config import (
     WHISPER_TIER_MAP,
     FUNASR_TIER_MAP,
     SENSEVOICE_TIER_MAP,
-    FIREREDASR_TIER_MAP,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,10 +24,6 @@ BACKENDS: dict[str, tuple[str, str]] = {
         "subforge.transcription.sensevoice_transcriber",
         "transcribe_audio_word_level",
     ),
-    "fireredasr": (
-        "subforge.transcription.fireredasr_transcriber",
-        "transcribe_audio_word_level",
-    ),
 }
 
 DEFAULT_BACKEND = "whisper"
@@ -44,7 +39,6 @@ _BACKEND_EXTRA: dict[str, str] = {
     "whisper": "full",
     "funasr": "funasr",
     "sensevoice": "funasr",   # SenseVoice ships via the funasr package
-    "fireredasr": "fireredasr",
 }
 
 # Third-party package each backend actually needs at runtime.
@@ -52,14 +46,12 @@ _BACKEND_RUNTIME_PKG: dict[str, str] = {
     "whisper": "faster_whisper",
     "funasr": "funasr",
     "sensevoice": "funasr",
-    "fireredasr": "fireredasr",
 }
 
 _TIER_MAPS: dict[str, dict[str, str]] = {
     "whisper": WHISPER_TIER_MAP,
     "funasr": FUNASR_TIER_MAP,
     "sensevoice": SENSEVOICE_TIER_MAP,
-    "fireredasr": FIREREDASR_TIER_MAP,
 }
 
 
