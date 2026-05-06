@@ -20,6 +20,7 @@ full = [
     "yt-dlp",
 ]
 gemini = ["google-genai>=1.0", "python-dotenv>=1.0"]
+funasr = ["funasr", "torch"]
 dev = ["pytest", "ruff"]
 
 [project.scripts]

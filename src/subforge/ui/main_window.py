@@ -27,11 +27,15 @@ from subforge.config import (
     OUTPUT_DIR,
     TARGET_LANGUAGES,
     TRANSLATE_TGT_LANG,
+    ASR_BACKEND,
+    ASR_SOURCE_LANGUAGE,
 )
 from subforge.pipeline.processor import SubtitlePipeline, PipelineCancelled
 from subforge.transcription.faster_whisper_transcriber import (
     SUPPORTED_MODELS as WHISPER_MODELS,
 )
+from subforge.transcription.funasr_transcriber import SUPPORTED_MODELS as FUNASR_MODELS
+from subforge.transcription.factory import BACKEND_NAMES as ASR_BACKEND_NAMES
 from subforge.translation.factory import BACKEND_NAMES
 
 
@@ -53,6 +57,8 @@ class PipelineWorker(QObject):
         target_lang: str = TRANSLATE_TGT_LANG,
         force: bool = False,
         local_file: str | None = None,
+        asr_backend: str = ASR_BACKEND,
+        source_language: str = ASR_SOURCE_LANGUAGE,
     ):
         super().__init__()
         self.url = url
@@ -65,6 +71,8 @@ class PipelineWorker(QObject):
         self.target_lang = target_lang
         self.force = force
         self.local_file = local_file
+        self.asr_backend = asr_backend
+        self.source_language = source_language
         self._pipeline: SubtitlePipeline | None = None
 
     def cancel(self):
@@ -88,6 +96,8 @@ class PipelineWorker(QObject):
                 progress_callback=lambda step, detail: self.progress.emit(step, detail),
                 force=self.force,
                 local_file=self.local_file,
+                asr_backend=self.asr_backend,
+                source_language=self.source_language,
             )
             srt_path = self._pipeline.run()
             video_path = (
@@ -173,6 +183,22 @@ class MainWindow(QMainWindow):
 
         # Settings row
         settings_row = QHBoxLayout()
+
+        settings_row.addWidget(QLabel("ASR:"))
+        self.asr_backend_combo = QComboBox()
+        self.asr_backend_combo.addItems(ASR_BACKEND_NAMES)
+        self.asr_backend_combo.setCurrentText(ASR_BACKEND)
+        self.asr_backend_combo.currentTextChanged.connect(self._on_asr_backend_changed)
+        settings_row.addWidget(self.asr_backend_combo)
+
+        self.source_lang_input = QLineEdit()
+        self.source_lang_input.setPlaceholderText("src lang (auto)")
+        self.source_lang_input.setFixedWidth(90)
+        self.source_lang_input.setToolTip(
+            "Source language ISO 639-1 code (e.g. zh). Leave blank for auto-detect."
+        )
+        settings_row.addWidget(self.source_lang_input)
+
         settings_row.addWidget(QLabel("Model:"))
         self.model_combo = QComboBox()
         self.model_combo.addItems(WHISPER_MODELS)
@@ -253,6 +279,18 @@ class MainWindow(QMainWindow):
 
     def _append_log(self, line: str):
         self.log.appendPlainText(line)
+
+    @Slot(str)
+    def _on_asr_backend_changed(self, backend: str):
+        """Swap model combo items when ASR backend changes."""
+        self.model_combo.clear()
+        if backend == "funasr":
+            self.model_combo.addItems(FUNASR_MODELS)
+        else:
+            self.model_combo.addItems(WHISPER_MODELS)
+            idx = self.model_combo.findText(WHISPER_MODEL)
+            if idx >= 0:
+                self.model_combo.setCurrentIndex(idx)
 
     @Slot(str)
     def _on_translate_changed(self, text: str):
@@ -363,6 +401,8 @@ class MainWindow(QMainWindow):
             url = self.url_input.text().strip() or DEFAULT_URL
 
         model_name = self.model_combo.currentText()
+        asr_backend = self.asr_backend_combo.currentText()
+        source_language = self.source_lang_input.text().strip() or ASR_SOURCE_LANGUAGE
 
         self.start_button.setEnabled(False)
         self.cancel_button.setEnabled(True)
@@ -374,7 +414,7 @@ class MainWindow(QMainWindow):
             self._append_log(f"Starting: {Path(local_file).name} (local file)")
         else:
             self._append_log(f"Starting: {url}")
-        self._append_log(f"Model: {model_name}")
+        self._append_log(f"ASR: {asr_backend}, Model: {model_name}")
 
         translate_text = self.translate_combo.currentText()
         target_lang = self.target_lang_combo.currentData() or TRANSLATE_TGT_LANG
@@ -390,6 +430,8 @@ class MainWindow(QMainWindow):
             target_lang=target_lang,
             force=self.force_check.isChecked(),
             local_file=local_file,
+            asr_backend=asr_backend,
+            source_language=source_language,
         )
         thread = self._thread
         worker = self._worker

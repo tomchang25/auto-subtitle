@@ -4,7 +4,8 @@ import logging
 
 def parse_args():
     from subforge.translation.factory import BACKEND_NAMES
-    from subforge.config import WHISPER_MODEL, TARGET_LANGUAGES, TRANSLATE_TGT_LANG
+    from subforge.transcription.factory import BACKEND_NAMES as ASR_BACKEND_NAMES
+    from subforge.config import WHISPER_MODEL, TARGET_LANGUAGES, TRANSLATE_TGT_LANG, ASR_BACKEND, ASR_SOURCE_LANGUAGE
 
     parser = argparse.ArgumentParser(
         description="Generate subtitles from a YouTube URL or local media file."
@@ -48,6 +49,20 @@ def parse_args():
         ),
     )
     parser.add_argument(
+        "--asr-backend",
+        default=None,
+        choices=ASR_BACKEND_NAMES,
+        help=f"ASR backend to use (default: {ASR_BACKEND}). 'auto' selects based on source language.",
+    )
+    parser.add_argument(
+        "--source-language",
+        default=None,
+        help=(
+            f"Source language ISO 639-1 code for routing (default: {ASR_SOURCE_LANGUAGE}). "
+            "Use 'zh' to route to FunASR, 'auto' to detect from audio."
+        ),
+    )
+    parser.add_argument(
         "--no-punctuation",
         action="store_true",
         default=False,
@@ -73,7 +88,7 @@ def main():
     check_dependencies(gui=False)
 
     from subforge.pipeline.processor import SubtitlePipeline
-    from subforge.config import WHISPER_MODEL, OUTPUT_DIR, DEFAULT_URL
+    from subforge.config import WHISPER_MODEL, OUTPUT_DIR, DEFAULT_URL, ASR_BACKEND, ASR_SOURCE_LANGUAGE
 
     from subforge.config import LOG_LEVEL
     args = parse_args()
@@ -86,6 +101,8 @@ def main():
         url = args.url or input("Enter YouTube URL: ").strip() or DEFAULT_URL
 
     model_name = args.model or WHISPER_MODEL
+    asr_backend = args.asr_backend or ASR_BACKEND
+    source_language = args.source_language or ASR_SOURCE_LANGUAGE
 
     pipeline = SubtitlePipeline(
         url=url,
@@ -98,6 +115,8 @@ def main():
         target_lang=args.target_lang,
         force=args.force,
         local_file=local_file,
+        asr_backend=asr_backend,
+        source_language=source_language,
     )
 
     logger = logging.getLogger(__name__)

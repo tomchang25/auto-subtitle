@@ -49,6 +49,8 @@ from subforge.config import (
     TRANSLATE_TGT_LANG,
     TRANSLATE_SRC_LANG,
     TARGET_LANG_SHORT,
+    ASR_BACKEND,
+    ASR_SOURCE_LANGUAGE,
 )
 from subforge.nlp.lang_profile import LanguageProfile, get_profile, DEFAULT as DEFAULT_PROFILE
 from subforge.utils import get_bounds_and_text, save_word_segments
@@ -56,12 +58,9 @@ from subforge.utils import get_bounds_and_text, save_word_segments
 ProgressCallback = Callable[[str, str], None]
 
 
-def _resolve_transcriber():
-    from subforge.transcription.faster_whisper_transcriber import (
-        transcribe_audio_word_level,
-    )
-
-    return transcribe_audio_word_level
+def _resolve_transcriber(backend: str, source_language: str):
+    from subforge.transcription.factory import get_transcriber
+    return get_transcriber(backend, source_language)
 
 
 class SubtitlePipeline:
@@ -79,6 +78,8 @@ class SubtitlePipeline:
         progress_callback: ProgressCallback | None = None,
         force: bool = False,
         local_file: str | None = None,
+        asr_backend: str = ASR_BACKEND,
+        source_language: str = ASR_SOURCE_LANGUAGE,
     ):
         self.url = url
         self.local_file = Path(local_file) if local_file else None
@@ -92,6 +93,8 @@ class SubtitlePipeline:
         self.target_lang = target_lang
         self.progress_callback = progress_callback
         self.force = force
+        self.asr_backend = asr_backend
+        self.source_language = source_language
         self._cancelled = False
         self.project_dir = None
         self.title = None
@@ -268,9 +271,9 @@ class SubtitlePipeline:
         else:
             self._emit(
                 "Transcribe",
-                f"model={self.model_name}",
+                f"backend={self.asr_backend}, model={self.model_name}",
             )
-            transcribe = _resolve_transcriber()
+            transcribe = _resolve_transcriber(self.asr_backend, self.source_language)
             word_segments, detected_lang = transcribe(
                 processed_audio,
                 self.model_name,

@@ -16,10 +16,19 @@ SUPPORTED_MODELS = (
     "distil-large-v3",
 )
 
+DEFAULT_MODEL = "large-v3-turbo"
+
 _loaded_models = {}
 
 
 def load_model(model_name: str) -> WhisperModel:
+    if model_name not in SUPPORTED_MODELS:
+        logger.warning(
+            "faster-whisper: unrecognized model %r, falling back to %r",
+            model_name,
+            DEFAULT_MODEL,
+        )
+        model_name = DEFAULT_MODEL
     if model_name not in _loaded_models:
         logger.info("Loading faster-whisper model: %s", model_name)
         _loaded_models[model_name] = WhisperModel(model_name)

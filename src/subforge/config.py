@@ -11,6 +11,10 @@ DEFAULT_URL = "https://www.youtube.com/watch?v=ByreRudsyoc"
 WHISPER_MODEL = "large-v3-turbo"
 SPACY_MODEL = "en_core_web_sm"
 
+# ASR backend selection
+ASR_BACKEND = "auto"          # "auto" | "whisper" | "funasr"
+ASR_SOURCE_LANGUAGE = "auto"  # ISO 639-1 source language hint, or "auto"
+
 # Subtitle formatting
 MAX_GAP = 3.0
 MIN_DURATION = 1.5
