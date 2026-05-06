@@ -28,6 +28,9 @@ MERGE_MAX_WORDS = 12        # don't merge if combined > this
 MERGE_MAX_DURATION = 4.0    # don't merge if combined duration > this (seconds)
 MERGE_MAX_GAP = 1.0         # don't merge if gap between segments > this (seconds)
 
+# Punctuation restoration (LLM-based, optional)
+USE_LLM_PUNCTUATION = True
+
 # Translation
 TRANSLATE_METHOD: str | None = None  # None = disabled by default
 TRANSLATE_SRC_LANG = "eng_Latn"  # NLLB language code

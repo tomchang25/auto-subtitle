@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import re
 import time
 from pathlib import Path
@@ -38,12 +37,7 @@ _SENTENCE_DELIM_STRIP = "|||"
 _BLOCK_DELIM = "\n\n===BLOCK===\n\n"  # between blocks
 _BLOCK_DELIM_STRIP = "===BLOCK==="
 
-MODEL_FALLBACK: list[str] = [
-    "gemini-3.1-flash-lite-preview",  # 500 RPD
-    "gemini-3-flash-preview",         # 20  RPD
-    "gemini-2.5-flash-lite",          # 20  RPD
-    "gemini-2.5-flash",               # 20  RPD
-]
+from subforge.llm.gemini_client import MODEL_FALLBACK, resolve_api_key
 
 # Max chunks per API request
 BATCH_SIZE = 500
@@ -55,25 +49,6 @@ BLOCK_TARGET_SIZE = 50
 BLOCK_GAP_THRESHOLD = 1.5
 
 
-def _resolve_api_key(explicit: str | None) -> str:
-    if explicit:
-        return explicit
-    key = os.environ.get("GEMINI_API_KEY")
-    if key:
-        return key
-    try:
-        from dotenv import dotenv_values
-
-        vals = dotenv_values()
-        key = vals.get("GEMINI_API_KEY")
-        if key:
-            return key
-    except ImportError:
-        pass
-    raise ValueError(
-        "Gemini API key not found. Provide it via the api_key parameter, "
-        "the GEMINI_API_KEY environment variable, or a .env file."
-    )
 
 
 def _split_into_blocks(
@@ -141,15 +116,14 @@ class GeminiTranslator:
     ):
         self.src_lang = src_lang
         self.tgt_lang = tgt_lang
-        self._api_key = _resolve_api_key(api_key)
+        self._api_key = resolve_api_key(api_key)
         self._models = [model] if model else list(MODEL_FALLBACK)
-        self._client: genai.Client | None = None  # type: ignore[name-defined]
+        self._client = None
         self.batch_size = batch_size
 
     def _load(self):
         if self._client is None:
             from google import genai as _genai
-
             self._client = _genai.Client(api_key=self._api_key)
 
     # ------------------------------------------------------------------

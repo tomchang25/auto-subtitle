@@ -44,6 +44,7 @@ from subforge.config import (
     MERGE_MAX_WORDS,
     MERGE_MAX_DURATION,
     MERGE_MAX_GAP,
+    USE_LLM_PUNCTUATION,
 )
 from subforge.utils import get_bounds_and_text, save_word_segments
 
@@ -65,6 +66,7 @@ class SubtitlePipeline:
         model_name: Optional[str] = None,
         output_dir: Path = OUTPUT_DIR,
         use_demucs: bool = True,
+        use_punctuation: bool = USE_LLM_PUNCTUATION,
         download_mp4: bool = False,
         video_quality: str = "1080p",
         translate_method: Optional[str] = None,
@@ -75,6 +77,7 @@ class SubtitlePipeline:
         self.model_name = model_name or WHISPER_MODEL
         self.output_dir = output_dir
         self.use_demucs = use_demucs
+        self.use_punctuation = use_punctuation
         self.download_mp4 = download_mp4
         self.video_quality = video_quality
         self.translate_method = translate_method
@@ -181,6 +184,14 @@ class SubtitlePipeline:
             save_word_segments(word_segments, word_segments_path)
             self._emit("Transcribe", f"{len(word_segments)} words (saved checkpoint)")
         self._check_cancel()
+
+        # Step 4b: Punctuation restoration (optional)
+        if self.use_punctuation:
+            self._emit("Punctuation", "Restoring punctuation")
+            from subforge.nlp.punctuation import restore_punctuation
+
+            word_segments = restore_punctuation(word_segments)
+            self._check_cancel()
 
         # Step 5: NLP sentence splitting
         self._emit("NLP", "Splitting into sentences")

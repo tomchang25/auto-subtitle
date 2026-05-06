@@ -32,6 +32,12 @@ def parse_args():
         help="Enable translation and choose backend (default: disabled).",
     )
     parser.add_argument(
+        "--no-punctuation",
+        action="store_true",
+        default=False,
+        help="Disable punctuation restoration (local model).",
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         default=False,
@@ -66,6 +72,7 @@ def main():
         model_name=model_name,
         output_dir=OUTPUT_DIR,
         download_mp4=args.download_video,
+        use_punctuation=not args.no_punctuation,
         video_quality=args.video_quality,
         translate_method=args.translate,
         force=args.force,

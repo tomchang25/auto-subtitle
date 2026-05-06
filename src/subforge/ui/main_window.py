@@ -42,6 +42,7 @@ class PipelineWorker(QObject):
         url: str,
         model_name: str,
         use_demucs: bool,
+        use_punctuation: bool = True,
         download_mp4: bool = False,
         video_quality: str = "1080p",
         translate_method: str | None = None,
@@ -51,6 +52,7 @@ class PipelineWorker(QObject):
         self.url = url
         self.model_name = model_name
         self.use_demucs = use_demucs
+        self.use_punctuation = use_punctuation
         self.download_mp4 = download_mp4
         self.video_quality = video_quality
         self.translate_method = translate_method
@@ -70,6 +72,7 @@ class PipelineWorker(QObject):
                 model_name=self.model_name,
                 output_dir=OUTPUT_DIR,
                 use_demucs=self.use_demucs,
+                use_punctuation=self.use_punctuation,
                 download_mp4=self.download_mp4,
                 video_quality=self.video_quality,
                 translate_method=self.translate_method,
@@ -129,6 +132,11 @@ class MainWindow(QMainWindow):
         self.demucs_check = QCheckBox("Use Demucs")
         self.demucs_check.setChecked(True)
         settings_row.addWidget(self.demucs_check)
+
+        self.punctuation_check = QCheckBox("Punctuation")
+        self.punctuation_check.setChecked(True)
+        self.punctuation_check.setToolTip("Restore punctuation using local model")
+        settings_row.addWidget(self.punctuation_check)
 
         self.download_mp4_check = QCheckBox("Download MP4")
         self.download_mp4_check.setChecked(False)
@@ -200,22 +208,25 @@ class MainWindow(QMainWindow):
             url=url,
             model_name=model_name,
             use_demucs=self.demucs_check.isChecked(),
+            use_punctuation=self.punctuation_check.isChecked(),
             download_mp4=self.download_mp4_check.isChecked(),
             video_quality=self.quality_combo.currentText(),
             translate_method=None if translate_text == "none" else translate_text,
             force=self.force_check.isChecked(),
         )
-        self._worker.moveToThread(self._thread)
-        self._thread.started.connect(self._worker.run)
-        self._worker.progress.connect(self._on_progress)
-        self._worker.finished.connect(self._on_finished)
-        self._worker.failed.connect(self._on_failed)
-        self._worker.cancelled.connect(self._on_cancelled)
-        self._worker.finished.connect(lambda *_: self._thread.quit())
-        self._worker.failed.connect(self._thread.quit)
-        self._worker.cancelled.connect(self._thread.quit)
-        self._thread.finished.connect(self._cleanup_thread)
-        self._thread.start()
+        thread = self._thread
+        worker = self._worker
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.progress.connect(self._on_progress)
+        worker.finished.connect(self._on_finished)
+        worker.failed.connect(self._on_failed)
+        worker.cancelled.connect(self._on_cancelled)
+        worker.finished.connect(lambda *_: thread.quit())
+        worker.failed.connect(thread.quit)
+        worker.cancelled.connect(thread.quit)
+        thread.finished.connect(self._cleanup_thread)
+        thread.start()
 
     @Slot(str, str)
     def _on_progress(self, step: str, detail: str):
@@ -276,7 +287,10 @@ class MainWindow(QMainWindow):
 
 def run():
     from subforge.config import LOG_LEVEL
-    logging.basicConfig(level=LOG_LEVEL, format="%(levelname)s - %(name)s - %(message)s")
+
+    logging.basicConfig(
+        level=LOG_LEVEL, format="%(levelname)s - %(name)s - %(message)s"
+    )
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
