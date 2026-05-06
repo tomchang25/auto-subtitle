@@ -35,6 +35,27 @@ def load_model(model_name: str) -> WhisperModel:
     return _loaded_models[model_name]
 
 
+def detect_language(wav_path: Path, model_name: str = DEFAULT_MODEL) -> tuple[str, float]:
+    """Fast language detection using Whisper on the first ~30 s of audio.
+
+    Returns (iso_639_1_code, probability). The segment iterator from
+    model.transcribe() is intentionally not consumed — language detection is
+    performed eagerly before any segments are emitted.
+    """
+    if not wav_path.exists():
+        raise FileNotFoundError(f"Audio file does not exist: {wav_path}")
+    model = load_model(model_name)
+    _segments_iter, info = model.transcribe(
+        str(wav_path),
+        beam_size=1,
+        vad_filter=False,
+    )
+    lang = info.language
+    prob = info.language_probability
+    logger.info("Language detection: %s (probability %.2f)", lang, prob)
+    return lang, prob
+
+
 def transcribe_audio_word_level(
     wav_path: Path,
     model_name: str,

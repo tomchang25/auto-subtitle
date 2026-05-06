@@ -5,7 +5,7 @@ import logging
 def parse_args():
     from subforge.translation.factory import BACKEND_NAMES
     from subforge.transcription.factory import BACKEND_NAMES as ASR_BACKEND_NAMES
-    from subforge.config import WHISPER_MODEL, TARGET_LANGUAGES, TRANSLATE_TGT_LANG, ASR_BACKEND, ASR_SOURCE_LANGUAGE
+    from subforge.config import MODEL_TIER, MODEL_TIERS, TARGET_LANGUAGES, TRANSLATE_TGT_LANG, ASR_BACKEND, ASR_SOURCE_LANGUAGE
 
     parser = argparse.ArgumentParser(
         description="Generate subtitles from a YouTube URL or local media file."
@@ -19,7 +19,10 @@ def parse_args():
     parser.add_argument(
         "--model",
         default=None,
-        help=f"Whisper model name (default: {WHISPER_MODEL}).",
+        help=(
+            f"Abstract model tier ({', '.join(MODEL_TIERS)}) or an explicit backend model name. "
+            f"Default tier: {MODEL_TIER}."
+        ),
     )
     parser.add_argument(
         "--download-video",
@@ -88,7 +91,7 @@ def main():
     check_dependencies(gui=False)
 
     from subforge.pipeline.processor import SubtitlePipeline
-    from subforge.config import WHISPER_MODEL, OUTPUT_DIR, DEFAULT_URL, ASR_BACKEND, ASR_SOURCE_LANGUAGE
+    from subforge.config import MODEL_TIER, OUTPUT_DIR, DEFAULT_URL, ASR_BACKEND, ASR_SOURCE_LANGUAGE
 
     from subforge.config import LOG_LEVEL
     args = parse_args()
@@ -100,9 +103,29 @@ def main():
     else:
         url = args.url or input("Enter YouTube URL: ").strip() or DEFAULT_URL
 
-    model_name = args.model or WHISPER_MODEL
+    model_name = args.model or MODEL_TIER
     asr_backend = args.asr_backend or ASR_BACKEND
     source_language = args.source_language or ASR_SOURCE_LANGUAGE
+
+    def _cli_missing_backend(backend: str, extra: str, pip_pkg: str) -> bool:
+        """Prompt the user in the terminal to install or skip."""
+        answer = input(
+            f"'{backend}' is not installed. Install now? "
+            f"(pip install {pip_pkg}) [y/N] "
+        ).strip().lower()
+        if answer == "y":
+            import subprocess
+            print(f"Installing {pip_pkg}…")
+            ret = subprocess.call(
+                [sys.executable, "-m", "pip", "install", pip_pkg],
+            )
+            if ret != 0:
+                print("Installation failed. Falling back to whisper.")
+                return False
+            print("Installation successful.")
+            return True
+        print("Falling back to whisper.")
+        return False
 
     pipeline = SubtitlePipeline(
         url=url,
@@ -117,6 +140,7 @@ def main():
         local_file=local_file,
         asr_backend=asr_backend,
         source_language=source_language,
+        missing_backend_handler=_cli_missing_backend,
     )
 
     logger = logging.getLogger(__name__)
