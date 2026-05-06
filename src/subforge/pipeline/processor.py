@@ -62,7 +62,7 @@ def _resolve_transcriber():
 class SubtitlePipeline:
     def __init__(
         self,
-        url: str,
+        url: str = "",
         model_name: Optional[str] = None,
         output_dir: Path = OUTPUT_DIR,
         use_demucs: bool = True,
@@ -72,8 +72,10 @@ class SubtitlePipeline:
         translate_method: Optional[str] = None,
         progress_callback: Optional[ProgressCallback] = None,
         force: bool = False,
+        local_file: Optional[str] = None,
     ):
         self.url = url
+        self.local_file = Path(local_file) if local_file else None
         self.model_name = model_name or WHISPER_MODEL
         self.output_dir = output_dir
         self.use_demucs = use_demucs
@@ -100,6 +102,20 @@ class SubtitlePipeline:
         ".aac",
     }
 
+    _VIDEO_EXTENSIONS = {
+        ".mp4",
+        ".mkv",
+        ".avi",
+        ".mov",
+        ".webm",
+        ".flv",
+        ".wmv",
+        ".ts",
+        ".m4v",
+    }
+
+    _MEDIA_EXTENSIONS = _AUDIO_EXTENSIONS | _VIDEO_EXTENSIONS
+
     def cancel(self):
         """Request cancellation. The pipeline will stop before the next step."""
         self._cancelled = True
@@ -124,29 +140,100 @@ class SubtitlePipeline:
             except Exception as exc:
                 logger.error("progress_callback raised: %s", exc)
 
+    def _extract_audio_from_video(self, video_path: Path, output_path: Path) -> Path:
+        """Extract audio track from a video file using ffmpeg."""
+        import shutil
+        import subprocess
+
+        ffmpeg = shutil.which("ffmpeg")
+        if ffmpeg is None:
+            raise FileNotFoundError("ffmpeg not found on PATH.")
+        audio_out = output_path.with_suffix(".mp3")
+        cmd = [
+            ffmpeg, "-y",
+            "-i", str(video_path),
+            "-vn",             # no video
+            "-acodec", "libmp3lame",
+            "-q:a", "2",      # high quality mp3
+            str(audio_out),
+        ]
+        logger.info("Extracting audio: %s", " ".join(cmd))
+        result = subprocess.run(cmd, capture_output=True)
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"ffmpeg audio extraction failed:\n"
+                f"{result.stderr.decode('utf-8', errors='replace')}"
+            )
+        return audio_out
+
     def run(self) -> Path:
         self._emit("Pipeline", "=== Starting Subtitle Pipeline ===")
 
-        # Step 1: Get title and prepare directories
-        self._emit("Title", "Fetching video title")
-        self.title = get_video_title(self.url)
-        self.project_dir = self.output_dir / self.title
-        self.project_dir.mkdir(parents=True, exist_ok=True)
-        self._emit("Title", f"Project directory: {self.project_dir}")
-        self._check_cancel()
+        if self.local_file:
+            # --- Local file mode ---
+            if not self.local_file.exists():
+                raise FileNotFoundError(f"Local file not found: {self.local_file}")
 
-        # Step 2: Download audio (skip if audio file already exists in folder)
-        output_base = self.project_dir / self.title
-        existing_audio = self._find_existing_audio(self.project_dir)
-        if existing_audio:
-            self._emit("Download", f"Skipped (found existing: {existing_audio.name})")
-            self.audio_path = existing_audio
+            suffix = self.local_file.suffix.lower()
+            if suffix not in self._MEDIA_EXTENSIONS:
+                raise ValueError(
+                    f"Unsupported file format: {suffix}. "
+                    f"Supported: {', '.join(sorted(self._MEDIA_EXTENSIONS))}"
+                )
+
+            self.title = self.local_file.stem
+            self.project_dir = self.output_dir / self.title
+            self.project_dir.mkdir(parents=True, exist_ok=True)
+            self._emit("Local", f"Using local file: {self.local_file.name}")
+            self._emit("Local", f"Project directory: {self.project_dir}")
+            self._check_cancel()
+
+            if suffix in self._VIDEO_EXTENSIONS:
+                # Extract audio from video (skip if cached mp3 exists)
+                audio_dest = self.project_dir / self.local_file.stem
+                cached_mp3 = audio_dest.with_suffix(".mp3")
+                if not self.force and cached_mp3.exists():
+                    self._emit("Extract", f"Skipped (found cached: {cached_mp3.name})")
+                    self.audio_path = cached_mp3
+                else:
+                    self._emit("Extract", "Extracting audio from video file")
+                    self.audio_path = self._extract_audio_from_video(
+                        self.local_file, audio_dest
+                    )
+                self.video_path = self.local_file
+            else:
+                # Audio file — copy into project dir (skip if already there)
+                dest = self.project_dir / self.local_file.name
+                if not self.force and dest.exists():
+                    self._emit("Local", f"Skipped copy (found cached: {dest.name})")
+                else:
+                    import shutil
+                    shutil.copy2(self.local_file, dest)
+                self.audio_path = dest
+                self._emit("Local", f"Audio ready: {self.audio_path.name}")
+            self._check_cancel()
         else:
-            self._emit("Download", "Downloading audio")
-            self.audio_path = download_audio(
-                self.url, output_base, format="mp3", force=False
-            )
-        self._check_cancel()
+            # --- YouTube URL mode (original behaviour) ---
+            # Step 1: Get title and prepare directories
+            self._emit("Title", "Fetching video title")
+            self.title = get_video_title(self.url)
+            self.project_dir = self.output_dir / self.title
+            self.project_dir.mkdir(parents=True, exist_ok=True)
+            self._emit("Title", f"Project directory: {self.project_dir}")
+            self._check_cancel()
+
+            # Step 2: Download audio (skip if audio file already exists in folder)
+            output_base = self.project_dir / self.title
+            existing_audio = self._find_existing_audio(self.project_dir)
+            if existing_audio:
+                self._emit("Download", f"Skipped (found existing: {existing_audio.name})")
+                self.audio_path = existing_audio
+            else:
+                self._emit("Download", "Downloading audio")
+                self.audio_path = download_audio(
+                    self.url, output_base, format="mp3", force=False
+                )
+            self._check_cancel()
 
         # Step 3: Preprocess audio
         self._emit(
@@ -311,8 +398,8 @@ class SubtitlePipeline:
             write_srt(en_sentences, srt_path)
             self._emit("Done", f"SRT written to {srt_path}")
 
-        # Step 10 (optional): Download MP4 with audio
-        if self.download_mp4:
+        # Step 10 (optional): Download MP4 with audio (skip for local files)
+        if self.download_mp4 and not self.local_file:
             self._check_cancel()
             self._emit("Video", f"Downloading MP4 (quality={self.video_quality})")
             output_base = self.project_dir / self.title

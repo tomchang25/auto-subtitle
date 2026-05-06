@@ -6,8 +6,15 @@ def parse_args():
     from subforge.translation.factory import BACKEND_NAMES
     from subforge.config import WHISPER_MODEL
 
-    parser = argparse.ArgumentParser(description="Generate subtitles from a YouTube URL.")
+    parser = argparse.ArgumentParser(
+        description="Generate subtitles from a YouTube URL or local media file."
+    )
     parser.add_argument("--url", help="YouTube URL (prompted if omitted).")
+    parser.add_argument(
+        "--file",
+        default=None,
+        help="Path to a local audio/video file (overrides --url).",
+    )
     parser.add_argument(
         "--model",
         default=None,
@@ -63,7 +70,11 @@ def main():
     args = parse_args()
     log_level = logging.DEBUG if args.debug else LOG_LEVEL
     logging.basicConfig(level=log_level, format="%(levelname)s - %(name)s - %(message)s")
-    url = args.url or input("Enter YouTube URL: ").strip() or DEFAULT_URL
+    local_file = args.file
+    if local_file:
+        url = ""
+    else:
+        url = args.url or input("Enter YouTube URL: ").strip() or DEFAULT_URL
 
     model_name = args.model or WHISPER_MODEL
 
@@ -76,6 +87,7 @@ def main():
         video_quality=args.video_quality,
         translate_method=args.translate,
         force=args.force,
+        local_file=local_file,
     )
 
     logger = logging.getLogger(__name__)

@@ -2,12 +2,13 @@ import logging
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot, QUrl
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtCore import QObject, QThread, Signal, Slot, QUrl, QMimeData, Qt
+from PySide6.QtGui import QDesktopServices, QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -47,6 +49,7 @@ class PipelineWorker(QObject):
         video_quality: str = "1080p",
         translate_method: str | None = None,
         force: bool = False,
+        local_file: str | None = None,
     ):
         super().__init__()
         self.url = url
@@ -57,6 +60,7 @@ class PipelineWorker(QObject):
         self.video_quality = video_quality
         self.translate_method = translate_method
         self.force = force
+        self.local_file = local_file
         self._pipeline: SubtitlePipeline | None = None
 
     def cancel(self):
@@ -78,6 +82,7 @@ class PipelineWorker(QObject):
                 translate_method=self.translate_method,
                 progress_callback=lambda step, detail: self.progress.emit(step, detail),
                 force=self.force,
+                local_file=self.local_file,
             )
             srt_path = self._pipeline.run()
             video_path = (
@@ -91,33 +96,75 @@ class PipelineWorker(QObject):
 
 
 class MainWindow(QMainWindow):
+
+    _SUPPORTED_EXTENSIONS = (
+        ".mp3", ".wav", ".flac", ".m4a", ".ogg", ".opus", ".wma", ".aac",
+        ".mp4", ".mkv", ".avi", ".mov", ".webm", ".flv", ".wmv", ".ts", ".m4v",
+    )
+
+    _SOURCE_YOUTUBE = 0
+    _SOURCE_LOCAL = 1
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SubForge")
         self.resize(720, 560)
+        self.setAcceptDrops(True)
 
         self._thread: QThread | None = None
         self._worker: PipelineWorker | None = None
         self._last_srt: Path | None = None
+        self._local_file: str | None = None
 
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
 
-        # URL row
-        url_row = QHBoxLayout()
-        url_row.addWidget(QLabel("YouTube URL:"))
-        self.url_input = QLineEdit()
-        self.url_input.setPlaceholderText(DEFAULT_URL)
-        url_row.addWidget(self.url_input, 1)
+        # --- Source selector row ---
+        source_row = QHBoxLayout()
+        source_row.addWidget(QLabel("Source:"))
+        self.source_combo = QComboBox()
+        self.source_combo.addItems(["YouTube URL", "Local File"])
+        self.source_combo.currentIndexChanged.connect(self._on_source_changed)
+        source_row.addWidget(self.source_combo)
+        source_row.addStretch(1)
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self._on_start)
-        url_row.addWidget(self.start_button)
+        source_row.addWidget(self.start_button)
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.setEnabled(False)
         self.cancel_button.clicked.connect(self._on_cancel)
-        url_row.addWidget(self.cancel_button)
-        layout.addLayout(url_row)
+        source_row.addWidget(self.cancel_button)
+        layout.addLayout(source_row)
+
+        # --- Stacked input area ---
+        self.input_stack = QStackedWidget()
+
+        # Page 0: YouTube URL
+        url_page = QWidget()
+        url_lay = QHBoxLayout(url_page)
+        url_lay.setContentsMargins(0, 0, 0, 0)
+        self.url_input = QLineEdit()
+        self.url_input.setPlaceholderText(DEFAULT_URL)
+        url_lay.addWidget(self.url_input, 1)
+        self.input_stack.addWidget(url_page)
+
+        # Page 1: Local file
+        file_page = QWidget()
+        file_lay = QHBoxLayout(file_page)
+        file_lay.setContentsMargins(0, 0, 0, 0)
+        self.file_input = QLineEdit()
+        self.file_input.setPlaceholderText(
+            "Drop audio/video here, or click Browse…"
+        )
+        self.file_input.setReadOnly(True)
+        file_lay.addWidget(self.file_input, 1)
+        self.browse_button = QPushButton("Browse…")
+        self.browse_button.clicked.connect(self._on_browse)
+        file_lay.addWidget(self.browse_button)
+        self.input_stack.addWidget(file_page)
+
+        layout.addWidget(self.input_stack)
 
         # Settings row
         settings_row = QHBoxLayout()
@@ -186,12 +233,107 @@ class MainWindow(QMainWindow):
     def _append_log(self, line: str):
         self.log.appendPlainText(line)
 
+    # ------------------------------------------------------------------
+    # Source mode switching
+    # ------------------------------------------------------------------
+
+    @Slot(int)
+    def _on_source_changed(self, index: int):
+        """Switch between YouTube URL and Local File input pages."""
+        self.input_stack.setCurrentIndex(index)
+        # Reset local file state when switching away from local mode
+        if index == self._SOURCE_YOUTUBE:
+            self._local_file = None
+            self.file_input.clear()
+            self.file_input.setToolTip("")
+
+    # ------------------------------------------------------------------
+    # Local file input helpers
+    # ------------------------------------------------------------------
+
+    @Slot()
+    def _on_browse(self):
+        """Open a file dialog for selecting a local audio/video file."""
+        ext_list = " ".join(f"*{e}" for e in self._SUPPORTED_EXTENSIONS)
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Audio or Video File",
+            "",
+            f"Media Files ({ext_list});;All Files (*)",
+        )
+        if path:
+            self._set_local_file(path)
+
+    def _set_local_file(self, path: str):
+        """Set a local file path from browse dialog or drag-and-drop."""
+        p = Path(path)
+        if p.suffix.lower() not in self._SUPPORTED_EXTENSIONS:
+            QMessageBox.warning(
+                self,
+                "Unsupported File",
+                f"File type '{p.suffix}' is not supported.\n\n"
+                f"Supported formats:\n{', '.join(self._SUPPORTED_EXTENSIONS)}",
+            )
+            return
+        self._local_file = str(p)
+        self.file_input.setText(p.name)
+        self.file_input.setToolTip(str(p))
+        # Auto-switch to local mode if user was on YouTube page
+        if self.source_combo.currentIndex() != self._SOURCE_LOCAL:
+            self.source_combo.setCurrentIndex(self._SOURCE_LOCAL)
+
+    # ------------------------------------------------------------------
+    # Drag & Drop
+    # ------------------------------------------------------------------
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        mime: QMimeData = event.mimeData()
+        if mime.hasUrls():
+            for url in mime.urls():
+                if url.isLocalFile():
+                    suffix = Path(url.toLocalFile()).suffix.lower()
+                    if suffix in self._SUPPORTED_EXTENSIONS:
+                        event.acceptProposedAction()
+                        return
+        event.ignore()
+
+    def dropEvent(self, event: QDropEvent):
+        mime: QMimeData = event.mimeData()
+        if mime.hasUrls():
+            for url in mime.urls():
+                if url.isLocalFile():
+                    file_path = url.toLocalFile()
+                    suffix = Path(file_path).suffix.lower()
+                    if suffix in self._SUPPORTED_EXTENSIONS:
+                        self._set_local_file(file_path)
+                        event.acceptProposedAction()
+                        return
+        event.ignore()
+
+    # ------------------------------------------------------------------
+    # Pipeline start
+    # ------------------------------------------------------------------
+
     @Slot()
     def _on_start(self):
         if self._thread is not None:
             return
 
-        url = self.url_input.text().strip() or DEFAULT_URL
+        is_local = self.source_combo.currentIndex() == self._SOURCE_LOCAL
+        local_file: str | None = None
+        url = ""
+
+        if is_local:
+            local_file = self._local_file
+            if not local_file:
+                QMessageBox.warning(
+                    self, "No file selected",
+                    "Please select an audio or video file first.",
+                )
+                return
+        else:
+            url = self.url_input.text().strip() or DEFAULT_URL
+
         model_name = self.model_combo.currentText()
 
         self.start_button.setEnabled(False)
@@ -199,7 +341,11 @@ class MainWindow(QMainWindow):
         self.open_folder_button.setEnabled(False)
         self.result_label.setText("Running…")
         self.log.clear()
-        self._append_log(f"Starting: {url}")
+
+        if local_file:
+            self._append_log(f"Starting: {Path(local_file).name} (local file)")
+        else:
+            self._append_log(f"Starting: {url}")
         self._append_log(f"Model: {model_name}")
 
         translate_text = self.translate_combo.currentText()
@@ -213,6 +359,7 @@ class MainWindow(QMainWindow):
             video_quality=self.quality_combo.currentText(),
             translate_method=None if translate_text == "none" else translate_text,
             force=self.force_check.isChecked(),
+            local_file=local_file,
         )
         thread = self._thread
         worker = self._worker
