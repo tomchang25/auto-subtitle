@@ -107,6 +107,26 @@ def main():
     asr_backend = args.asr_backend or ASR_BACKEND
     source_language = args.source_language or ASR_SOURCE_LANGUAGE
 
+    def _cli_missing_backend(backend: str, extra: str, pip_pkg: str) -> bool:
+        """Prompt the user in the terminal to install or skip."""
+        answer = input(
+            f"'{backend}' is not installed. Install now? "
+            f"(pip install {pip_pkg}) [y/N] "
+        ).strip().lower()
+        if answer == "y":
+            import subprocess
+            print(f"Installing {pip_pkg}…")
+            ret = subprocess.call(
+                [sys.executable, "-m", "pip", "install", pip_pkg],
+            )
+            if ret != 0:
+                print("Installation failed. Falling back to whisper.")
+                return False
+            print("Installation successful.")
+            return True
+        print("Falling back to whisper.")
+        return False
+
     pipeline = SubtitlePipeline(
         url=url,
         model_name=model_name,
@@ -120,6 +140,7 @@ def main():
         local_file=local_file,
         asr_backend=asr_backend,
         source_language=source_language,
+        missing_backend_handler=_cli_missing_backend,
     )
 
     logger = logging.getLogger(__name__)

@@ -56,7 +56,7 @@ ProgressCallback = Callable[[str, str], None]
 
 def _resolve_transcriber(backend: str, source_language: str):
     from subforge.transcription.factory import get_transcriber
-    return get_transcriber(backend, source_language)
+    return get_transcriber(backend, source_language)  # (fn, actual_backend)
 
 
 class SubtitlePipeline:
@@ -76,6 +76,7 @@ class SubtitlePipeline:
         local_file: str | None = None,
         asr_backend: str = ASR_BACKEND,
         source_language: str = ASR_SOURCE_LANGUAGE,
+        missing_backend_handler: Callable[[str, str, str], bool] | None = None,
     ):
         self.url = url
         self.local_file = Path(local_file) if local_file else None
@@ -91,11 +92,18 @@ class SubtitlePipeline:
         self.force = force
         self.asr_backend = asr_backend
         self.source_language = source_language
+        self.missing_backend_handler = missing_backend_handler
         self._cancelled = False
+        self._fallback_from: str | None = None
         self.project_dir = None
         self.title = None
         self.audio_path = None
         self.video_path = None
+
+    @property
+    def fallback_from(self) -> str | None:
+        """Backend that was requested but unavailable (``None`` = no fallback)."""
+        return self._fallback_from
 
     _AUDIO_EXTENSIONS = {
         ".mp3",
@@ -277,7 +285,34 @@ class SubtitlePipeline:
                 self._emit("Detect", f"lang={detected_hint} (probability={prob:.2f})")
                 effective_language = detected_hint
 
-            concrete_backend = resolve_backend(self.asr_backend, effective_language)
+            requested_backend = resolve_backend(self.asr_backend, effective_language)
+
+            # Give the caller (GUI / CLI) a chance to install a missing backend
+            from subforge.transcription.factory import (
+                is_backend_available, _BACKEND_EXTRA, _BACKEND_RUNTIME_PKG, DEFAULT_BACKEND,
+            )
+            if (
+                not is_backend_available(requested_backend)
+                and requested_backend != DEFAULT_BACKEND
+            ):
+                extra = _BACKEND_EXTRA.get(requested_backend, requested_backend)
+                pkg = _BACKEND_RUNTIME_PKG.get(requested_backend, requested_backend)
+                if self.missing_backend_handler:
+                    self.missing_backend_handler(requested_backend, extra, pkg)
+                    # Handler may have installed the package; get_transcriber
+                    # will re-check and fallback if still unavailable.
+
+            transcribe, concrete_backend = _resolve_transcriber(
+                requested_backend, effective_language,
+            )
+
+            if concrete_backend != requested_backend:
+                self._emit(
+                    "Fallback",
+                    f"{requested_backend} is not installed — falling back to {concrete_backend}",
+                )
+                self._fallback_from = requested_backend
+
             concrete_model = resolve_model(self.model_name, concrete_backend)
 
             self._emit(
@@ -285,7 +320,6 @@ class SubtitlePipeline:
                 f"backend={concrete_backend}, model={concrete_model}, lang={effective_language}",
             )
 
-            transcribe = _resolve_transcriber(concrete_backend, effective_language)
             word_segments, detected_lang = transcribe(
                 processed_audio,
                 concrete_model,
