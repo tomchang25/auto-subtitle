@@ -23,7 +23,9 @@ from PySide6.QtWidgets import (
 
 from subforge.config import (
     DEFAULT_URL,
-    WHISPER_MODEL,
+    MODEL_TIER,
+    MODEL_TIERS,
+    SOURCE_LANGUAGES,
     OUTPUT_DIR,
     TARGET_LANGUAGES,
     TRANSLATE_TGT_LANG,
@@ -31,10 +33,6 @@ from subforge.config import (
     ASR_SOURCE_LANGUAGE,
 )
 from subforge.pipeline.processor import SubtitlePipeline, PipelineCancelled
-from subforge.transcription.faster_whisper_transcriber import (
-    SUPPORTED_MODELS as WHISPER_MODELS,
-)
-from subforge.transcription.funasr_transcriber import SUPPORTED_MODELS as FUNASR_MODELS
 from subforge.transcription.factory import BACKEND_NAMES as ASR_BACKEND_NAMES
 from subforge.translation.factory import BACKEND_NAMES
 
@@ -188,23 +186,21 @@ class MainWindow(QMainWindow):
         self.asr_backend_combo = QComboBox()
         self.asr_backend_combo.addItems(ASR_BACKEND_NAMES)
         self.asr_backend_combo.setCurrentText(ASR_BACKEND)
-        self.asr_backend_combo.currentTextChanged.connect(self._on_asr_backend_changed)
         settings_row.addWidget(self.asr_backend_combo)
 
-        self.source_lang_input = QLineEdit()
-        self.source_lang_input.setPlaceholderText("src lang (auto)")
-        self.source_lang_input.setFixedWidth(90)
-        self.source_lang_input.setToolTip(
-            "Source language ISO 639-1 code (e.g. zh). Leave blank for auto-detect."
-        )
-        settings_row.addWidget(self.source_lang_input)
+        self.source_lang_combo = QComboBox()
+        for display, code in SOURCE_LANGUAGES.items():
+            self.source_lang_combo.addItem(display, userData=code)
+        self.source_lang_combo.setToolTip("Source language (used to route the ASR backend)")
+        settings_row.addWidget(self.source_lang_combo)
 
         settings_row.addWidget(QLabel("Model:"))
         self.model_combo = QComboBox()
-        self.model_combo.addItems(WHISPER_MODELS)
-        whisper_idx = self.model_combo.findText(WHISPER_MODEL)
-        if whisper_idx >= 0:
-            self.model_combo.setCurrentIndex(whisper_idx)
+        self.model_combo.addItems(MODEL_TIERS)
+        tier_idx = self.model_combo.findText(MODEL_TIER)
+        if tier_idx >= 0:
+            self.model_combo.setCurrentIndex(tier_idx)
+        self.model_combo.setToolTip("Abstract model size (large / medium / small)")
         settings_row.addWidget(self.model_combo)
 
         self.demucs_check = QCheckBox("Use Demucs")
@@ -279,18 +275,6 @@ class MainWindow(QMainWindow):
 
     def _append_log(self, line: str):
         self.log.appendPlainText(line)
-
-    @Slot(str)
-    def _on_asr_backend_changed(self, backend: str):
-        """Swap model combo items when ASR backend changes."""
-        self.model_combo.clear()
-        if backend == "funasr":
-            self.model_combo.addItems(FUNASR_MODELS)
-        else:
-            self.model_combo.addItems(WHISPER_MODELS)
-            idx = self.model_combo.findText(WHISPER_MODEL)
-            if idx >= 0:
-                self.model_combo.setCurrentIndex(idx)
 
     @Slot(str)
     def _on_translate_changed(self, text: str):
@@ -402,7 +386,7 @@ class MainWindow(QMainWindow):
 
         model_name = self.model_combo.currentText()
         asr_backend = self.asr_backend_combo.currentText()
-        source_language = self.source_lang_input.text().strip() or ASR_SOURCE_LANGUAGE
+        source_language = self.source_lang_combo.currentData() or ASR_SOURCE_LANGUAGE
 
         self.start_button.setEnabled(False)
         self.cancel_button.setEnabled(True)

@@ -3,6 +3,11 @@ from __future__ import annotations
 import importlib
 import logging
 
+from subforge.config import (
+    WHISPER_TIER_MAP,
+    FUNASR_TIER_MAP,
+)
+
 logger = logging.getLogger(__name__)
 
 BACKENDS: dict[str, tuple[str, str]] = {
@@ -26,6 +31,23 @@ _BACKEND_EXTRA: dict[str, str] = {
     "whisper": "full",
     "funasr": "funasr",
 }
+
+
+_TIER_MAPS: dict[str, dict[str, str]] = {
+    "whisper": WHISPER_TIER_MAP,
+    "funasr": FUNASR_TIER_MAP,
+}
+
+
+def resolve_model(model_name_or_tier: str, backend: str) -> str:
+    """Resolve an abstract tier name or an explicit model name to a concrete model.
+
+    If *model_name_or_tier* matches a tier key (large/medium/small) the
+    backend-specific concrete model is returned.  Otherwise the value is
+    returned unchanged so that explicit model names remain valid.
+    """
+    tier_map = _TIER_MAPS.get(backend, WHISPER_TIER_MAP)
+    return tier_map.get(model_name_or_tier, model_name_or_tier)
 
 
 def resolve_backend(backend: str, source_language: str) -> str:

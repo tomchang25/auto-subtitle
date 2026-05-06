@@ -31,7 +31,8 @@ from subforge.nlp.segmentation import split_long_sentences_by_length, merge_shor
 from subforge.subtitle.writer import write_srt
 
 from subforge.config import (
-    WHISPER_MODEL,
+    MODEL_TIER,
+    WHISPER_TIER_MAP,
     OUTPUT_DIR,
     MAX_GAP,
     MIN_DURATION,
@@ -78,7 +79,7 @@ class SubtitlePipeline:
     ):
         self.url = url
         self.local_file = Path(local_file) if local_file else None
-        self.model_name = model_name or WHISPER_MODEL
+        self.model_name = model_name or MODEL_TIER
         self.output_dir = output_dir
         self.use_demucs = use_demucs
         self.use_punctuation = use_punctuation
@@ -263,14 +264,31 @@ class SubtitlePipeline:
             detected_lang = lang_path.read_text().strip() if lang_path.exists() else "en"
             self._emit("Transcribe", f"{len(word_segments)} words, lang={detected_lang} (from cache)")
         else:
+            from subforge.transcription.factory import resolve_backend, resolve_model
+
+            effective_language = self.source_language
+
+            # Pre-transcription language detection when both backend and language are auto
+            if self.asr_backend == "auto" and self.source_language == "auto":
+                self._emit("Detect", "Running language detection…")
+                from subforge.transcription.faster_whisper_transcriber import detect_language
+                detect_model = WHISPER_TIER_MAP["large"]
+                detected_hint, prob = detect_language(processed_audio, detect_model)
+                self._emit("Detect", f"lang={detected_hint} (probability={prob:.2f})")
+                effective_language = detected_hint
+
+            concrete_backend = resolve_backend(self.asr_backend, effective_language)
+            concrete_model = resolve_model(self.model_name, concrete_backend)
+
             self._emit(
-                "Transcribe",
-                f"backend={self.asr_backend}, model={self.model_name}",
+                "Engine",
+                f"backend={concrete_backend}, model={concrete_model}, lang={effective_language}",
             )
-            transcribe = _resolve_transcriber(self.asr_backend, self.source_language)
+
+            transcribe = _resolve_transcriber(concrete_backend, effective_language)
             word_segments, detected_lang = transcribe(
                 processed_audio,
-                self.model_name,
+                concrete_model,
                 progress_callback=self.progress_callback,
             )
             save_word_segments(word_segments, word_segments_path)
