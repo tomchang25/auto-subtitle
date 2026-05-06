@@ -6,7 +6,7 @@ import sys
 def parse_args():
     from subforge.translation.factory import BACKEND_NAMES
     from subforge.transcription.factory import BACKEND_NAMES as ASR_BACKEND_NAMES
-    from subforge.config import MODEL_TIER, MODEL_TIERS, TARGET_LANGUAGES, TRANSLATE_TGT_LANG, ASR_BACKEND, ASR_SOURCE_LANGUAGE
+    from subforge.config import MODEL_TIER, MODEL_TIERS, TARGET_LANGUAGES, TRANSLATE_TGT_LANG, ASR_BACKEND, ASR_SOURCE_LANGUAGE, CHINESE_BENCHMARK_MODE
 
     parser = argparse.ArgumentParser(
         description="Generate subtitles from a YouTube URL or local media file."
@@ -71,6 +71,16 @@ def parse_args():
         action="store_true",
         default=False,
         help="Disable punctuation restoration (local model).",
+    )
+    parser.add_argument(
+        "--chinese-benchmark",
+        action="store_true",
+        default=CHINESE_BENCHMARK_MODE,
+        help=(
+            "Chinese ASR benchmark mode: bypass semantic splitting, timing refinement, "
+            "soft segmentation, and merging. Applies a simple hard-cut strategy so the "
+            "SRT reflects raw ASR output for clean benchmark comparison."
+        ),
     )
     parser.add_argument(
         "--force",
@@ -142,6 +152,7 @@ def main():
         asr_backend=asr_backend,
         source_language=source_language,
         missing_backend_handler=_cli_missing_backend,
+        chinese_benchmark=args.chinese_benchmark,
     )
 
     logger = logging.getLogger(__name__)

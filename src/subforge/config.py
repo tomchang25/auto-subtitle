@@ -63,6 +63,12 @@ MERGE_MAX_GAP = 1.0         # don't merge if gap between segments > this (second
 # Punctuation restoration (LLM-based, optional)
 USE_LLM_PUNCTUATION = True
 
+# Chinese ASR benchmark mode — bypasses all downstream NLP refinement so that
+# raw ASR output can be compared directly without subtitle-quality confounders.
+CHINESE_BENCHMARK_MODE = False
+CHINESE_BENCHMARK_HARD_CHARS = 30    # max characters accumulated before a forced cut
+CHINESE_BENCHMARK_GAP_SECONDS = 1.5  # timing gap (seconds) that triggers a cut
+
 # Translation
 TRANSLATE_METHOD: str | None = None  # None = disabled by default
 TRANSLATE_SRC_LANG = "eng_Latn"  # NLLB language code
