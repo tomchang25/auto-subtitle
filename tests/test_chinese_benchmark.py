@@ -1,5 +1,4 @@
 """Tests for hard_cut_chinese_segments (Chinese benchmark mode)."""
-import pytest
 from subforge.nlp.chinese_benchmark import hard_cut_chinese_segments
 
 
