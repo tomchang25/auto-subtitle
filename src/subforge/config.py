@@ -8,12 +8,42 @@ LOG_LEVEL = logging.DEBUG  # set to logging.DEBUG for full prompts/responses
 DEFAULT_URL = "https://www.youtube.com/watch?v=ByreRudsyoc"
 
 # ASR/NLP Models
-WHISPER_MODEL = "large-v3-turbo"
+MODEL_TIER = "large"           # default abstract model tier
+MODEL_TIERS = ("large", "medium", "small")
+
+# Concrete model names resolved from each tier per backend
+WHISPER_TIER_MAP: dict[str, str] = {
+    "large": "large-v3-turbo",
+    "medium": "medium",
+    "small": "small",
+}
+FUNASR_TIER_MAP: dict[str, str] = {
+    "large": "paraformer-zh",
+    "medium": "paraformer-zh",
+    "small": "paraformer-zh",
+}
+
 SPACY_MODEL = "en_core_web_sm"
 
 # ASR backend selection
 ASR_BACKEND = "auto"          # "auto" | "whisper" | "funasr"
 ASR_SOURCE_LANGUAGE = "auto"  # ISO 639-1 source language hint, or "auto"
+
+# Source language options for the GUI dropdown (display name → ISO 639-1 code)
+SOURCE_LANGUAGES: dict[str, str] = {
+    "Auto Detect": "auto",
+    "English": "en",
+    "Traditional Chinese": "zh",
+    "Simplified Chinese": "zh",
+    "Japanese": "ja",
+    "Korean": "ko",
+    "French": "fr",
+    "German": "de",
+    "Spanish": "es",
+    "Portuguese": "pt",
+    "Vietnamese": "vi",
+    "Thai": "th",
+}
 
 # Subtitle formatting
 MAX_GAP = 3.0
