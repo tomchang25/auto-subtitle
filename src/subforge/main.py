@@ -56,14 +56,19 @@ def parse_args():
         "--asr-backend",
         default=None,
         choices=ASR_BACKEND_NAMES,
-        help=f"ASR backend to use (default: {ASR_BACKEND}). 'auto' selects based on source language.",
+        help=(
+            f"ASR backend to use (default: {ASR_BACKEND}). "
+            "'auto' always selects whisper. "
+            "Use 'funasr' (Paraformer) or 'sensevoice' for legacy CJK experiments."
+        ),
     )
     parser.add_argument(
         "--source-language",
         default=None,
         help=(
-            f"Source language ISO 639-1 code for routing (default: {ASR_SOURCE_LANGUAGE}). "
-            "Use 'zh' to route to FunASR, 'auto' to detect from audio."
+            f"Source language ISO 639-1 code hint (default: {ASR_SOURCE_LANGUAGE}). "
+            "Used for language-profile selection and (with --asr-backend auto) for "
+            "backend routing. 'auto' detects from audio via Whisper."
         ),
     )
     parser.add_argument(

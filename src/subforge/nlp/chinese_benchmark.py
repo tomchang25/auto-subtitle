@@ -27,9 +27,9 @@ def hard_cut_chinese_segments(
     Cuts after sentence-end punctuation (。！？.!?), when accumulated character
     count reaches hard_chars, or when there is a timing gap > gap_seconds.
 
-    Segments with end <= start are skipped (invalid interval).
-    Non-monotonic timestamps are logged as warnings but not discarded so that
-    ASR text is preserved as faithfully as possible.
+    Segments with missing or zero timestamps are still included so that ASR
+    text is preserved as faithfully as possible; timing gaps are only evaluated
+    when valid timestamps are available.
     """
     chunks: list[list[dict]] = []
     current: list[dict] = []
@@ -41,19 +41,7 @@ def hard_cut_chinese_segments(
         start = float(seg.get("start", 0.0))
         end = float(seg.get("end", 0.0))
 
-        if end <= start:
-            logger.warning(
-                "Skipping segment with end <= start: %r [%.3f, %.3f]", word, start, end
-            )
-            continue
-
-        if start < prev_end:
-            logger.warning(
-                "Non-monotonic timestamp: %r starts at %.3f but previous ended at %.3f",
-                word,
-                start,
-                prev_end,
-            )
+        has_valid_time = end > start
 
         tok = {
             "text": word,
@@ -63,15 +51,16 @@ def hard_cut_chinese_segments(
             "end": end,
         }
 
-        # Flush current chunk on a large timing gap
-        if current and start - prev_end > gap_seconds:
+        # Flush current chunk on a large timing gap (only when timestamps are valid)
+        if current and has_valid_time and prev_end >= 0 and start - prev_end > gap_seconds:
             chunks.append(current)
             current = []
             current_chars = 0
 
         current.append(tok)
         current_chars += len(word)
-        prev_end = end
+        if has_valid_time:
+            prev_end = end
 
         # Cut after sentence-end punctuation
         if word and word[-1] in _SENTENCE_END:

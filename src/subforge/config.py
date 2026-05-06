@@ -9,24 +9,31 @@ DEFAULT_URL = "https://www.youtube.com/watch?v=ByreRudsyoc"
 
 # ASR/NLP Models
 MODEL_TIER = "large"           # default abstract model tier
-MODEL_TIERS = ("large", "medium", "small")
+MODEL_TIERS = ("accuracy", "large", "medium", "small")
 
 # Concrete model names resolved from each tier per backend
 WHISPER_TIER_MAP: dict[str, str] = {
+    "accuracy": "large-v3",       # full large-v3; slower but highest accuracy
     "large": "large-v3-turbo",
     "medium": "medium",
     "small": "small",
 }
 FUNASR_TIER_MAP: dict[str, str] = {
+    "accuracy": "paraformer-zh",
     "large": "paraformer-zh",
     "medium": "paraformer-zh",
     "small": "paraformer-zh",
 }
-
+SENSEVOICE_TIER_MAP: dict[str, str] = {
+    "accuracy": "iic/SenseVoiceSmall",
+    "large": "iic/SenseVoiceSmall",
+    "medium": "iic/SenseVoiceSmall",
+    "small": "iic/SenseVoiceSmall",
+}
 SPACY_MODEL = "en_core_web_sm"
 
 # ASR backend selection
-ASR_BACKEND = "auto"          # "auto" | "whisper" | "funasr"
+ASR_BACKEND = "auto"          # "auto" | "whisper" | "funasr" | "sensevoice"
 ASR_SOURCE_LANGUAGE = "auto"  # ISO 639-1 source language hint, or "auto"
 
 # Source language options for the GUI dropdown (display name → ISO 639-1 code)
