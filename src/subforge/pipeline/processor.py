@@ -26,19 +26,24 @@ from subforge.nlp.alignment import (
     align_sentences_with_timestamps,
     refine_sentences_by_timing,
 )
-from subforge.nlp.segmentation import split_long_sentences_by_length
+from subforge.nlp.segmentation import split_long_sentences_by_length, merge_short_segments
 
 from subforge.subtitle.writer import write_srt
 
 from subforge.config import (
     WHISPER_MODEL,
     OUTPUT_DIR,
-    MAX_WORDS,
-    MIN_WORDS,
     MAX_GAP,
     MIN_DURATION,
     BREATH_GAP,
     MIN_WORDS_FOR_BREATH_SPLIT,
+    SEG_MIN_WORDS,
+    SEG_SOFT_WORDS,
+    SEG_HARD_WORDS,
+    SEG_PAUSE_THRESHOLD,
+    MERGE_MAX_WORDS,
+    MERGE_MAX_DURATION,
+    MERGE_MAX_GAP,
 )
 from subforge.utils import get_bounds_and_text, save_word_segments
 
@@ -202,7 +207,20 @@ class SubtitlePipeline:
         # Step 8: Split long segments
         self._emit("Split", "Splitting long segments by word count")
         refined = split_long_sentences_by_length(
-            refined, min_words=MIN_WORDS, max_words=MAX_WORDS
+            refined,
+            min_words=SEG_MIN_WORDS,
+            max_words=SEG_HARD_WORDS,
+            soft_words=SEG_SOFT_WORDS,
+            pause_threshold=SEG_PAUSE_THRESHOLD,
+        )
+
+        # Step 8b: Merge short segments back together
+        self._emit("Merge", "Merging short segments")
+        refined = merge_short_segments(
+            refined,
+            max_words=MERGE_MAX_WORDS,
+            max_duration=MERGE_MAX_DURATION,
+            max_gap=MERGE_MAX_GAP,
         )
         self._check_cancel()
 
