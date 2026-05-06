@@ -4,7 +4,7 @@ import logging
 
 def parse_args():
     from subforge.translation.factory import BACKEND_NAMES
-    from subforge.config import WHISPER_MODEL
+    from subforge.config import WHISPER_MODEL, TARGET_LANGUAGES, TRANSLATE_TGT_LANG
 
     parser = argparse.ArgumentParser(
         description="Generate subtitles from a YouTube URL or local media file."
@@ -37,6 +37,15 @@ def parse_args():
         default=None,
         choices=BACKEND_NAMES,
         help="Enable translation and choose backend (default: disabled).",
+    )
+    parser.add_argument(
+        "--target-lang",
+        default=TRANSLATE_TGT_LANG,
+        choices=list(TARGET_LANGUAGES.keys()),
+        help=(
+            f"Target language for translation (default: {TRANSLATE_TGT_LANG}). "
+            f"Available: {', '.join(f'{k} ({v})' for k, v in TARGET_LANGUAGES.items())}"
+        ),
     )
     parser.add_argument(
         "--no-punctuation",
@@ -86,6 +95,7 @@ def main():
         use_punctuation=not args.no_punctuation,
         video_quality=args.video_quality,
         translate_method=args.translate,
+        target_lang=args.target_lang,
         force=args.force,
         local_file=local_file,
     )

@@ -45,6 +45,9 @@ from subforge.config import (
     MERGE_MAX_DURATION,
     MERGE_MAX_GAP,
     USE_LLM_PUNCTUATION,
+    TRANSLATE_TGT_LANG,
+    TRANSLATE_SRC_LANG,
+    TARGET_LANG_SHORT,
 )
 from subforge.utils import get_bounds_and_text, save_word_segments
 
@@ -70,6 +73,7 @@ class SubtitlePipeline:
         download_mp4: bool = False,
         video_quality: str = "1080p",
         translate_method: Optional[str] = None,
+        target_lang: str = TRANSLATE_TGT_LANG,
         progress_callback: Optional[ProgressCallback] = None,
         force: bool = False,
         local_file: Optional[str] = None,
@@ -83,6 +87,7 @@ class SubtitlePipeline:
         self.download_mp4 = download_mp4
         self.video_quality = video_quality
         self.translate_method = translate_method
+        self.target_lang = target_lang
         self.progress_callback = progress_callback
         self.force = force
         self._cancelled = False
@@ -325,14 +330,13 @@ class SubtitlePipeline:
         en_sentences = get_bounds_and_text(refined)
 
         if self.translate_method:
-            self._emit("Translate", f"method={self.translate_method}")
+            self._emit("Translate", f"method={self.translate_method}, target={self.target_lang}")
             from subforge.translation.factory import create_translator
-            from subforge.config import TRANSLATE_SRC_LANG, TRANSLATE_TGT_LANG
 
             translator = create_translator(
                 self.translate_method,
                 src_lang=TRANSLATE_SRC_LANG,
-                tgt_lang=TRANSLATE_TGT_LANG,
+                tgt_lang=self.target_lang,
             )
             translation_cache = self.project_dir / "translation_cache"
 
@@ -377,15 +381,19 @@ class SubtitlePipeline:
         if has_translation:
             from subforge.subtitle.formatter import format_srt
 
+            # Derive short language codes for filenames
+            src_short = TARGET_LANG_SHORT.get(TRANSLATE_SRC_LANG, "src")
+            tgt_short = TARGET_LANG_SHORT.get(self.target_lang, "tgt")
+
             # Bilingual (default)
             write_srt(en_sentences, srt_path)
             # Source language only
-            src_path = self.project_dir / "output_en.srt"
+            src_path = self.project_dir / f"output_{src_short}.srt"
             src_path.write_text(
                 format_srt(en_sentences, mode="source"), encoding="utf-8"
             )
             # Translation only
-            tgt_path = self.project_dir / "output_zh.srt"
+            tgt_path = self.project_dir / f"output_{tgt_short}.srt"
             tgt_path.write_text(
                 format_srt(en_sentences, mode="translation"), encoding="utf-8"
             )

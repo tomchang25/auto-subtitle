@@ -25,6 +25,8 @@ from subforge.config import (
     DEFAULT_URL,
     WHISPER_MODEL,
     OUTPUT_DIR,
+    TARGET_LANGUAGES,
+    TRANSLATE_TGT_LANG,
 )
 from subforge.pipeline.processor import SubtitlePipeline, PipelineCancelled
 from subforge.transcription.faster_whisper_transcriber import (
@@ -48,6 +50,7 @@ class PipelineWorker(QObject):
         download_mp4: bool = False,
         video_quality: str = "1080p",
         translate_method: str | None = None,
+        target_lang: str = TRANSLATE_TGT_LANG,
         force: bool = False,
         local_file: str | None = None,
     ):
@@ -59,6 +62,7 @@ class PipelineWorker(QObject):
         self.download_mp4 = download_mp4
         self.video_quality = video_quality
         self.translate_method = translate_method
+        self.target_lang = target_lang
         self.force = force
         self.local_file = local_file
         self._pipeline: SubtitlePipeline | None = None
@@ -80,6 +84,7 @@ class PipelineWorker(QObject):
                 download_mp4=self.download_mp4,
                 video_quality=self.video_quality,
                 translate_method=self.translate_method,
+                target_lang=self.target_lang,
                 progress_callback=lambda step, detail: self.progress.emit(step, detail),
                 force=self.force,
                 local_file=self.local_file,
@@ -203,7 +208,23 @@ class MainWindow(QMainWindow):
         self.translate_combo.addItems(["none"] + BACKEND_NAMES)
         self.translate_combo.setCurrentText("none")
         self.translate_combo.setToolTip("Translation backend (none = disabled)")
+        self.translate_combo.currentTextChanged.connect(self._on_translate_changed)
         settings_row.addWidget(self.translate_combo)
+
+        self.target_lang_label = QLabel("→")
+        settings_row.addWidget(self.target_lang_label)
+        self.target_lang_combo = QComboBox()
+        for code, name in TARGET_LANGUAGES.items():
+            self.target_lang_combo.addItem(f"{name} ({code})", userData=code)
+        # Default to TRANSLATE_TGT_LANG from config
+        default_idx = self.target_lang_combo.findData(TRANSLATE_TGT_LANG)
+        if default_idx >= 0:
+            self.target_lang_combo.setCurrentIndex(default_idx)
+        self.target_lang_combo.setToolTip("Target language for translation")
+        settings_row.addWidget(self.target_lang_combo)
+        # Initially hidden when translate is "none"
+        self.target_lang_label.setVisible(False)
+        self.target_lang_combo.setVisible(False)
 
         self.force_check = QCheckBox("Force Re-run")
         self.force_check.setChecked(False)
@@ -232,6 +253,13 @@ class MainWindow(QMainWindow):
 
     def _append_log(self, line: str):
         self.log.appendPlainText(line)
+
+    @Slot(str)
+    def _on_translate_changed(self, text: str):
+        """Show/hide target language dropdown based on translation backend."""
+        enabled = text != "none"
+        self.target_lang_label.setVisible(enabled)
+        self.target_lang_combo.setVisible(enabled)
 
     # ------------------------------------------------------------------
     # Source mode switching
@@ -349,6 +377,7 @@ class MainWindow(QMainWindow):
         self._append_log(f"Model: {model_name}")
 
         translate_text = self.translate_combo.currentText()
+        target_lang = self.target_lang_combo.currentData() or TRANSLATE_TGT_LANG
         self._thread = QThread(self)
         self._worker = PipelineWorker(
             url=url,
@@ -358,6 +387,7 @@ class MainWindow(QMainWindow):
             download_mp4=self.download_mp4_check.isChecked(),
             video_quality=self.quality_combo.currentText(),
             translate_method=None if translate_text == "none" else translate_text,
+            target_lang=target_lang,
             force=self.force_check.isChecked(),
             local_file=local_file,
         )
