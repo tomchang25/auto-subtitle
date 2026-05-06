@@ -1,15 +1,73 @@
-# Words that signal a natural sentence boundary in spoken English
-_BREAK_WORDS = {"but", "and", "so", "because", "like", "then", "right", "now", "anyway", "although", "however"}
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from subforge.nlp.lang_profile import LanguageProfile
+
+# Fallback English values used when no profile is provided
+_BREAK_WORDS = {
+    "but",
+    "and",
+    "so",
+    "because",
+    "like",
+    "then",
+    "right",
+    "now",
+    "anyway",
+    "although",
+    "however",
+}
+_PUNCT = set(",.!?;:")
+_SENTENCE_END = set(".!?")
 
 
-def _cut_strength(token, next_token, pause_threshold):
+def _get_break_words(profile: LanguageProfile | None) -> set[str]:
+    if profile is not None:
+        return set(profile.break_words)
+    return _BREAK_WORDS
+
+
+def _get_punctuation(profile: LanguageProfile | None) -> set[str]:
+    if profile is not None:
+        return set(profile.punctuation)
+    return _PUNCT
+
+
+def _get_sentence_end(profile: LanguageProfile | None) -> set[str]:
+    if profile is not None:
+        return set(profile.sentence_end)
+    return _SENTENCE_END
+
+
+def _use_char_count(profile: LanguageProfile | None) -> bool:
+    if profile is not None:
+        return profile.use_char_count
+    return False
+
+
+def _measure(token, use_chars: bool) -> int:
+    if use_chars:
+        return len(token.get("text", ""))
+    return 1
+
+
+def _measure_chunk(chunk, use_chars: bool) -> int:
+    return sum(_measure(tok, use_chars) for tok in chunk)
+
+
+def _cut_strength(token, next_token, pause_threshold, profile=None):
     """Return cut strength: 'strong', 'weak', or None.
 
     Strong (triggers at min_words): punctuation (. ! ? , ;) or timing pause.
     Weak (triggers at soft_words): next token is a break word.
     """
+    punct = _get_punctuation(profile)
+    break_words = _get_break_words(profile)
+
     text = token.get("text", "")
-    if text and text[-1] in ",.!?;":
+    if text and text[-1] in punct:
         return "strong"
 
     if next_token and pause_threshold > 0:
@@ -19,10 +77,11 @@ def _cut_strength(token, next_token, pause_threshold):
             if n_start - t_end >= pause_threshold:
                 return "strong"
 
-    # Next token is a break word (cut BEFORE it)
     if next_token:
-        next_text = next_token.get("text", "").lower().rstrip(",.!?;")
-        if next_text in _BREAK_WORDS:
+        next_text = next_token.get("text", "").lower()
+        for ch in list(punct):
+            next_text = next_text.rstrip(ch)
+        if next_text in break_words:
             return "weak"
 
     return None
@@ -34,53 +93,60 @@ def split_long_sentences_by_length(
     max_words=15,
     soft_words=8,
     pause_threshold=0.25,
+    profile: LanguageProfile | None = None,
 ):
     """Split chunks with min/soft/hard thresholds."""
+    use_chars = _use_char_count(profile)
     new_chunks = []
 
     for chunk in sentence_chunks:
-        length = len(chunk)
-        if length <= min_words:
+        chunk_size = _measure_chunk(chunk, use_chars)
+        if chunk_size <= min_words:
             new_chunks.append(chunk)
             continue
 
         current = []
+        current_size = 0
         for i, token in enumerate(chunk):
             current.append(token)
-            word_count = len(current)
+            current_size += _measure(token, use_chars)
 
-            if word_count < min_words:
+            if current_size < min_words:
                 continue
 
-            tokens_left = length - (i + 1)
+            remaining = chunk[i + 1 :]
+            remaining_size = _measure_chunk(remaining, use_chars)
 
             # Hard cut
-            if word_count >= max_words:
-                if 0 < tokens_left < min_words:
-                    current.extend(chunk[i + 1:])
+            if current_size >= max_words:
+                if 0 < remaining_size < min_words:
+                    current.extend(remaining)
                     break
                 new_chunks.append(current)
                 current = []
+                current_size = 0
                 continue
 
             # Check cut strength
-            next_token = chunk[i + 1] if i + 1 < length else None
-            strength = _cut_strength(token, next_token, pause_threshold)
+            next_token = chunk[i + 1] if i + 1 < len(chunk) else None
+            strength = _cut_strength(token, next_token, pause_threshold, profile)
 
-            if strength == "strong" and word_count >= min_words:
-                if tokens_left >= min_words or tokens_left == 0:
+            if strength == "strong" and current_size >= min_words:
+                if remaining_size >= min_words or remaining_size == 0:
                     new_chunks.append(current)
                     current = []
+                    current_size = 0
                     continue
 
-            if strength == "weak" and word_count >= soft_words:
-                if tokens_left >= min_words or tokens_left == 0:
+            if strength == "weak" and current_size >= soft_words:
+                if remaining_size >= min_words or remaining_size == 0:
                     new_chunks.append(current)
                     current = []
+                    current_size = 0
                     continue
 
         if current:
-            if len(current) < min_words and new_chunks:
+            if _measure_chunk(current, use_chars) < min_words and new_chunks:
                 new_chunks[-1].extend(current)
             else:
                 new_chunks.append(current)
@@ -93,6 +159,7 @@ def merge_short_segments(
     max_words=15,
     max_duration=4.0,
     max_gap=1.0,
+    profile: LanguageProfile | None = None,
 ):
     """Merge consecutive short segments if the result stays within limits.
 
@@ -104,31 +171,34 @@ def merge_short_segments(
     if not sentence_chunks:
         return []
 
+    use_chars = _use_char_count(profile)
+    sentence_end = _get_sentence_end(profile)
     merged = [sentence_chunks[0]]
 
     for chunk in sentence_chunks[1:]:
         prev = merged[-1]
-        combined_words = len(prev) + len(chunk)
+        combined_size = _measure_chunk(prev, use_chars) + _measure_chunk(
+            chunk, use_chars
+        )
 
-        # Don't merge across sentence boundaries (prev ends with . ! ?)
         prev_last_text = prev[-1].get("text", "")
-        if prev_last_text and prev_last_text[-1] in ".!?":
+        if prev_last_text and prev_last_text[-1] in sentence_end:
             merged.append(chunk)
             continue
 
-        # Check gap between segments
         prev_end = prev[-1].get("end", 0)
         chunk_start = chunk[0].get("start", 0)
         gap = chunk_start - prev_end
 
-        # Check combined duration
         combined_start = prev[0].get("start", 0)
         combined_end = chunk[-1].get("end", 0)
         combined_duration = combined_end - combined_start
 
-        if (combined_words <= max_words
-                and combined_duration <= max_duration
-                and gap <= max_gap):
+        if (
+            combined_size <= max_words
+            and combined_duration <= max_duration
+            and gap <= max_gap
+        ):
             merged[-1] = prev + chunk
         else:
             merged.append(chunk)

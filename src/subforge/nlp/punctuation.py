@@ -1,6 +1,12 @@
 """Punctuation restoration using a local token-classification model."""
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from subforge.nlp.lang_profile import LanguageProfile
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +24,13 @@ _LABEL_MAP = {
     ":": ",",
 }
 
+_DEFAULT_PUNCT_CHARS = set(".,!?;:")
 
-def restore_punctuation(word_segments: list[dict]) -> list[dict]:
+
+def restore_punctuation(
+    word_segments: list[dict],
+    profile: LanguageProfile | None = None,
+) -> list[dict]:
     """Add punctuation to word_segments using a local transformer model.
 
     Only adds punctuation where Whisper didn't already provide it.
@@ -38,14 +49,22 @@ def restore_punctuation(word_segments: list[dict]) -> list[dict]:
         aggregation_strategy="none",
     )
 
+    # Build the punctuation character set from profile
+    punct_chars = _DEFAULT_PUNCT_CHARS
+    if profile is not None:
+        punct_chars = set(profile.punctuation) | _DEFAULT_PUNCT_CHARS
+
     # Identify which words already have punctuation from Whisper
     has_punct = []
     clean_words = []
     for seg in word_segments:
         word = seg["word"]
-        if word and word[-1] in ".,!?;:":
+        if word and word[-1] in punct_chars:
             has_punct.append(True)
-            clean_words.append(word.rstrip(".,!?;:"))
+            stripped = word
+            while stripped and stripped[-1] in punct_chars:
+                stripped = stripped[:-1]
+            clean_words.append(stripped if stripped else word)
         else:
             has_punct.append(False)
             clean_words.append(word)

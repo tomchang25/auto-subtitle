@@ -1,11 +1,21 @@
-import spacy
-import functools
+from __future__ import annotations
 
-BREAK_WORD = ["so", "but"]
+import functools
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from subforge.nlp.lang_profile import LanguageProfile
+
+
+# ---------------------------------------------------------------------------
+# spaCy path (English and other alphabetic languages)
+# ---------------------------------------------------------------------------
 
 
 @functools.lru_cache(maxsize=1)
 def _get_nlp_model():
+    import spacy
+
     return spacy.load("en_core_web_sm")
 
 
@@ -26,15 +36,7 @@ def _merge_tokens(tokens):
         j = i
         while j + 1 < len(tokens) and (
             tokens[j]["whitespace"] == ""
-            or tokens[j + 1]["text"]
-            in [
-                "'s",
-                "'re",
-                "'ve",
-                "'d",
-                "'ll",
-                "n't",
-            ]
+            or tokens[j + 1]["text"] in ["'s", "'re", "'ve", "'d", "'ll", "n't"]
         ):
             text += tokens[j + 1]["text"]
             whitespace = tokens[j + 1]["whitespace"]
@@ -54,7 +56,7 @@ def _merge_tokens(tokens):
     return merged
 
 
-def split_to_sentences(text: str, punct_limit: int = 5):
+def _split_spacy(text: str, punct_limit: int = 5):
     """
     Split a sentence based on punctuation breaks and soft word limits.
     No hard max word enforcement anymore.
@@ -89,3 +91,52 @@ def split_to_sentences(text: str, punct_limit: int = 5):
         chunks.append(current)
 
     return chunks
+
+
+# ---------------------------------------------------------------------------
+# CJK path
+# ---------------------------------------------------------------------------
+
+
+def split_word_segments_by_punctuation(
+    word_segments: list[dict],
+    profile: LanguageProfile,
+) -> list[list[dict]]:
+    sentence_end = profile.sentence_end
+    punct = profile.punctuation
+
+    chunks: list[list[dict]] = []
+    current: list[dict] = []
+
+    for seg in word_segments:
+        word = seg["word"]
+        tok = {
+            "text": word,
+            "whitespace": "",
+            "is_punct": bool(word and word[-1] in punct),
+            "start": seg["start"],
+            "end": seg["end"],
+        }
+        current.append(tok)
+
+        if word and word[-1] in sentence_end:
+            chunks.append(current)
+            current = []
+
+    if current:
+        chunks.append(current)
+
+    return chunks
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+
+def split_to_sentences(
+    text: str,
+    punct_limit: int = 5,
+    profile: LanguageProfile | None = None,
+):
+    return _split_spacy(text, punct_limit)

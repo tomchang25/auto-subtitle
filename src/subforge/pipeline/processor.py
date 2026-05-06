@@ -21,6 +21,7 @@ from subforge.audio.preprocess import preprocess_audio
 
 from subforge.nlp.text_semantically import (
     split_to_sentences,
+    split_word_segments_by_punctuation,
 )
 from subforge.nlp.alignment import (
     align_sentences_with_timestamps,
@@ -49,6 +50,7 @@ from subforge.config import (
     TRANSLATE_SRC_LANG,
     TARGET_LANG_SHORT,
 )
+from subforge.nlp.lang_profile import LanguageProfile, get_profile, DEFAULT as DEFAULT_PROFILE
 from subforge.utils import get_bounds_and_text, save_word_segments
 
 ProgressCallback = Callable[[str, str], None]
@@ -254,80 +256,108 @@ class SubtitlePipeline:
 
         # Step 4: Transcribe (with checkpoint)
         word_segments_path = self.project_dir / "word_segments.json"
+        lang_path = self.project_dir / "detected_lang.txt"
         if not self.force and word_segments_path.exists():
             import json
 
             self._emit("Transcribe", "Loading cached word segments")
             with open(word_segments_path, "r", encoding="utf-8") as f:
                 word_segments = json.load(f)
-            self._emit("Transcribe", f"{len(word_segments)} words (from cache)")
+            detected_lang = lang_path.read_text().strip() if lang_path.exists() else "en"
+            self._emit("Transcribe", f"{len(word_segments)} words, lang={detected_lang} (from cache)")
         else:
             self._emit(
                 "Transcribe",
                 f"model={self.model_name}",
             )
             transcribe = _resolve_transcriber()
-            word_segments = transcribe(
+            word_segments, detected_lang = transcribe(
                 processed_audio,
                 self.model_name,
                 progress_callback=self.progress_callback,
             )
             save_word_segments(word_segments, word_segments_path)
-            self._emit("Transcribe", f"{len(word_segments)} words (saved checkpoint)")
+            lang_path.write_text(detected_lang, encoding="utf-8")
+            self._emit("Transcribe", f"{len(word_segments)} words, lang={detected_lang} (saved checkpoint)")
+
+        profile = get_profile(detected_lang)
+        self._emit("NLP", f"Language profile: {profile.code} (join='{profile.join_token}', char_mode={profile.use_char_count})")
         self._check_cancel()
 
-        # Step 4b: Punctuation restoration (optional)
-        if self.use_punctuation:
+        # Step 4b: Punctuation restoration (optional, English-like languages only)
+        if self.use_punctuation and not profile.skip_punctuation_model:
             self._emit("Punctuation", "Restoring punctuation")
             from subforge.nlp.punctuation import restore_punctuation
 
-            word_segments = restore_punctuation(word_segments)
+            word_segments = restore_punctuation(word_segments, profile)
+            self._check_cancel()
+        elif profile.skip_punctuation_model:
+            self._emit("Punctuation", f"Skipped (not needed for {profile.code})")
+
+        if profile.use_spacy:
+            # --- English path: spaCy tokenise → align → refine ---
+            # Step 5: NLP sentence splitting
+            self._emit("NLP", "Splitting into sentences (spaCy)")
+            full_text = profile.join_token.join([seg["word"] for seg in word_segments])
+            sentence_chunks = split_to_sentences(full_text)
             self._check_cancel()
 
-        # Step 5: NLP sentence splitting
-        self._emit("NLP", "Splitting into sentences")
-        full_text = " ".join([seg["word"] for seg in word_segments])
-        sentence_chunks = split_to_sentences(full_text)
-        self._check_cancel()
+            # Step 6: Timestamp alignment
+            self._emit("Align", "Aligning sentences with timestamps")
+            aligned = align_sentences_with_timestamps(word_segments, sentence_chunks)
+            self._check_cancel()
 
-        # Step 6: Timestamp alignment
-        self._emit("Align", "Aligning sentences with timestamps")
-        aligned = align_sentences_with_timestamps(word_segments, sentence_chunks)
-        self._check_cancel()
+            # Step 7: Refinement
+            self._emit("Refine", "Refining segment timing")
+            refined = refine_sentences_by_timing(
+                aligned,
+                min_duration=MIN_DURATION,
+                max_gap=MAX_GAP,
+                breath_gap=BREATH_GAP,
+                min_words_for_breath_split=MIN_WORDS_FOR_BREATH_SPLIT,
+            )
+            self._check_cancel()
+        else:
+            # --- CJK path: split word_segments directly by punctuation ---
+            self._emit("NLP", "Splitting by punctuation (CJK)")
+            refined = split_word_segments_by_punctuation(word_segments, profile)
+            self._check_cancel()
 
-        # Step 7: Refinement
-        self._emit("Refine", "Refining segment timing")
-        refined = refine_sentences_by_timing(
-            aligned,
-            min_duration=MIN_DURATION,
-            max_gap=MAX_GAP,
-            breath_gap=BREATH_GAP,
-            min_words_for_breath_split=MIN_WORDS_FOR_BREATH_SPLIT,
-        )
-        self._check_cancel()
+            # Still apply timing refinement
+            self._emit("Refine", "Refining segment timing")
+            refined = refine_sentences_by_timing(
+                refined,
+                min_duration=MIN_DURATION,
+                max_gap=MAX_GAP,
+                breath_gap=BREATH_GAP,
+                min_words_for_breath_split=MIN_WORDS_FOR_BREATH_SPLIT,
+            )
+            self._check_cancel()
 
         # Step 8: Split long segments
-        self._emit("Split", "Splitting long segments by word count")
+        self._emit("Split", "Splitting long segments")
         refined = split_long_sentences_by_length(
             refined,
-            min_words=SEG_MIN_WORDS,
-            max_words=SEG_HARD_WORDS,
-            soft_words=SEG_SOFT_WORDS,
+            min_words=profile.seg_min,
+            max_words=profile.seg_hard,
+            soft_words=profile.seg_soft,
             pause_threshold=SEG_PAUSE_THRESHOLD,
+            profile=profile,
         )
 
         # Step 8b: Merge short segments back together
         self._emit("Merge", "Merging short segments")
         refined = merge_short_segments(
             refined,
-            max_words=MERGE_MAX_WORDS,
+            max_words=profile.merge_max,
             max_duration=MERGE_MAX_DURATION,
             max_gap=MERGE_MAX_GAP,
+            profile=profile,
         )
         self._check_cancel()
 
         # Step 9: Write SRT
-        en_sentences = get_bounds_and_text(refined)
+        en_sentences = get_bounds_and_text(refined, profile=profile)
 
         if self.translate_method:
             self._emit("Translate", f"method={self.translate_method}, target={self.target_lang}")

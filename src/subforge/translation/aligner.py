@@ -22,9 +22,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_RATIO = 0.35
 
 # Punctuation/natural break points in CJK text
-_CJK_BREAK_RE = re.compile(r"(?<=[，。！？、；：\n])")
-# Whitespace break (fallback)
-_SPACE_BREAK_RE = re.compile(r"\s+")
+_CJK_BREAK_RE = re.compile(r"(?<=[，。！？、；：「」『』…\n])")
 
 
 def estimate_ratio(en_texts: list[str], zh_text: str) -> float:
@@ -88,7 +86,9 @@ def realign(
 
     logger.debug(
         "Realign: %d en segments, %d zh segments, ratio=%.3f",
-        n_en, n_zh, ratio,
+        n_en,
+        n_zh,
+        ratio,
     )
 
     # Build candidate split positions (prefer segment markers and punctuation)
@@ -111,7 +111,8 @@ def realign(
         # Shouldn't happen, but safety fallback
         logger.error(
             "Realign produced %d segments instead of %d, using naive split",
-            len(result), n_en,
+            len(result),
+            n_en,
         )
         result = _naive_split(zh_joined.replace(_SEG_MARKER, ""), n_en)
 
@@ -168,7 +169,10 @@ def _split_proportional(
 
         # Find best split point near target
         best_pos = _find_best_split(
-            clean_text, target_pos, preferred_splits, secondary_splits,
+            clean_text,
+            target_pos,
+            preferred_splits,
+            secondary_splits,
             search_radius=max(15, int(target_pos * 0.1)),
         )
         best_pos = max(prev_pos + 1, min(best_pos, total_len - (n_en - 1 - i)))

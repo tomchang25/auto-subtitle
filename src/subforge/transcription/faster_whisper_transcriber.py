@@ -30,7 +30,7 @@ def transcribe_audio_word_level(
     wav_path: Path,
     model_name: str,
     progress_callback=None,
-) -> list:
+) -> tuple[list, str]:
     if not wav_path.exists():
         raise FileNotFoundError(f"Audio file does not exist: {wav_path}")
 
@@ -44,6 +44,12 @@ def transcribe_audio_word_level(
     )
 
     duration = info.duration  # total audio duration in seconds
+    detected_lang = info.language  # ISO 639-1 code, e.g. "en", "zh", "ja"
+    logger.info(
+        "Detected language: %s (probability %.2f)",
+        detected_lang,
+        info.language_probability,
+    )
     segments = []
     last_reported = 0
 
@@ -64,7 +70,10 @@ def transcribe_audio_word_level(
             pct = min(100, int(current_time / duration * 100))
             logger.info(
                 "Transcription progress: %d%% (%d/%ds, %d words so far)",
-                pct, int(current_time), int(duration), len(segments),
+                pct,
+                int(current_time),
+                int(duration),
+                len(segments),
             )
             if progress_callback:
                 progress_callback(
@@ -76,5 +85,7 @@ def transcribe_audio_word_level(
     if not segments:
         raise ValueError("faster-whisper did not return word-level timestamps")
 
-    logger.info("Transcription complete: %d words", len(segments))
-    return segments
+    logger.info(
+        "Transcription complete: %d words, lang=%s", len(segments), detected_lang
+    )
+    return segments, detected_lang
