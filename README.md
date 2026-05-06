@@ -5,6 +5,7 @@
   </p>
   <p align="center">
     <a href="#features">Features</a> •
+    <a href="#language-support">Language Support</a> •
     <a href="#how-it-works">How It Works</a> •
     <a href="#installation">Installation</a> •
     <a href="#usage">Usage</a> •
@@ -45,6 +46,24 @@ SubForge bridges the gap between **raw ASR output** and **human-edited subtitles
 - **YouTube Integration** — Paste a URL to download audio (and optionally video) via yt-dlp.
 - **GUI & CLI** — PySide6 desktop app with progress tracking, or a full-featured command-line interface.
 - **Caching & Resumability** — Each pipeline stage checkpoints its output. Re-runs skip completed steps automatically.
+
+## Language Support
+
+> **Current scope:** SubForge is optimized for **English-language audio**. The NLP pipeline
+> (spaCy sentence splitting, break-word rules) is English-only. Non-English transcription
+> is on the [roadmap](#roadmap).
+
+| Pipeline Stage          | Language Support         | Notes                                            |
+| ----------------------- | ------------------------ | ------------------------------------------------ |
+| Transcription (Whisper) | English ¹                | Whisper supports 99+ languages; others untested   |
+| Punctuation Restoration | Multilingual             | fullstop-punctuation-multilang-large              |
+| Sentence Splitting      | **English only**         | Hardcoded to spaCy `en_core_web_sm`               |
+| Segmentation            | English only             | Break-word list is English-specific               |
+| Translation (NLLB)      | → 11 target languages ² | Sentence-level — quality is limited               |
+| Translation (Gemini)    | → 11 target languages ² | Block-level — better quality, may misalign output |
+
+¹ Other languages may work but are not tested or officially supported.  
+² Target languages: Traditional Chinese, Simplified Chinese, Japanese, Korean, French, German, Spanish, Portuguese, Vietnamese, Thai, English.
 
 ## How It Works
 
