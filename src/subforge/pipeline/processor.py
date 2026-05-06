@@ -47,6 +47,9 @@ from subforge.config import (
     TARGET_LANG_SHORT,
     ASR_BACKEND,
     ASR_SOURCE_LANGUAGE,
+    CHINESE_BENCHMARK_MODE,
+    CHINESE_BENCHMARK_HARD_CHARS,
+    CHINESE_BENCHMARK_GAP_SECONDS,
 )
 from subforge.nlp.lang_profile import get_profile
 from subforge.utils import get_bounds_and_text, save_word_segments
@@ -77,6 +80,7 @@ class SubtitlePipeline:
         asr_backend: str = ASR_BACKEND,
         source_language: str = ASR_SOURCE_LANGUAGE,
         missing_backend_handler: Callable[[str, str, str], bool] | None = None,
+        chinese_benchmark: bool = CHINESE_BENCHMARK_MODE,
     ):
         self.url = url
         self.local_file = Path(local_file) if local_file else None
@@ -93,6 +97,7 @@ class SubtitlePipeline:
         self.asr_backend = asr_backend
         self.source_language = source_language
         self.missing_backend_handler = missing_backend_handler
+        self.chinese_benchmark = chinese_benchmark
         self._cancelled = False
         self._fallback_from: str | None = None
         self.project_dir = None
@@ -343,7 +348,24 @@ class SubtitlePipeline:
         elif profile.skip_punctuation_model:
             self._emit("Punctuation", f"Skipped (not needed for {profile.code})")
 
-        if profile.use_spacy:
+        if profile.code == "zh" and self.chinese_benchmark:
+            # --- Chinese benchmark mode: hard-cut only, no NLP refinement ---
+            # Bypasses semantic splitting, timing refinement, soft segmentation,
+            # and short-segment merging so raw ASR output reaches the SRT unchanged.
+            self._emit(
+                "NLP",
+                f"Chinese benchmark mode: hard-cut segmentation "
+                f"(hard_chars={CHINESE_BENCHMARK_HARD_CHARS}, "
+                f"gap={CHINESE_BENCHMARK_GAP_SECONDS}s)",
+            )
+            from subforge.nlp.chinese_benchmark import hard_cut_chinese_segments
+            refined = hard_cut_chinese_segments(
+                word_segments,
+                hard_chars=CHINESE_BENCHMARK_HARD_CHARS,
+                gap_seconds=CHINESE_BENCHMARK_GAP_SECONDS,
+            )
+            self._check_cancel()
+        elif profile.use_spacy:
             # --- English path: spaCy tokenise → align → refine ---
             # Step 5: NLP sentence splitting
             self._emit("NLP", "Splitting into sentences (spaCy)")
@@ -366,6 +388,28 @@ class SubtitlePipeline:
                 min_words_for_breath_split=MIN_WORDS_FOR_BREATH_SPLIT,
             )
             self._check_cancel()
+
+            # Step 8: Split long segments
+            self._emit("Split", "Splitting long segments")
+            refined = split_long_sentences_by_length(
+                refined,
+                min_words=profile.seg_min,
+                max_words=profile.seg_hard,
+                soft_words=profile.seg_soft,
+                pause_threshold=SEG_PAUSE_THRESHOLD,
+                profile=profile,
+            )
+
+            # Step 8b: Merge short segments back together
+            self._emit("Merge", "Merging short segments")
+            refined = merge_short_segments(
+                refined,
+                max_words=profile.merge_max,
+                max_duration=MERGE_MAX_DURATION,
+                max_gap=MERGE_MAX_GAP,
+                profile=profile,
+            )
+            self._check_cancel()
         else:
             # --- CJK path: split word_segments directly by punctuation ---
             self._emit("NLP", "Splitting by punctuation (CJK)")
@@ -383,27 +427,27 @@ class SubtitlePipeline:
             )
             self._check_cancel()
 
-        # Step 8: Split long segments
-        self._emit("Split", "Splitting long segments")
-        refined = split_long_sentences_by_length(
-            refined,
-            min_words=profile.seg_min,
-            max_words=profile.seg_hard,
-            soft_words=profile.seg_soft,
-            pause_threshold=SEG_PAUSE_THRESHOLD,
-            profile=profile,
-        )
+            # Step 8: Split long segments
+            self._emit("Split", "Splitting long segments")
+            refined = split_long_sentences_by_length(
+                refined,
+                min_words=profile.seg_min,
+                max_words=profile.seg_hard,
+                soft_words=profile.seg_soft,
+                pause_threshold=SEG_PAUSE_THRESHOLD,
+                profile=profile,
+            )
 
-        # Step 8b: Merge short segments back together
-        self._emit("Merge", "Merging short segments")
-        refined = merge_short_segments(
-            refined,
-            max_words=profile.merge_max,
-            max_duration=MERGE_MAX_DURATION,
-            max_gap=MERGE_MAX_GAP,
-            profile=profile,
-        )
-        self._check_cancel()
+            # Step 8b: Merge short segments back together
+            self._emit("Merge", "Merging short segments")
+            refined = merge_short_segments(
+                refined,
+                max_words=profile.merge_max,
+                max_duration=MERGE_MAX_DURATION,
+                max_gap=MERGE_MAX_GAP,
+                profile=profile,
+            )
+            self._check_cancel()
 
         # Step 9: Write SRT
         en_sentences = get_bounds_and_text(refined, profile=profile)
