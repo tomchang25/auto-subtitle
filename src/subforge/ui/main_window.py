@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot, QUrl, QMimeData, Qt
+from PySide6.QtCore import QObject, QThread, Signal, Slot, QUrl, QMimeData
 from PySide6.QtGui import QDesktopServices, QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
     QApplication,

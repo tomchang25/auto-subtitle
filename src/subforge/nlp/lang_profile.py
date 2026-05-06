@@ -7,9 +7,7 @@ and segmentation thresholds.
 
 from __future__ import annotations
 
-import re
-import unicodedata
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 def _is_cjk_char(ch: str) -> bool:

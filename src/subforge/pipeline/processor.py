@@ -1,6 +1,5 @@
 import hashlib
 import logging
-import shutil
 from pathlib import Path
 from typing import Callable
 
@@ -38,11 +37,7 @@ from subforge.config import (
     MIN_DURATION,
     BREATH_GAP,
     MIN_WORDS_FOR_BREATH_SPLIT,
-    SEG_MIN_WORDS,
-    SEG_SOFT_WORDS,
-    SEG_HARD_WORDS,
     SEG_PAUSE_THRESHOLD,
-    MERGE_MAX_WORDS,
     MERGE_MAX_DURATION,
     MERGE_MAX_GAP,
     USE_LLM_PUNCTUATION,
@@ -52,7 +47,7 @@ from subforge.config import (
     ASR_BACKEND,
     ASR_SOURCE_LANGUAGE,
 )
-from subforge.nlp.lang_profile import LanguageProfile, get_profile, DEFAULT as DEFAULT_PROFILE
+from subforge.nlp.lang_profile import get_profile
 from subforge.utils import get_bounds_and_text, save_word_segments
 
 ProgressCallback = Callable[[str, str], None]
@@ -152,7 +147,6 @@ class SubtitlePipeline:
 
     def _extract_audio_from_video(self, video_path: Path, output_path: Path) -> Path:
         """Extract audio track from a video file using ffmpeg."""
-        import shutil
         import subprocess
 
         from subforge.audio.preprocess import _find_ffmpeg
