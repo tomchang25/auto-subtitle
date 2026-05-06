@@ -145,9 +145,8 @@ class SubtitlePipeline:
         import shutil
         import subprocess
 
-        ffmpeg = shutil.which("ffmpeg")
-        if ffmpeg is None:
-            raise FileNotFoundError("ffmpeg not found on PATH.")
+        from subforge.audio.preprocess import _find_ffmpeg
+        ffmpeg = _find_ffmpeg()
         audio_out = output_path.with_suffix(".mp3")
         cmd = [
             ffmpeg, "-y",

@@ -14,13 +14,24 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def _find_ffmpeg() -> str:
-    """Return the ffmpeg binary path, or raise if not found."""
+    """Return the ffmpeg binary path, or raise if not found.
+
+    Checks the system PATH first, then falls back to a bundled copy in the
+    project's ``tools/`` directory (downloaded automatically by setup.bat).
+    """
     ffmpeg = shutil.which("ffmpeg")
-    if ffmpeg is None:
-        raise FileNotFoundError(
-            "ffmpeg not found on PATH. Install ffmpeg and make sure it's accessible."
-        )
-    return ffmpeg
+    if ffmpeg is not None:
+        return ffmpeg
+
+    # Fallback: check <project_root>/tools/ffmpeg.exe
+    tools_ffmpeg = Path(__file__).resolve().parents[2] / "tools" / "ffmpeg.exe"
+    if tools_ffmpeg.is_file():
+        return str(tools_ffmpeg)
+
+    raise FileNotFoundError(
+        "ffmpeg not found on PATH or in tools/. "
+        "Run setup.bat or install ffmpeg manually."
+    )
 
 
 def _get_duration_seconds(audio_path: Path) -> float:

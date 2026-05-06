@@ -19,6 +19,12 @@ venv/
 # Models (large files)
 models/
 
+# Bundled tools (ffmpeg, downloaded by setup.bat)
+tools/
+
+# Setup completion marker
+.setup_done
+
 # IDE
 .idea/
 

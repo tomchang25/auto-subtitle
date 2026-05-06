@@ -98,26 +98,39 @@ YouTube URL
 
 ## Installation
 
-**Requirements:** Python 3.11+, ffmpeg on PATH.
+**Requirements:**
 
-### One-Click Setup
+- **Python 3.11+** — make sure to check "Add Python to PATH" during installation ([download](https://www.python.org/downloads/))
+- **NVIDIA GPU** with CUDA support (recommended) — CPU-only mode works but is significantly slower.
+
+> **Note:** ffmpeg is downloaded automatically during setup. If you already have ffmpeg on PATH, the bundled download is skipped.
+
+### Windows — Double-Click Launch
+
+```bash
+git clone https://github.com/tomchang25/subforge.git
+```
+
+Double-click **`SubForge.bat`** in the project root. On the first run it will automatically:
+
+1. Create a Python virtual environment
+2. Install PyTorch with CUDA 12.4 support
+3. Install all project dependencies
+4. Download the spaCy English model
+5. Download ffmpeg (if not already on PATH)
+6. Launch the GUI
+
+Subsequent launches skip setup and open the app directly. If setup is interrupted, the next launch will re-run setup from where it left off.
+
+### macOS / Linux
 
 ```bash
 git clone https://github.com/tomchang25/subforge.git
 cd subforge
-```
-
-```bat
-:: Windows
-scripts\setup.bat
-```
-
-```bash
-# macOS / Linux
 ./scripts/setup.sh
 ```
 
-The setup script creates a virtual environment, installs the correct PyTorch build for your platform (CUDA 12.4 on Windows/Linux, MPS on macOS), installs all dependencies, and downloads the spaCy English model.
+The setup script creates a virtual environment, installs the correct PyTorch build for your platform (CUDA 12.4 on Linux, MPS on macOS), installs all dependencies, and downloads the spaCy English model.
 
 ### Manual Setup
 
@@ -137,9 +150,15 @@ python -m spacy download en_core_web_sm
 pip install -e .
 ```
 
+### Troubleshooting
+
+If something goes wrong during setup, delete the `.setup_done` file in the project root and double-click `SubForge.bat` again to re-run setup.
+
 ## Usage
 
 ### GUI
+
+Double-click **`SubForge.bat`** (Windows) or run:
 
 ```bash
 subforge
