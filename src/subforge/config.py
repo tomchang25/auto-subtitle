@@ -22,13 +22,11 @@ BREATH_GAP = 0.3
 MIN_WORDS_FOR_BREATH_SPLIT = 8
 
 # Segmentation thresholds
-SEG_MIN_WORDS = 4       # never create a segment shorter than this
-SEG_SOFT_WORDS = 8      # after this many words, cut at next punctuation/pause
-SEG_HARD_WORDS = 15     # hard cut regardless
 SEG_PAUSE_THRESHOLD = 0.25  # timing gap (seconds) treated as a cut opportunity
+# NOTE: word/char count thresholds (seg_min, seg_soft, seg_hard, merge_max)
+# are defined per-language in nlp/lang_profile.py
 
 # Merge thresholds (soft merge after splitting)
-MERGE_MAX_WORDS = 12        # don't merge if combined > this
 MERGE_MAX_DURATION = 4.0    # don't merge if combined duration > this (seconds)
 MERGE_MAX_GAP = 1.0         # don't merge if gap between segments > this (seconds)
 
