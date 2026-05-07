@@ -13,8 +13,8 @@ These cover behaviors PR2 introduces on top of the existing CJK tests:
 * Repeated cached runs do not bump the legacy mirror's mtime when the
   contents haven't changed.
 
-Existing CJK test coverage (alignment, fallback, benchmark, split-source
-inputs, corrector seam) still lives in ``test_cjk_pipeline.py`` and exercises
+Existing CJK test coverage (alignment, fallback, split-source inputs,
+corrector seam) still lives in ``test_cjk_pipeline.py`` and exercises
 the same code paths through the shared runner.
 """
 
@@ -48,7 +48,6 @@ def _ctx(
     *,
     profile=CHINESE,
     force=False,
-    chinese_benchmark=False,
     transcript_text=None,
     transcript_source=None,
     transcript_backend=None,
@@ -63,7 +62,6 @@ def _ctx(
         force=force,
         emit=lambda step, detail="": None,
         check_cancel=lambda: None,
-        chinese_benchmark=chinese_benchmark,
         transcript_text=transcript_text,
         transcript_source=transcript_source,
         transcript_backend=transcript_backend,

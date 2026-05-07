@@ -31,7 +31,6 @@ from subforge.config import (
     TARGET_LANG_SHORT,
     ASR_BACKEND,
     ASR_SOURCE_LANGUAGE,
-    CHINESE_BENCHMARK_MODE,
     CJK_USE_SENSEVOICE_TRANSCRIPT,
     CJK_SENSEVOICE_MIN_RATIO,
 )
@@ -65,7 +64,6 @@ class SubtitlePipeline:
         asr_backend: str = ASR_BACKEND,
         source_language: str = ASR_SOURCE_LANGUAGE,
         missing_backend_handler: Callable[[str, str, str], bool] | None = None,
-        chinese_benchmark: bool = CHINESE_BENCHMARK_MODE,
     ):
         self.url = url
         self.local_file = Path(local_file) if local_file else None
@@ -82,7 +80,6 @@ class SubtitlePipeline:
         self.asr_backend = asr_backend
         self.source_language = source_language
         self.missing_backend_handler = missing_backend_handler
-        self.chinese_benchmark = chinese_benchmark
         self._cancelled = False
         self._fallback_from: str | None = None
         self.project_dir = None
@@ -410,10 +407,10 @@ class SubtitlePipeline:
         # Step 5–8: language-specific NLP pipeline (English vs CJK)
         strategy = get_strategy(profile)
 
-        # Pre-Plan 2 — CJK transcript/timing split. For CJK languages (and
-        # only when not already in benchmark mode) we try to use SenseVoice
-        # as the transcript backend while keeping Whisper word_segments as
-        # the timing source. Whisper-only is the documented fallback.
+        # Pre-Plan 2 — CJK transcript/timing split. For CJK languages we try
+        # to use SenseVoice as the transcript backend while keeping Whisper
+        # word_segments as the timing source. Whisper-only is the
+        # documented fallback.
         sensevoice_text: str | None = None
         sensevoice_source: str | None = None
         sensevoice_backend: str | None = None
@@ -421,11 +418,7 @@ class SubtitlePipeline:
         timing_backend: str | None = None
         timing_model: str | None = None
         transcript_fallback: str | None = None
-        if (
-            not profile.use_spacy
-            and not self.chinese_benchmark
-            and CJK_USE_SENSEVOICE_TRANSCRIPT
-        ):
+        if not profile.use_spacy and CJK_USE_SENSEVOICE_TRANSCRIPT:
             sensevoice_text, sensevoice_source, transcript_fallback = (
                 self._maybe_run_sensevoice_transcript(
                     processed_audio,
@@ -448,7 +441,6 @@ class SubtitlePipeline:
             force=self.force,
             emit=self._emit,
             check_cancel=self._check_cancel,
-            chinese_benchmark=self.chinese_benchmark,
             transcript_text=sensevoice_text,
             transcript_source=sensevoice_source,
             transcript_backend=sensevoice_backend,
