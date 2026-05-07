@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from subforge.nlp.cjk_corrector import NoOpCorrector
 from subforge.nlp.lang_profile import CHINESE, ENGLISH, JAPANESE, KOREAN
 from subforge.pipeline.strategies import (
