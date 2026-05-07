@@ -26,25 +26,41 @@ Create a dedicated CJK subtitle pipeline so Chinese/Japanese/Korean processing n
 
 ---
 
-## Pre-Plan 2: Add SenseVoice as the Primary CJK Transcript Backend
+## Pre-Plan 2: Add SenseVoice Transcript Backend with Whisper Timing Provider
 
 ### 1. Goal
 
-Use SenseVoice as the primary CJK transcript source because it is fast and produces usable text, while treating it as transcript-only unless reliable timestamps are available.
+Use SenseVoice as the primary CJK transcript source while using Whisper as the timing provider so CJK subtitles can combine better text quality with usable subtitle timestamps.
 
-### 2. Requirements
+### 2. Why This Is Needed
 
-1. SenseVoice backend — support SenseVoice as a selectable ASR backend for CJK transcript generation.
+SenseVoice does not provide reliable subtitle timestamps, so it cannot independently produce normal timed subtitles. The current CJK pipeline already separates transcript text from timing anchors, which makes it possible to use SenseVoice for text and Whisper for timing instead of forcing SenseVoice output into a fake word-timestamp format.
 
-2. Transcript-only contract — allow ASR backends to return transcript-level or segment-level output without requiring fake word-level timestamps.
+### 3. Requirements
 
-3. Timing status metadata — record whether a backend provides word timing, segment timing, no timing, or untrusted timing.
+1. SenseVoice transcript source — support SenseVoice as a CJK transcript provider that returns text without requiring word-level, character-level, or segment-level timestamps.
+2. Whisper timing source — support Whisper as the default CJK timing provider when SenseVoice is used, with timing represented separately from transcript text.
+3. CJK transcript/timing merge — align SenseVoice-derived sentences against Whisper timing anchors so final subtitles use SenseVoice text with Whisper start/end times.
+4. Default CJK routing — prefer SenseVoice transcript plus Whisper timing for CJK when SenseVoice is available, with Whisper-only fallback when SenseVoice fails or produces unusable text.
+5. Timing degradation — when Whisper timing is unavailable or invalid, mark timing as missing or estimated rather than emitting fake normal timestamps.
+6. Diagnostics — persist transcript source, timing source, timing status, backend names, transcript length, fallback usage, and alignment outcome in CJK artifacts.
 
-4. Default CJK routing — make SenseVoice the preferred CJK transcript backend when available, with Whisper as fallback.
+### 4. Non-Goals
 
-5. No fake timestamps — do not synthesize word-level timestamps for SenseVoice output just to satisfy the existing word segment format.
+1. Do not implement local LLM correction or glossary correction.
+2. Do not implement forced audio alignment.
+3. Do not redesign English or non-CJK transcription behavior.
+4. Do not require SenseVoice to emit word-level timestamps.
+5. Do not expose full CJK mode selection in CLI or UI yet.
 
-6. Backend diagnostics — include backend name, model name, timing availability, transcript length, and fallback usage in logs or metadata.
+### 5. Acceptance Criteria
+
+1. A CJK run can use SenseVoice text as the final subtitle display text while taking subtitle timing from Whisper.
+2. SenseVoice-only output is treated as untimed transcript data unless an explicit estimated-timing fallback is enabled.
+3. Whisper-only fallback can still produce a usable timed subtitle when SenseVoice is unavailable, empty, or suspiciously incomplete.
+4. CJK artifacts clearly distinguish transcript source from timing source.
+5. No fake SenseVoice word timestamps are produced to satisfy legacy pipeline assumptions.
+6. Existing English subtitle behavior remains unchanged.
 
 ---
 
