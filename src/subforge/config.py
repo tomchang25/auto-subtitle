@@ -76,6 +76,24 @@ CHINESE_BENCHMARK_MODE = False
 CHINESE_BENCHMARK_HARD_CHARS = 30    # max characters accumulated before a forced cut
 CHINESE_BENCHMARK_GAP_SECONDS = 1.5  # timing gap (seconds) that triggers a cut
 
+# Pre-Plan 3 — CJK subtitle postprocess (display-width aware):
+# Maximum display columns (full-width = 2, half-width = 1) per CJK cue line
+# before the postprocess splits it. 28 ≈ 14 CJK ideographs.
+CJK_POSTPROCESS_MAX_WIDTH = 28
+# Minimum subtitle duration (seconds). Cues below this are extended into
+# any trailing silence before the next cue starts.
+CJK_POSTPROCESS_MIN_DURATION = 0.8
+# Maximum subtitle duration (seconds) before the cue end is shortened.
+CJK_POSTPROCESS_MAX_DURATION = 6.0
+# Combined width budget for merging two short adjacent cues.
+CJK_POSTPROCESS_MERGE_MAX_WIDTH = 24
+# Combined duration budget when merging.
+CJK_POSTPROCESS_MERGE_MAX_DURATION = 5.0
+# Largest gap (seconds) allowed between two cues being merged.
+CJK_POSTPROCESS_MERGE_MAX_GAP = 0.5
+# Cues at/below this display width are merge candidates.
+CJK_POSTPROCESS_SHORT_CUE_WIDTH = 6
+
 # Pre-Plan 2 — CJK transcript/timing split:
 # When True (default), CJK runs use SenseVoice for transcript text and
 # Whisper for timing anchors. Falls back to Whisper-only when SenseVoice is
