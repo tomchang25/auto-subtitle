@@ -1,297 +1,260 @@
-# Plan: Unify English and CJK Subtitle Processing into a Shared Transcript-First Staged Pipeline
+# Plan: Unified Subtitle Pipeline
 
-## Context
+## Current State (after PR1–PR3)
 
-The subtitle pipeline currently splits into two parallel orchestration paths after transcription:
+PR1–PR3 moved both English and CJK onto a single `StagedPipelineRunner`. The runner calls language-specific behavior through a `Policy` protocol. Both paths now share the same stage order:
 
-- The English path owns a spaCy-based flow: sentence split → token-level timing attach → timing-gap refinement → word-count split → short-segment merge.
-- The CJK path owns a transcript-first flow with explicit artifacts: raw transcript + timing anchors → correction seam → sentence split → alignment → display-width-aware postprocess.
+```
+build_inputs → correct → split_sentences → align → postprocess → final_cues
+```
 
-This split makes future work difficult to add consistently. LLM correction, punctuation restoration, translation timing projection, force alignment, and richer diagnostics should target shared stages rather than separate end-to-end language pipelines.
+This is done and working. The strategies (`EnglishPipelineStrategy`, `CjkPipelineStrategy`) are thin wrappers.
 
-Outcome: one staged orchestration scaffold, language-specific policies, consistent stage artifacts, and behavior-compatible subtitle output. Byte-identical output should be required only for targeted deterministic regression fixtures, not as a blanket requirement for every language and fixture.
+### What still lives outside the staged pipeline
 
-## Architecture Decisions
+Several processing steps currently live in `processor.py`, before or after the staged runner:
 
-1. **Shared staged pipeline skeleton.** English and CJK should both pass through the same high-level stage names: inputs, correction, sentence units, alignment, postprocess, and final cues.
+| Step                        | Location                                | Notes                                                                                  |
+| --------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------- |
+| Punctuation restoration     | `processor.py`, before `strategy.run()` | Mutates `word_segments` in place; CJK skips it                                         |
+| Translation                 | `processor.py`, after `strategy.run()`  | Runs on postprocessed writer chunks — already cut into short fragments with no context |
+| SenseVoice transcript fetch | `processor.py`, before `strategy.run()` | Result passed via `StrategyContext` fields                                             |
+| Chinese benchmark mode      | Removed in PR4b                         | `CjkPolicy.short_circuit()` and CLI/config benchmark hooks are gone                    |
 
-2. **Policy-based language behavior.** Language-specific behavior should live in policies and stage implementations, not in separate end-to-end orchestration classes.
+The staged pipeline has no visibility into whether punctuation restoration ran or whether translation happened. These steps produce no stage artifacts and no metadata.
 
-3. **Typed token intervals.** `AlignedCue` should include an optional `tokens` field, but the token type should be explicit rather than raw dictionaries. English populates token intervals; CJK may leave them empty and rely on cue interval plus display text.
+### Why current translation quality is poor
 
-4. **Consistent stage signatures.** Stage protocols should expose consistent signatures so the runner stays generic. Differences between English and CJK should be handled inside implementations, not through runner-level language branching.
+Translation currently runs **after postprocess**, which means it receives short, context-free subtitle fragments:
 
-5. **Canonical artifact directory.** Shared artifacts should be read from one canonical stage directory. Legacy CJK artifact output may be mirrored for compatibility, but the runner should not read caches from both locations.
+```
+Input to translator (now):
+  1. "Footage has emerged showing towering masts"
+  2. "of the ship clipping the bridge"
+  3. "as the sailing vessel was passing"
+  4. "under the famous structure."
 
-6. **Strategy compatibility shims.** Existing `EnglishPipelineStrategy` and `CjkPipelineStrategy` should remain importable public entry points, but their orchestration bodies should become thin wrappers around the shared staged pipeline.
+These are pieces of one sentence, but the translator sees them as independent lines.
+```
 
-7. **Incremental PR slicing.** This refactor should land in small behavior-preserving slices rather than one large all-at-once rewrite.
+Results: bad translations (no context), mismatched segment counts (LLM merges or splits freely), and a complex realignment step (`translation/aligner.py`) that often fails.
 
-## Shared Data Model
+---
 
-Introduce language-agnostic stage models:
+## PR4b — Metadata normalization and cleanup (done)
 
-- `Transcript`
-- `TimingAnchor`
-- `TimingAnchors`
-- `SentenceUnit`
-- `TokenInterval`
-- `AlignedCue`
-- `PostprocessResult`
-- `PipelineResult`
+`final_cues.json` metadata has been normalized so English, CJK, and fallback paths emit the same required key set. PR4b also removed the Chinese benchmark shortcut and stale benchmark plumbing.
 
-`TokenInterval` should include at least:
+After PR4b, any consumer of `final_cues.json` can read required metadata without knowing which language produced it.
 
-- `text`
-- `start`
-- `end`
-- `is_punct`
-- `whitespace`
-- `source`
-- optional confidence or provenance metadata
+Implemented by commit `6f868bc88de2e00991016260b8d30f6c0460202b` / PR #21.
 
-`AlignedCue` should include at least:
+---
 
-- raw text
-- corrected text
-- display text
-- start and end interval
-- confidence
-- fallback reason
-- text source
-- timing source
-- timing status
-- optional `tokens: list[TokenInterval] | None`
+## Future direction: pull remaining steps into the staged pipeline
 
-English writer output should treat `tokens` as the source of truth when available. `display_text` for English is primarily an artifact/debug view and must not introduce punctuation-spacing regressions.
+The goal is one linear flow where every step is a stage with artifacts and metadata:
 
-## Shared Stage Contract
+```
+transcription
+  → punctuation restoration (if applicable)
+  → correction (if applicable)
+  → sentence splitting
+  → translation (if applicable) ← after split, before align
+  → alignment (current: English word-level, CJK char-level; future: force-aligned)
+  → postprocess (source and translated, independently)
+  → output
+```
 
-Each stage should return explicit data rather than passing hidden state through mutable context side channels.
+All steps run inside the staged pipeline. `processor.py` only handles I/O (download, audio preprocessing, model loading) and hands off to the runner.
 
-Recommended stage shapes:
+### PR5 — Pull punctuation restoration into the staged pipeline
 
-- Input stage: word segments plus optional transcript override → transcript and timing anchors.
-- Correction stage: transcript plus policy → corrected transcript and correction metadata.
-- Sentence stage: corrected transcript plus policy → sentence units.
-- Alignment stage: sentence units, timing anchors, original word segments, and policy → aligned cues and alignment metadata.
-- Postprocess stage: aligned cues and policy → final writer chunks plus postprocess diagnostics.
+Move punctuation restoration from `processor.py` into the pipeline as a stage between `build_inputs` and `correct`.
 
-Do not pass English spaCy sentence tokens through generic context options. If sentence-level token data is needed by alignment, attach it to the sentence unit or an explicit sentence-stage result.
+Currently `processor.py` calls `restore_punctuation(word_segments, profile)` and mutates the word segments before the strategy ever sees them. This means:
 
-## Artifact Policy
+- The staged pipeline doesn't know if punctuation was restored or not.
+- There's no artifact recording the before/after.
+- CJK skips it via `profile.skip_punctuation_model`, but this check lives in `processor.py`, not in the policy.
 
-Use a canonical shared artifact directory for both English and CJK runs.
+After PR5:
 
-Canonical artifact names:
+- Punctuation restoration becomes a policy-controlled stage.
+- English policy enables it; CJK policy skips it.
+- The runner records whether it ran/skipped in stage metadata.
+- `processor.py` no longer touches `word_segments` after transcription.
+- The stage cache hash includes the punctuation backend/config so changing punctuation settings invalidates downstream artifacts safely.
 
-- `raw_transcript.json`
-- `timing_anchors.json`
-- `corrected_transcript.json`
-- `sentences.json`
-- `alignment.json`
-- `final_cues.json`
+### PR6 — Pull translation into the staged pipeline (sentence-level)
 
-CJK may mirror these files to the legacy CJK artifact directory for backward compatibility, but that directory should be write-only from the runner’s perspective.
+Move translation from `processor.py` into the pipeline as a stage **after `split_sentences` and before `align`**.
 
-Rules:
+#### Why after split, not after postprocess
 
-1. The runner reads only canonical stage artifacts.
-2. Legacy artifact directories are compatibility mirrors, not cache sources.
-3. Force-clear and schema invalidation operate on the canonical directory first.
-4. Legacy mirrors are overwritten from canonical artifacts after successful writes.
-5. Stage schema version should be bumped so stale artifacts from previous layouts are ignored.
+The current flow translates postprocessed writer chunks — short fragments already cut by word count or display width. The translator has no sentence context and the output count frequently mismatches, requiring a fragile realignment step.
 
-Minimum shared metadata should include:
+Moving translation to after `split_sentences` means the translator receives **complete sentences with full context**. The prompt enforces strict 1:1 sentence correspondence, so the output count is guaranteed to match.
 
-- mode
-- language/profile code
-- text source
-- timing source
-- transcript backend
-- timing backend
-- correction mode
-- correction applied
-- alignment status
-- fallback used
-- fallback reason
-- timing status
-- postprocess action counts when postprocess ran
+#### Translation approach
 
-## Implementation Plan
+Send all sentences in a single prompt with numbering. The LLM sees full context but outputs one translated line per source sentence:
 
-### PR 1 — Shared models and compatibility re-exports
+```
+以下是一段英文逐句轉錄，請逐句翻譯成繁體中文。
+嚴格保持句數一致，第 N 句原文對應第 N 句譯文。
+不要合併、不要拆分、不要省略。
 
-Create shared stage models and cache helpers without changing behavior.
+1. Footage has emerged showing towering masts of the ship clipping the bridge as the sailing vessel was passing under the famous structure.
+2. Parts of the masts reportedly fell onto the deck.
 
-Tasks:
+→
+1. 畫面顯示，這艘帆船經過時，高聳的桅杆撞上了這座著名建築。
+2. 據報導，部分桅杆掉落在甲板上。
+```
 
-1. Introduce shared transcript, timing, sentence, token, cue, and result models.
-2. Add typed token interval support and JSON round-trip behavior.
-3. Re-export existing CJK model names from the shared models so existing imports continue to work.
-4. Keep the existing English and CJK strategy bodies unchanged.
-5. Add focused tests for model serialization, including aligned cues with and without tokens.
+If the returned count doesn't match, retry (not realign). This eliminates the `translation/aligner.py` complexity for the common case.
 
-Completion criteria:
+#### Bilingual cue pairing
 
-- Existing tests pass unchanged.
-- CJK model imports still resolve.
-- New shared cue and token models can round-trip through JSON.
+After translation, source and translated sentences share 1:1 correspondence. Both go through alignment and postprocess independently:
 
-### PR 2 — Shared staged runner for CJK only
+- Source sentences → align with word timestamps → postprocess by source language rules → source cues
+- Translated sentences → inherit the same sentence time range → postprocess by target language rules → translated cues
 
-Move CJK orchestration onto the shared runner while preserving behavior and legacy artifacts.
+The source postprocess produces the primary cue track (it has real word-level timestamps). Translated text is then mapped onto source cues:
 
-Tasks:
+1. For each source sentence's time range, count how many source cues were produced.
+2. Calculate proportional split points in the translated text based on source cue character ratios.
+3. At each split point, look for nearby target-language punctuation (`，。、！？`).
+4. If punctuation is found within range, snap to it. If not, cut at the proportional point.
+5. Each translated fragment pairs with the corresponding source cue.
 
-1. Introduce the policy object and stage protocol definitions.
-2. Implement the staged runner using the shared stage contract.
-3. Extract existing CJK input, correction, sentence split, alignment, fallback, and display-width postprocess behavior into policy-driven stage implementations.
-4. Keep `CjkPipelineStrategy` as a thin compatibility shim.
-5. Write canonical artifacts to the shared stage directory and mirror them to the legacy CJK directory.
-6. Ensure the runner reads only canonical artifacts.
-7. Preserve Chinese benchmark short-circuit behavior and its existing metadata shape.
+Example:
 
-Completion criteria:
+```
+Source sentence: 5.36s — 9.92s
+Source postprocess produced 4 cues:
+  cue 1: "Footage has emerged showing towering masts"       5.36 - 7.52  (~33%)
+  cue 2: "of the ship clipping the bridge"                  7.52 - 8.64  (~25%)
+  cue 3: "as the sailing vessel was passing"                 8.64 - 9.20  (~25%)
+  cue 4: "under the famous structure."                       9.20 - 9.92  (~17%)
 
-- Existing CJK tests pass unchanged.
-- CJK artifacts appear in both canonical and legacy locations.
-- Canonical artifacts are the only cache source.
-- Benchmark mode still bypasses normal stages and records the same high-level intent.
+Translated sentence: "畫面顯示，這艘帆船經過時，高聳的桅杆撞上了這座著名建築。"
 
-### PR 3 — English policy through the staged runner
+Proportional split points in Chinese text: ~33%, ~58%, ~83%
+  ~33% (pos ~7)  → 逗號在 pos 11 → snap → "畫面顯示，這艘帆船經過時，"
+  ~58% (pos ~13) → no punctuation → cut at proportion → "高聳的桅杆"
+  ~83% (pos ~18) → no punctuation → cut at proportion → "撞上了這座"
+  remainder                                             → "著名建築。"
 
-Route English through the shared runner without changing default behavior.
+Final bilingual output:
+  cue 1: "Footage has emerged showing towering masts"       5.36 - 7.52
+         "畫面顯示，這艘帆船經過時，"
 
-Tasks:
+  cue 2: "of the ship clipping the bridge"                  7.52 - 8.64
+         "高聳的桅杆"
 
-1. Implement English sentence splitting as a stage result that explicitly carries any token data needed by alignment.
-2. Implement English word-level alignment that populates `AlignedCue.tokens`.
-3. Implement English postprocess that reads token intervals and calls existing timing refinement, long-split, and short-merge primitives.
-4. Keep `EnglishPipelineStrategy` as a thin compatibility shim.
-5. Add English stage artifacts under the canonical stage directory.
-6. Add targeted deterministic regression fixtures for behavior-compatible or byte-identical English output where appropriate.
+  cue 3: "as the sailing vessel was passing"                8.64 - 9.20
+         "撞上了這座"
 
-Completion criteria:
+  cue 4: "under the famous structure."                      9.20 - 9.92
+         "著名建築。"
+```
 
-- Existing English primitive tests pass.
-- English staged runs produce canonical artifacts.
-- Aligned English cues have populated token intervals.
-- Writer output does not regress punctuation spacing.
-- Deterministic English fixture output matches the legacy path where the fixture is stable enough for byte comparison.
+#### What this replaces
 
-### PR 4 — Cleanup duplicated orchestration and tighten diagnostics
+- `translation/aligner.py` (DP-based realignment) — no longer needed; 1:1 sentence mapping eliminates count mismatches.
+- Ad-hoc `translation_cache/` in `processor.py` — cache moves to canonical stage directory.
+- `_SENTENCE_DELIM` / `_BLOCK_DELIM` parsing in `gemini_translator.py` — replaced by numbered-line prompt/parse for the staged translation path.
 
-After both languages route through the staged runner, remove duplicated orchestration logic and normalize diagnostics.
+### PR7 — Force alignment stage
 
-Tasks:
+Replace the current char-level / word-level alignment with a force alignment stage that can use audio-level alignment.
 
-1. Remove old end-to-end strategy orchestration bodies after shims are stable.
-2. Ensure postprocess diagnostics have a comparable shape across English and CJK.
-3. Ensure alignment fallback metadata is consistent across language policies.
-4. Audit stage metadata for required shared fields.
-5. Update developer documentation to explain the staged pipeline and language policy model.
+Currently:
 
-Completion criteria:
+- English: walks spaCy tokens onto ASR word timestamps (exact word matching).
+- CJK: uses `difflib.SequenceMatcher` to fuzzy-match corrected text to timing-side text (char-level).
 
-- Strategies are compatibility wrappers only.
-- Runner does not contain language-specific orchestration branches except policy selection and explicitly documented benchmark gates.
-- Final cue metadata is comparable across English and CJK.
-- Future correction, punctuation, translation projection, and force-alignment work can target explicit stages.
+Both approaches break when the corrected/restored text diverges significantly from the ASR transcript. Force alignment against the audio would be more robust.
 
-## Language Policies
+After PR7:
 
-### English policy
+- Alignment stage can use audio-level forced alignment as a backend (e.g. `torchaudio` forced alignment API with wav2vec2 models).
+- The current word-level and char-level aligners remain as fallbacks.
+- Policy selects which aligner to use.
 
-English policy should provide:
+### PR8 — Move SenseVoice transcript fetch into the pipeline
 
-- spaCy or equivalent sentence splitting
-- word-token alignment from ASR word segments
-- token-aware timing refinement
-- token-aware long-cue splitting and short-cue merging
-- no default transcript correction
-- canonical artifact output only
+Currently `processor.py` runs SenseVoice, caches the result to `sensevoice_text.txt`, and passes the text via `StrategyContext` fields. This is a side channel that the runner doesn't control.
 
-English postprocess should preserve existing token timing behavior. When tokens are present, postprocess should use tokens rather than interpolating from cue-level intervals.
+After PR8:
 
-### CJK policy
+- The runner owns the SenseVoice transcript fetch as part of `build_inputs`.
+- The SenseVoice cache lives under the canonical stage directory.
+- `StrategyContext` no longer carries transcript override fields.
+- Fallback logic (SenseVoice unavailable / too short / empty) is handled inside the policy's `build_inputs`, with proper metadata.
 
-CJK policy should provide:
+---
 
-- transcript/timing separation
-- no-op correction by default
-- punctuation-based sentence splitting from corrected transcript
-- char-level or fuzzy text-to-timing alignment
-- display-width-aware postprocess
-- legacy artifact mirroring for compatibility
+## Target architecture
 
-CJK should not require English-style word tokens. If tokens are unavailable, postprocess should operate on display text and cue interval.
+```
+processor.py (I/O only):
+  download audio
+  preprocess audio (demucs, ffmpeg)
+  load ASR model
+  transcribe → word_segments
+  pass to runner
 
-## Fallback Policy
+staged pipeline runner:
+  1. build_inputs        → Transcript + TimingAnchors
+  2. punctuation_restore → Transcript (restored)           [policy-controlled]
+  3. correct             → Transcript (corrected)           [policy-controlled]
+  4. split_sentences     → list[Sentence]
+  5. translate           → list[TranslatedSentence]         [policy-controlled, 1:1]
+  6. align               → list[AlignedCue]                 [word/char/force]
+  7. postprocess         → source cues + bilingual pairing
+  8. final_cues          → final_cues.json with full metadata
 
-Fallback behavior should be policy-driven and should avoid reintroducing hidden alternate pipelines.
+translation pairing (inside step 7):
+  - source sentences → align → postprocess → source cues (primary track)
+  - per source sentence time range:
+      count source cues in range
+      proportional split translated text
+      snap to target-language punctuation where possible
+      pair each translated fragment with corresponding source cue
 
-Rules:
+each stage:
+  - reads explicit inputs from previous stage
+  - writes canonical artifact
+  - records metadata (ran/skipped, backend, config)
+  - policy decides behavior (enable/disable, backend selection, params)
+```
 
-1. Alignment failures should return structured fallback metadata.
-2. Fallback output should flow through the same postprocess stage where possible.
-3. Fallback should avoid writing invalid zero-duration cues as normal subtitles.
-4. CJK fallback should not bypass display-width-aware postprocess by returning to legacy hard-cut behavior unless explicitly marked as a benchmark or emergency fallback.
-5. English fallback may use punctuation-based word segment splitting when spaCy alignment fails, but it should still produce the shared result shape.
+`processor.py` does not modify `word_segments`, does not run translation, does not fetch SenseVoice transcripts. It only does I/O and model loading, then delegates everything to the runner.
 
-## Processor Integration
+---
 
-Avoid changing the main processor unless policy construction requires new options. The existing strategy selection surface should remain stable initially.
+## Removed
 
-Current compatibility requirements:
+- **Chinese benchmark mode** — removed in PR4b. It was a debug shortcut that bypassed all stages. If raw ASR output comparison is needed, it can be done by reading `raw_transcript.json` directly.
+- **`translation/aligner.py` DP realignment** — replaced in PR6 by 1:1 sentence-level translation. No more count mismatches to fix after the fact.
 
-- `get_strategy(profile, *, corrector=None)` remains available.
-- `EnglishPipelineStrategy` remains importable.
-- `CjkPipelineStrategy` remains importable.
-- Existing SenseVoice transcript override fields in strategy context continue to work.
-- Existing benchmark and force flags continue to work.
+---
 
-If future policy options are required, they should be added through explicit configuration and stage metadata rather than hidden context mutation.
+## Implementation order
 
-## Non-Goals
+| PR   | Scope                                                         | Status |
+| ---- | ------------------------------------------------------------- | ------ |
+| PR1  | Shared models + compatibility re-exports                      | Done   |
+| PR2  | CJK onto shared runner                                        | Done   |
+| PR3  | English onto shared runner                                    | Done   |
+| PR4b | Metadata normalization + remove benchmark + stale cleanup     | Done   |
+| PR5  | Punctuation restoration into pipeline                         | Future |
+| PR6  | Translation into pipeline (sentence-level, bilingual pairing) | Future |
+| PR7  | Force alignment stage (wav2vec2 / torchaudio)                 | Future |
+| PR8  | SenseVoice fetch into pipeline                                | Future |
 
-1. Do not implement LLM transcript correction in this refactor.
-2. Do not implement rule-based CJK boundary restoration in this refactor.
-3. Do not add neural punctuation restoration in this refactor.
-4. Do not implement force alignment in this refactor.
-5. Do not redesign translation quality or translation prompts in this refactor.
-6. Do not remove public strategy imports in the initial migration.
-7. Do not make legacy CJK artifacts a second cache source.
-
-## Risk Areas and Guardrails
-
-### Risk: Hidden stage coupling through context mutation
-
-Guardrail: Stage outputs must explicitly carry data needed by later stages. Avoid using generic context options as a data transport layer.
-
-### Risk: English spacing regressions
-
-Guardrail: English writer output should be derived from token intervals when tokens exist. Do not reconstruct English subtitle text with naive string joining.
-
-### Risk: Cache confusion between canonical and legacy artifacts
-
-Guardrail: Read only canonical stage artifacts. Treat legacy CJK artifact output as a compatibility mirror.
-
-### Risk: Runner becomes a language switchboard
-
-Guardrail: The runner should call policy stages through shared contracts. Any language-specific decision should live in policy construction or implementation classes.
-
-### Risk: Refactor becomes too large
-
-Guardrail: Land models, CJK runner, English runner, and cleanup as separate PRs with green tests at each step.
-
-## Verification
-
-1. Run the full existing test suite after each PR slice.
-2. Add model serialization tests for typed token intervals and aligned cues.
-3. Add CJK staged-run tests verifying canonical artifacts and legacy mirrors.
-4. Add English staged-run tests verifying token population and canonical artifacts.
-5. Add deterministic English fixture regression checks where byte equality is stable.
-6. Add metadata checks for shared final cue fields across English and CJK.
-7. Run an end-to-end CJK smoke test using split transcript/timing input and verify that invalid zero-duration cues are not emitted as normal subtitles.
-8. Run an end-to-end English smoke test and verify that punctuation spacing and timing-gap behavior remain behavior-compatible with the legacy path.
+PR5–PR8 are mostly independent and can be reordered based on priority. PR6 should land before removing the current translation realignment code from the runtime path. PR7 (force alignment) depends on external tooling (`torchaudio.pipelines` forced alignment API with wav2vec2).
