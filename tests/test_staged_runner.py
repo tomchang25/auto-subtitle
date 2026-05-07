@@ -6,6 +6,8 @@ These cover behaviors PR2 introduces on top of the existing CJK tests:
   the legacy ``project_dir/cjk/`` mirrors.
 * The runner reads only canonical artifacts as cache input — legacy CJK
   artifacts are write-only.
+* On cache hit, missing or stale legacy mirrors are restored from
+  canonical content (PR2.5 cleanup).
 * Stale pre-refactor artifacts are ignored after the schema bump.
 * Force reruns refresh both canonical and legacy mirrors.
 * Repeated cached runs do not bump the legacy mirror's mtime when the
@@ -19,6 +21,7 @@ the same code paths through the shared runner.
 from __future__ import annotations
 
 import json
+import shutil
 import time
 from pathlib import Path
 
@@ -176,6 +179,59 @@ def test_runner_recomputes_when_only_legacy_has_a_matching_cache(tmp_path):
     assert canonical_raw_path.exists()
     # Legacy mirror wasn't disturbed because contents are identical.
     assert legacy_raw_path.read_text(encoding="utf-8") == legacy_raw_before
+
+
+def test_cached_rerun_restores_missing_legacy_mirror(tmp_path):
+    """Deleting the legacy ``cjk/`` directory after a successful run and
+    re-running should still produce a complete legacy mirror, populated
+    from canonical staged artifacts on cache hit."""
+    strat = CjkPipelineStrategy()
+    ctx = _ctx(tmp_path)
+    strat.run(_basic_segs(), ctx)
+
+    stages_dir = tmp_path / CANONICAL_DIRNAME
+    cjk_dir = tmp_path / "cjk"
+
+    canonical_before = {
+        name: (stages_dir / name).read_text(encoding="utf-8")
+        for name in STAGE_FILES
+    }
+
+    shutil.rmtree(cjk_dir)
+    assert not cjk_dir.exists()
+
+    # Second run hits canonical caches; legacy mirrors should be
+    # backfilled from the canonical content.
+    strat.run(_basic_segs(), ctx)
+
+    assert cjk_dir.is_dir()
+    for name in STAGE_FILES:
+        canonical_now = (stages_dir / name).read_text(encoding="utf-8")
+        legacy_now = (cjk_dir / name).read_text(encoding="utf-8")
+        # Canonical content should be unchanged across cached reruns…
+        assert canonical_now == canonical_before[name], f"canonical drifted: {name}"
+        # …and the legacy mirror should match it byte-for-byte.
+        assert legacy_now == canonical_now, f"legacy mismatch: {name}"
+
+
+def test_cached_rerun_overwrites_stale_legacy_mirror(tmp_path):
+    """If the legacy mirror has been modified out-of-band, a cache-hit
+    rerun should overwrite it with the canonical content rather than
+    leaving the stale bytes in place."""
+    strat = CjkPipelineStrategy()
+    ctx = _ctx(tmp_path)
+    strat.run(_basic_segs(), ctx)
+
+    legacy_raw = tmp_path / "cjk" / "raw_transcript.json"
+    canonical_raw = tmp_path / CANONICAL_DIRNAME / "raw_transcript.json"
+    canonical_text = canonical_raw.read_text(encoding="utf-8")
+
+    legacy_raw.write_text("garbage tampered content", encoding="utf-8")
+    assert legacy_raw.read_text(encoding="utf-8") != canonical_text
+
+    strat.run(_basic_segs(), ctx)
+
+    assert legacy_raw.read_text(encoding="utf-8") == canonical_text
 
 
 # ---------------------------------------------------------------------------
