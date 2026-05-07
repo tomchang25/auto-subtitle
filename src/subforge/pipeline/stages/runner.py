@@ -12,9 +12,6 @@ Stage order:
 3. sentence splitting     — ``list[Sentence]``
 4. alignment              — ``list[AlignedCue]`` (or fallback)
 5. postprocess / final    — writer chunks + final-cues metadata
-
-The runner is currently used by the CJK strategy. English will land
-later through its own policy without touching this file.
 """
 
 from __future__ import annotations
@@ -69,12 +66,6 @@ class StagedPipelineRunner:
         if ctx.force:
             clear_stage_files(canonical_dir, legacy_dir)
 
-        short = self.policy.short_circuit(word_segments, ctx)
-        if short is not None:
-            chunks, meta = short
-            self._write_final_cues(canonical_dir, legacy_dir, chunks, meta)
-            return chunks
-
         ws_hash = self.policy.stage_inputs_hash(
             self.SCHEMA_VERSION, word_segments, ctx
         )
@@ -113,7 +104,9 @@ class StagedPipelineRunner:
             )
         else:
             chunks, post_diag = self.policy.postprocess(cues, ctx)
-            meta = self.policy.summarise_meta(cues, raw, timing, ctx)
+            meta = self.policy.summarise_meta(
+                cues, raw, timing, correction_applied, ctx
+            )
             meta["postprocess"] = post_diag
 
         self._write_final_cues(canonical_dir, legacy_dir, chunks, meta)

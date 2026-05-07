@@ -76,13 +76,6 @@ class EnglishPolicy:
     def legacy_artifact_dir(self, ctx: "StrategyContext") -> Path | None:
         return None
 
-    def short_circuit(
-        self,
-        word_segments: list[dict],
-        ctx: "StrategyContext",
-    ) -> tuple[list[list[dict]], dict] | None:
-        return None
-
     def stage_inputs_hash(
         self,
         schema_version: str,
@@ -193,6 +186,7 @@ class EnglishPolicy:
         cues: list[AlignedCue],
         raw: Transcript,
         timing: TimingAnchors,
+        correction_applied: bool,
         ctx: "StrategyContext",
     ) -> dict:
         fallback_cues = [c for c in cues if c.fallback_reason is not None]
@@ -208,8 +202,10 @@ class EnglishPolicy:
             "text_source": "raw",
             "timing_source": timing.source,
             "timing_status": timing.status,
+            "transcript_backend": "whisper",
+            "timing_backend": "whisper",
             "correction_mode": self.corrector_id,
-            "correction_applied": False,
+            "correction_applied": correction_applied,
             "fallback_used": bool(fallback_cues),
             "fallback_reason": (
                 fallback_cues[0].fallback_reason if fallback_cues else None

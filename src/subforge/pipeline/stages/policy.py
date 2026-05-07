@@ -39,12 +39,6 @@ class Policy(Protocol):
         self, ctx: "StrategyContext"
     ) -> Path | None: ...
 
-    def short_circuit(
-        self,
-        word_segments: list[dict],
-        ctx: "StrategyContext",
-    ) -> tuple[list[list[dict]], dict] | None: ...
-
     def stage_inputs_hash(
         self,
         schema_version: str,
@@ -102,6 +96,7 @@ class Policy(Protocol):
         cues: list["AlignedCue"],
         raw: "Transcript",
         timing: "TimingAnchors",
+        correction_applied: bool,
         ctx: "StrategyContext",
     ) -> dict: ...
 

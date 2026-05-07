@@ -31,23 +31,30 @@ def fallback_cjk(
     raw: Transcript,
     timing: TimingAnchors,
     fallback_reason: str | None,
+    *,
+    corrector_id: str = "none",
 ) -> tuple[list[list[dict]], dict]:
     """Build CJK fallback chunks via punctuation-driven word splitting."""
     chunks = split_word_segments_by_punctuation(word_segments, ctx.profile)
     chunks = finalize_token_chunks(chunks, ctx)
     meta = {
         "mode": "fallback",
-        "fallback_used": True,
-        "fallback_reason": fallback_reason or "alignment_empty",
+        "profile": ctx.profile.code,
         "text_source": "raw_transcript",
         "timing_source": timing.source,
         "timing_status": "fallback",
         "transcript_backend": ctx.transcript_backend
         or ("sensevoice" if ctx.transcript_text is not None else "whisper"),
-        "transcript_model": ctx.transcript_model,
-        "transcript_length": len(raw.text),
-        "transcript_provenance": raw.source,
         "timing_backend": ctx.timing_backend or "whisper",
+        "correction_mode": corrector_id,
+        "correction_applied": False,
+        "fallback_used": True,
+        "fallback_reason": fallback_reason or "alignment_empty",
+        "alignment_total_cues": 0,
+        "alignment_anchored_cues": 0,
+        "transcript_length": len(raw.text),
+        "transcript_model": ctx.transcript_model,
+        "transcript_provenance": raw.source,
         "timing_model": ctx.timing_model,
         "transcript_fallback": ctx.transcript_fallback,
     }
@@ -84,10 +91,14 @@ def fallback_english(
         "text_source": "raw_transcript",
         "timing_source": timing.source,
         "timing_status": "fallback",
+        "transcript_backend": "whisper",
+        "timing_backend": "whisper",
         "correction_mode": corrector_id,
         "correction_applied": False,
         "fallback_used": True,
         "fallback_reason": fallback_reason or "alignment_empty",
+        "alignment_total_cues": 0,
+        "alignment_anchored_cues": 0,
         "transcript_length": len(raw.text),
     }
     return chunks, meta

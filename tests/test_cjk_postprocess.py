@@ -464,19 +464,3 @@ def test_english_strategy_does_not_use_cjk_postprocess(tmp_path, monkeypatch):
         pass
 
 
-def test_chinese_benchmark_mode_bypasses_postprocess(tmp_path):
-    segs = _segs(
-        ("今天", 0.0, 0.5),
-        ("天氣", 0.5, 1.0),
-        ("很好。", 1.0, 1.5),
-    )
-    strat = CjkPipelineStrategy()
-    ctx = _ctx(tmp_path)
-    ctx.chinese_benchmark = True
-    strat.run(segs, ctx)
-
-    final = json.loads((tmp_path / "cjk" / "final_cues.json").read_text("utf-8"))
-    # Benchmark mode short-circuits before postprocess; the postprocess
-    # diagnostics block should not be present in benchmark output.
-    assert final["meta"]["mode"] == "chinese_benchmark"
-    assert "postprocess" not in final["meta"]

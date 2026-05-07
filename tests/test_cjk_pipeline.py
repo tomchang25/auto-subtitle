@@ -33,7 +33,6 @@ def _ctx(
     tmp_path: Path,
     profile=CHINESE,
     force=False,
-    chinese_benchmark=False,
     transcript_text=None,
     transcript_source=None,
     transcript_backend=None,
@@ -48,7 +47,6 @@ def _ctx(
         force=force,
         emit=lambda step, detail="": None,
         check_cancel=lambda: None,
-        chinese_benchmark=chinese_benchmark,
         transcript_text=transcript_text,
         transcript_source=transcript_source,
         transcript_backend=transcript_backend,
@@ -283,38 +281,6 @@ def test_empty_word_segments_does_not_crash(tmp_path):
     strat = CjkPipelineStrategy()
     chunks = strat.run([], _ctx(tmp_path))
     assert chunks == []
-
-
-# ---------------------------------------------------------------------------
-# Benchmark mode preserved
-# ---------------------------------------------------------------------------
-
-
-def test_chinese_benchmark_mode_uses_hard_cut(tmp_path):
-    segs = _segs(
-        ("今天", 0.0, 0.5),
-        ("天氣", 0.5, 1.0),
-        ("很好。", 1.0, 1.5),
-        ("我們", 1.5, 2.0),
-        ("走吧。", 2.0, 2.5),
-    )
-    strat = CjkPipelineStrategy()
-    chunks = strat.run(segs, _ctx(tmp_path, chinese_benchmark=True))
-
-    assert len(chunks) == 2
-    assert "".join(t["text"] for t in chunks[0]) == "今天天氣很好。"
-    assert "".join(t["text"] for t in chunks[1]) == "我們走吧。"
-
-    # Benchmark mode short-circuits the transcript-first stages — no per-stage
-    # artifacts — but still records final_cues.json with bypass metadata so a
-    # later benchmark report can tell apart "ran the full pipeline" from
-    # "ran the hard-cut path".
-    cjk_dir = tmp_path / "cjk"
-    assert not (cjk_dir / "raw_transcript.json").exists()
-    assert not (cjk_dir / "timing_anchors.json").exists()
-    final = json.loads((cjk_dir / "final_cues.json").read_text(encoding="utf-8"))
-    assert final["meta"]["mode"] == "chinese_benchmark"
-    assert "correction" in final["meta"]["bypassed_stages"]
 
 
 # ---------------------------------------------------------------------------

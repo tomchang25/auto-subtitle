@@ -24,7 +24,6 @@ class StrategyContext:
     force: bool
     emit: EmitFn
     check_cancel: CancelFn
-    chinese_benchmark: bool = False
     options: dict = field(default_factory=dict)
 
     # Optional override transcript supplied by a separate backend (e.g.

@@ -70,12 +70,6 @@ MERGE_MAX_GAP = 1.0         # don't merge if gap between segments > this (second
 # Punctuation restoration (LLM-based, optional)
 USE_LLM_PUNCTUATION = True
 
-# Chinese ASR benchmark mode — bypasses all downstream NLP refinement so that
-# raw ASR output can be compared directly without subtitle-quality confounders.
-CHINESE_BENCHMARK_MODE = False
-CHINESE_BENCHMARK_HARD_CHARS = 30    # max characters accumulated before a forced cut
-CHINESE_BENCHMARK_GAP_SECONDS = 1.5  # timing gap (seconds) that triggers a cut
-
 # Pre-Plan 3 — CJK subtitle postprocess (display-width aware):
 # Maximum display columns (full-width = 2, half-width = 1) per CJK cue line
 # before the postprocess splits it. 28 ≈ 14 CJK ideographs.

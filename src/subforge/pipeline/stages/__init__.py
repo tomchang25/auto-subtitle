@@ -35,6 +35,10 @@ from subforge.pipeline.stages.cache import (
     STAGE_FILES,
     STAGE_SCHEMA_VERSION,
 )
+from subforge.pipeline.stages.metadata import (
+    REQUIRED_META_KEYS,
+    validate_meta,
+)
 from subforge.pipeline.stages.models import (
     TIMING_STATUSES,
     AlignedCue,
@@ -53,6 +57,7 @@ from subforge.pipeline.stages.runner import StagedPipelineRunner
 __all__ = [
     "CANONICAL_DIRNAME",
     "Policy",
+    "REQUIRED_META_KEYS",
     "STAGE_FILES",
     "STAGE_SCHEMA_VERSION",
     "StagedPipelineRunner",
@@ -65,5 +70,6 @@ __all__ = [
     "TokenInterval",
     "Transcript",
     "build_split_inputs",
+    "validate_meta",
     "word_segments_to_inputs",
 ]

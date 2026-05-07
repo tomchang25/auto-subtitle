@@ -3,9 +3,8 @@
 Selects and composes the concrete CJK stage implementations
 (``sentences.punctuation``, ``align.char_level``,
 ``postprocess.display_width``, ``fallback``). The policy itself owns
-the corrector seam, the benchmark short-circuit, per-stage hash
-inputs, the legacy ``project_dir/cjk/`` mirror directory, and the
-result-metadata summary.
+the corrector seam, per-stage hash inputs, the legacy
+``project_dir/cjk/`` mirror directory, and the result-metadata summary.
 """
 
 from __future__ import annotations
@@ -16,10 +15,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from subforge.config import (
-    CHINESE_BENCHMARK_GAP_SECONDS,
-    CHINESE_BENCHMARK_HARD_CHARS,
-)
 from subforge.nlp.cjk_corrector import Corrector
 from subforge.pipeline.stages.align.char_level import (
     align_cjk,
@@ -72,45 +67,6 @@ class CjkPolicy:
 
     def legacy_artifact_dir(self, ctx: "StrategyContext") -> Path | None:
         return ctx.project_dir / _LEGACY_CJK_DIRNAME
-
-    def short_circuit(
-        self,
-        word_segments: list[dict],
-        ctx: "StrategyContext",
-    ) -> tuple[list[list[dict]], dict] | None:
-        # Benchmark mode short-circuits the transcript-first flow but
-        # still records final_cues.json with bypass metadata so a later
-        # benchmark report can tell apart "ran the full pipeline" from
-        # "ran the hard-cut path".
-        if ctx.profile.code != "zh" or not ctx.chinese_benchmark:
-            return None
-        from subforge.nlp.chinese_benchmark import hard_cut_chinese_segments
-
-        ctx.emit(
-            "NLP",
-            f"Chinese benchmark mode: hard-cut segmentation "
-            f"(hard_chars={CHINESE_BENCHMARK_HARD_CHARS}, "
-            f"gap={CHINESE_BENCHMARK_GAP_SECONDS}s)",
-        )
-        chunks = hard_cut_chinese_segments(
-            word_segments,
-            hard_chars=CHINESE_BENCHMARK_HARD_CHARS,
-            gap_seconds=CHINESE_BENCHMARK_GAP_SECONDS,
-        )
-        meta = {
-            "mode": "chinese_benchmark",
-            "bypassed_stages": [
-                "correction",
-                "sentence_alignment",
-                "cue_polishing",
-            ],
-            "fallback_used": False,
-            "fallback_reason": None,
-            "text_source": "raw_transcript",
-            "timing_source": "word_segments",
-            "timing_status": "word_timing",
-        }
-        return chunks, meta
 
     def stage_inputs_hash(
         self,
@@ -231,13 +187,21 @@ class CjkPolicy:
             "Transcript-first alignment produced no cues — "
             "falling back to word-segment punctuation split",
         )
-        return fallback_cjk(word_segments, ctx, raw, timing, fallback_reason)
+        return fallback_cjk(
+            word_segments,
+            ctx,
+            raw,
+            timing,
+            fallback_reason,
+            corrector_id=self.corrector_id,
+        )
 
     def summarise_meta(
         self,
         cues: list[AlignedCue],
         raw: Transcript,
         timing: TimingAnchors,
+        correction_applied: bool,
         ctx: "StrategyContext",
     ) -> dict:
         fallback_cues = [c for c in cues if c.fallback_reason is not None]
@@ -253,9 +217,12 @@ class CjkPolicy:
         )
         return {
             "mode": "transcript_first",
+            "profile": ctx.profile.code,
             "text_source": text_source,
             "timing_source": timing.source,
             "timing_status": timing.status,
+            "correction_mode": self.corrector_id,
+            "correction_applied": correction_applied,
             "fallback_used": bool(fallback_cues),
             "fallback_reason": (
                 fallback_cues[0].fallback_reason if fallback_cues else None
