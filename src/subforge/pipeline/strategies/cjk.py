@@ -2,22 +2,22 @@
 
 Unlike the English path — which relies on ASR word timestamps to drive
 sentence segmentation through spaCy — the CJK strategy treats text quality
-and timing as separate first-class concerns. It runs five named stages,
-each of which persists its artifact under ``project_dir/cjk/`` so a rerun
-can resume from the latest valid stage:
+and timing as separate first-class concerns. The orchestration runs five
+named stages on top of the shared
+:class:`subforge.pipeline.stages.runner.StagedPipelineRunner`:
 
-  1. ``raw_transcript.json``       — :class:`CjkTranscript` rebuilt from the
+  1. ``raw_transcript.json``       — :class:`Transcript` rebuilt from the
                                     ASR output (text only, with provenance).
-  1b. ``timing_anchors.json``      — :class:`CjkTimingAnchors`, the per-char
+  1b. ``timing_anchors.json``      — :class:`TimingAnchors`, the per-char
                                     timing track parallel to the raw
-                                    transcript. Kept separate so a future
+                                    transcript. Kept separate so a
                                     SenseVoice / Whisper split can populate
                                     them from different sources.
   2. ``corrected_transcript.json`` — output of the pluggable corrector
                                     (defaults to a no-op).
-  3. ``sentences.json``            — sentence list (with offsets) split from
-                                    text only, independent of timing.
-  4. ``alignment.json``            — :class:`CjkAlignedCue` list: corrected
+  3. ``sentences.json``            — sentence list (with offsets) split
+                                    from text only, independent of timing.
+  4. ``alignment.json``            — :class:`AlignedCue` list: corrected
                                     text + timing interval + display text +
                                     confidence and fallback metadata.
   5. ``final_cues.json``           — writer-compatible chunks after timing
@@ -26,21 +26,28 @@ can resume from the latest valid stage:
                                     SRT writing so debugging can distinguish
                                     alignment quality from SRT formatting.
 
-Each stage degrades gracefully: a failed corrector falls back to raw text,
-a failed alignment falls back to the legacy ``split_word_segments_by_
-punctuation`` path, and timing falls back to estimated intervals when char
-mapping yields nothing. Fallbacks are recorded in the artifact metadata,
-not just in logs, so later benchmarking can compare runs without re-reading
-the source media.
+The runner persists each stage's artifact under
+``project_dir/stages/`` (the canonical, cache-source directory) and
+mirrors the same files into ``project_dir/cjk/`` for backward
+compatibility with downstream tools that still inspect the legacy
+location. The legacy directory is write-only — the runner never reads
+caches from it.
+
+Each stage degrades gracefully: a failed corrector falls back to raw
+text, a failed alignment falls back to the legacy
+``split_word_segments_by_punctuation`` path, and timing falls back to
+estimated intervals when char mapping yields nothing. Fallbacks are
+recorded in the artifact metadata, not just in logs, so later
+benchmarking can compare runs without re-reading the source media.
 """
 
 from __future__ import annotations
 
 import difflib
-import hashlib
-import json
 import logging
+from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from subforge.config import (
     BREATH_GAP,
@@ -72,284 +79,169 @@ from subforge.nlp.segmentation import (
     split_long_sentences_by_length,
 )
 from subforge.nlp.text_semantically import split_word_segments_by_punctuation
+from subforge.pipeline.stages.models import (
+    AlignedCue,
+    Sentence,
+    TimingAnchors,
+    Transcript,
+    build_split_inputs,
+    word_segments_to_inputs,
+)
+from subforge.pipeline.stages.runner import (
+    StagedPipelineRunner,
+    _hash,
+)
 from subforge.pipeline.strategies.base import (
     LanguagePipelineStrategy,
     StrategyContext,
 )
-from subforge.pipeline.strategies.cjk_models import (
-    CjkAlignedCue,
-    CjkPipelineResult,
-    CjkSentence,
-    CjkTimingAnchors,
-    CjkTranscript,
-    build_split_cjk_inputs,
-    word_segments_to_cjk_inputs,
-)
+
+if TYPE_CHECKING:
+    pass
 
 logger = logging.getLogger(__name__)
 
 
-# Bumped whenever the artifact schema changes so old caches don't poison
-# new pipeline runs.
-_STAGE_SCHEMA_VERSION = "v3"
-
-_STAGE_FILES = (
-    "raw_transcript.json",
-    "timing_anchors.json",
-    "corrected_transcript.json",
-    "sentences.json",
-    "alignment.json",
-    "final_cues.json",
-)
+# Legacy artifact directory name. The runner mirrors stage artifacts here
+# for backward compatibility with downstream tools and tests. Canonical
+# artifacts live under ``project_dir / "stages"`` and are the runner's
+# only cache source.
+_LEGACY_CJK_DIRNAME = "cjk"
 
 
-def _hash(*parts: str) -> str:
-    h = hashlib.sha256()
-    for p in parts:
-        h.update(p.encode("utf-8"))
-        h.update(b"\x1f")
-    return h.hexdigest()
+# ---------------------------------------------------------------------------
+# CJK policy — owns CJK-specific stage behavior
+# ---------------------------------------------------------------------------
 
 
-def _load_stage(path: Path, expected_hash: str) -> dict | None:
-    if not path.exists():
-        return None
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        logger.warning("Stage cache unreadable at %s: %s", path, exc)
-        return None
-    if data.get("input_hash") != expected_hash:
-        return None
-    return data.get("data")
+@dataclass
+class CjkPolicy:
+    """CJK-specific stage behavior driven by the staged runner.
 
+    The policy holds only the CJK-shaped pieces — corrector seam,
+    transcript/timing separation, no-op default correction, punctuation
+    sentence splitting, char-level alignment, display-width-aware
+    postprocess, fallback path and benchmark short-circuit. The runner
+    handles caching, force-clear, schema versioning, and legacy
+    mirroring.
+    """
 
-def _save_stage(path: Path, input_hash: str, data) -> None:
-    payload = {"input_hash": input_hash, "data": data}
-    path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    corrector: Corrector
 
+    @property
+    def corrector_id(self) -> str:
+        return type(self.corrector).__name__
 
-class CjkPipelineStrategy(LanguagePipelineStrategy):
-    """Transcript-first subtitle strategy for CJK languages."""
+    @property
+    def stage_label(self) -> str:
+        return "CJK"
 
-    def __init__(self, corrector: Corrector | None = None):
-        self.corrector = corrector or NoOpCorrector()
+    def legacy_artifact_dir(self, ctx: StrategyContext) -> Path | None:
+        return ctx.project_dir / _LEGACY_CJK_DIRNAME
 
     # ------------------------------------------------------------------
-    # Public entry point
+    # Benchmark short-circuit
     # ------------------------------------------------------------------
-    def run(
+    def short_circuit(
         self,
         word_segments: list[dict],
         ctx: StrategyContext,
-    ) -> list[list[dict]]:
-        cjk_dir = ctx.project_dir / "cjk"
-        cjk_dir.mkdir(parents=True, exist_ok=True)
-
-        if ctx.force:
-            for name in _STAGE_FILES:
-                stale = cjk_dir / name
-                if stale.exists():
-                    stale.unlink()
-
-        # Benchmark mode short-circuits the transcript-first flow but still
-        # lives inside the CJK strategy so the orchestrator stays language-
-        # agnostic. The bypass is recorded in final_cues.json so later
-        # benchmark reports can tell apart "ran the full pipeline" from
+    ) -> tuple[list[list[dict]], dict] | None:
+        # Benchmark mode short-circuits the transcript-first flow but
+        # still records final_cues.json with bypass metadata so a later
+        # benchmark report can tell apart "ran the full pipeline" from
         # "ran the hard-cut path".
-        if ctx.profile.code == "zh" and ctx.chinese_benchmark:
-            from subforge.nlp.chinese_benchmark import hard_cut_chinese_segments
+        if ctx.profile.code != "zh" or not ctx.chinese_benchmark:
+            return None
+        from subforge.nlp.chinese_benchmark import hard_cut_chinese_segments
 
-            ctx.emit(
-                "NLP",
-                f"Chinese benchmark mode: hard-cut segmentation "
-                f"(hard_chars={CHINESE_BENCHMARK_HARD_CHARS}, "
-                f"gap={CHINESE_BENCHMARK_GAP_SECONDS}s)",
-            )
-            chunks = hard_cut_chinese_segments(
-                word_segments,
-                hard_chars=CHINESE_BENCHMARK_HARD_CHARS,
-                gap_seconds=CHINESE_BENCHMARK_GAP_SECONDS,
-            )
-            self._save_final_cues(
-                cjk_dir,
-                chunks,
-                meta={
-                    "mode": "chinese_benchmark",
-                    "bypassed_stages": [
-                        "correction",
-                        "sentence_alignment",
-                        "cue_polishing",
-                    ],
-                    "fallback_used": False,
-                    "fallback_reason": None,
-                    "text_source": "raw_transcript",
-                    "timing_source": "word_segments",
-                    "timing_status": "word_timing",
-                },
-            )
-            return chunks
+        ctx.emit(
+            "NLP",
+            f"Chinese benchmark mode: hard-cut segmentation "
+            f"(hard_chars={CHINESE_BENCHMARK_HARD_CHARS}, "
+            f"gap={CHINESE_BENCHMARK_GAP_SECONDS}s)",
+        )
+        chunks = hard_cut_chinese_segments(
+            word_segments,
+            hard_chars=CHINESE_BENCHMARK_HARD_CHARS,
+            gap_seconds=CHINESE_BENCHMARK_GAP_SECONDS,
+        )
+        meta = {
+            "mode": "chinese_benchmark",
+            "bypassed_stages": [
+                "correction",
+                "sentence_alignment",
+                "cue_polishing",
+            ],
+            "fallback_used": False,
+            "fallback_reason": None,
+            "text_source": "raw_transcript",
+            "timing_source": "word_segments",
+            "timing_status": "word_timing",
+        }
+        return chunks, meta
 
-        ws_hash = _hash(
-            _STAGE_SCHEMA_VERSION,
+    # ------------------------------------------------------------------
+    # Per-stage hash inputs
+    # ------------------------------------------------------------------
+    def stage_inputs_hash(
+        self,
+        schema_version: str,
+        word_segments: list[dict],
+        ctx: StrategyContext,
+    ) -> str:
+        import json
+
+        return _hash(
+            schema_version,
             json.dumps(word_segments, ensure_ascii=False, sort_keys=True),
-            (ctx.transcript_text or ""),
-            (ctx.transcript_source or ""),
+            ctx.transcript_text or "",
+            ctx.transcript_source or "",
         )
 
-        # Stage 1 — raw transcript + timing anchors (separate artifacts).
-        raw_transcript, timing = self._stage_inputs(
-            word_segments, ctx, cjk_dir, ws_hash
-        )
-        ctx.check_cancel()
-
-        # Stage 2 — corrected transcript.
-        corrected_transcript, correction_applied = self._stage_correct(
-            raw_transcript, ctx, cjk_dir, ws_hash
-        )
-        ctx.check_cancel()
-
-        # Stage 3 — sentence list (text only).
-        sentences = self._stage_split_sentences(
-            corrected_transcript, ctx, cjk_dir, ws_hash
-        )
-        ctx.check_cancel()
-
-        # Stage 4 — re-attach timing → list[CjkAlignedCue].
-        cues, fallback_reason = self._stage_align(
-            sentences,
-            raw_transcript,
-            corrected_transcript,
-            timing,
-            correction_applied,
-            ctx,
-            cjk_dir,
-            ws_hash,
-        )
-        ctx.check_cancel()
-
-        if not cues:
-            ctx.emit(
-                "Align",
-                "Transcript-first alignment produced no cues — "
-                "falling back to word-segment punctuation split",
-            )
-            chunks = split_word_segments_by_punctuation(word_segments, ctx.profile)
-            chunks = self._finalize(chunks, ctx)
-            self._save_final_cues(
-                cjk_dir,
-                chunks,
-                meta={
-                    "mode": "fallback",
-                    "fallback_used": True,
-                    "fallback_reason": fallback_reason or "alignment_empty",
-                    "text_source": "raw_transcript",
-                    "timing_source": timing.source,
-                    "timing_status": "fallback",
-                    "transcript_backend": ctx.transcript_backend
-                    or ("sensevoice" if ctx.transcript_text is not None else "whisper"),
-                    "transcript_model": ctx.transcript_model,
-                    "transcript_length": len(raw_transcript.text),
-                    "transcript_provenance": raw_transcript.source,
-                    "timing_backend": ctx.timing_backend or "whisper",
-                    "timing_model": ctx.timing_model,
-                    "transcript_fallback": ctx.transcript_fallback,
-                },
-            )
-            return chunks
-
-        # Stage 5 — CJK postprocess: width-aware split / merge / timing
-        # safety. Replaces the shared length-split / short-merge passes so
-        # final SRT cues respect display columns instead of raw character
-        # counts. Diagnostics for each cue are recorded in final_cues.json.
-        ctx.emit("Postprocess", "CJK cue postprocess (width-aware)")
-        cfg = PostprocessConfig(
-            max_display_width=CJK_POSTPROCESS_MAX_WIDTH,
-            min_duration=CJK_POSTPROCESS_MIN_DURATION,
-            max_duration=CJK_POSTPROCESS_MAX_DURATION,
-            merge_max_width=CJK_POSTPROCESS_MERGE_MAX_WIDTH,
-            merge_max_duration=CJK_POSTPROCESS_MERGE_MAX_DURATION,
-            merge_max_gap=CJK_POSTPROCESS_MERGE_MAX_GAP,
-            short_cue_width=CJK_POSTPROCESS_SHORT_CUE_WIDTH,
-        )
-        post_cues, post_diag = postprocess_cjk_cues(cues, ctx.profile, cfg)
-        chunks = postprocess_cues_to_writer_chunks(post_cues, ctx.profile)
-
-        result_meta = self._summarise_result(cues, timing, raw_transcript, ctx)
-        result_meta["postprocess"] = post_diag
-        self._save_final_cues(cjk_dir, chunks, meta=result_meta)
-        return chunks
+    def split_signature(self, ctx: StrategyContext) -> str:
+        return "".join(sorted(ctx.profile.sentence_end))
 
     # ------------------------------------------------------------------
-    # Stage 1 — raw transcript + timing anchors via the adapter
+    # Stage 1 — input shaping
     # ------------------------------------------------------------------
-    def _stage_inputs(
+    def build_inputs(
         self,
         word_segments: list[dict],
         ctx: StrategyContext,
-        cjk_dir: Path,
-        ws_hash: str,
-    ) -> tuple[CjkTranscript, CjkTimingAnchors]:
-        raw_path = cjk_dir / "raw_transcript.json"
-        timing_path = cjk_dir / "timing_anchors.json"
-
-        cached_raw = None if ctx.force else _load_stage(raw_path, ws_hash)
-        cached_timing = None if ctx.force else _load_stage(timing_path, ws_hash)
-
-        if cached_raw is not None and cached_timing is not None:
-            ctx.emit("CJK", "Stage 1: raw transcript + timing anchors (cached)")
-            return (
-                CjkTranscript.from_dict(cached_raw),
-                CjkTimingAnchors.from_dict(cached_timing),
-            )
-
+    ) -> tuple[Transcript, TimingAnchors]:
         if ctx.transcript_text is not None:
             ctx.emit(
-                "CJK",
+                self.stage_label,
                 "Stage 1: split transcript "
                 f"({ctx.transcript_source or 'transcript_only'} text + "
                 f"{ctx.timing_backend or 'word_segments'} timing)",
             )
-            transcript, timing = build_split_cjk_inputs(
+            return build_split_inputs(
                 word_segments,
                 transcript_text=ctx.transcript_text,
                 transcript_source=ctx.transcript_source or "transcript_only",
                 join_token=ctx.profile.join_token,
             )
-        else:
-            ctx.emit("CJK", "Stage 1: building raw transcript and timing anchors")
-            transcript, timing = word_segments_to_cjk_inputs(
-                word_segments, ctx.profile.join_token
-            )
-        _save_stage(raw_path, ws_hash, transcript.to_dict())
-        _save_stage(timing_path, ws_hash, timing.to_dict())
-        return transcript, timing
+        ctx.emit(
+            self.stage_label,
+            "Stage 1: building raw transcript and timing anchors",
+        )
+        return word_segments_to_inputs(word_segments, ctx.profile.join_token)
 
     # ------------------------------------------------------------------
-    # Stage 2 — corrector
+    # Stage 2 — correction
     # ------------------------------------------------------------------
-    def _stage_correct(
+    def correct(
         self,
-        raw: CjkTranscript,
+        raw: Transcript,
         ctx: StrategyContext,
-        cjk_dir: Path,
-        ws_hash: str,
-    ) -> tuple[CjkTranscript, bool]:
-        path = cjk_dir / "corrected_transcript.json"
-        corrector_id = type(self.corrector).__name__
-        input_hash = _hash(ws_hash, raw.text, corrector_id)
-        cached = None if ctx.force else _load_stage(path, input_hash)
-        if cached is not None:
-            ctx.emit("CJK", f"Stage 2: corrected transcript (cached, {corrector_id})")
-            return (
-                CjkTranscript(text=cached["text"], source=cached.get("source", "corrector")),
-                bool(cached.get("applied", False)),
-            )
-
-        ctx.emit("CJK", f"Stage 2: correcting transcript ({corrector_id})")
+    ) -> tuple[Transcript, bool]:
+        corrector_id = self.corrector_id
+        ctx.emit(
+            self.stage_label,
+            f"Stage 2: correcting transcript ({corrector_id})",
+        )
         applied = True
         try:
             corrected_text = self.corrector.correct(raw.text, ctx.profile.code)
@@ -358,92 +250,60 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
                 corrected_text = raw.text
         except Exception as exc:  # noqa: BLE001 — corrector boundary
             logger.warning(
-                "Corrector %s raised: %s — using raw transcript", corrector_id, exc
+                "Corrector %s raised: %s — using raw transcript",
+                corrector_id,
+                exc,
             )
             ctx.emit(
-                "CJK",
-                f"Stage 2: corrector failed ({type(exc).__name__}); using raw text",
+                self.stage_label,
+                f"Stage 2: corrector failed ({type(exc).__name__}); "
+                "using raw text",
             )
             corrected_text = raw.text
             applied = False
 
         source = "corrector" if applied else "asr_raw"
-        corrected = CjkTranscript(text=corrected_text, source=source)
-        data = {
-            "text": corrected.text,
-            "source": corrected.source,
-            "corrector": corrector_id,
-            "applied": applied,
-        }
-        _save_stage(path, input_hash, data)
-        return corrected, applied
+        return Transcript(text=corrected_text, source=source), applied
 
     # ------------------------------------------------------------------
-    # Stage 3 — sentence split (text only)
+    # Stage 3 — sentence split
     # ------------------------------------------------------------------
-    def _stage_split_sentences(
+    def split_sentences(
         self,
-        transcript: CjkTranscript,
+        corrected: Transcript,
         ctx: StrategyContext,
-        cjk_dir: Path,
-        ws_hash: str,
-    ) -> list[CjkSentence]:
-        path = cjk_dir / "sentences.json"
-        input_hash = _hash(
-            ws_hash,
-            transcript.text,
-            "".join(sorted(ctx.profile.sentence_end)),
+    ) -> list[Sentence]:
+        ctx.emit(
+            self.stage_label, "Stage 3: splitting transcript into sentences"
         )
-        cached = None if ctx.force else _load_stage(path, input_hash)
-        if cached is not None:
-            ctx.emit("CJK", f"Stage 3: sentences (cached, {len(cached)})")
-            return [CjkSentence.from_dict(s) for s in cached]
-
-        ctx.emit("CJK", "Stage 3: splitting transcript into sentences")
         sentence_end = ctx.profile.sentence_end
-        sentences: list[CjkSentence] = []
-        text = transcript.text
+        sentences: list[Sentence] = []
+        text = corrected.text
         start = 0
         for i, ch in enumerate(text):
             if ch in sentence_end:
-                sentences.append(CjkSentence(text[start : i + 1], start, i + 1))
+                sentences.append(Sentence(text[start : i + 1], start, i + 1))
                 start = i + 1
         if start < len(text):
-            sentences.append(CjkSentence(text[start:], start, len(text)))
-
-        _save_stage(path, input_hash, [s.to_dict() for s in sentences])
+            sentences.append(Sentence(text[start:], start, len(text)))
         return sentences
 
     # ------------------------------------------------------------------
     # Stage 4 — alignment
     # ------------------------------------------------------------------
-    def _stage_align(
+    def align(
         self,
-        sentences: list[CjkSentence],
-        raw: CjkTranscript,
-        corrected: CjkTranscript,
-        timing: CjkTimingAnchors,
+        sentences: list[Sentence],
+        raw: Transcript,
+        corrected: Transcript,
+        timing: TimingAnchors,
         correction_applied: bool,
         ctx: StrategyContext,
-        cjk_dir: Path,
-        ws_hash: str,
-    ) -> tuple[list[CjkAlignedCue], str | None]:
-        path = cjk_dir / "alignment.json"
-        input_hash = _hash(
-            ws_hash,
-            raw.text,
-            corrected.text,
-            json.dumps([s.to_dict() for s in sentences], ensure_ascii=False),
-            timing.source,
-            timing.status,
+    ) -> tuple[list[AlignedCue], str | None]:
+        ctx.emit(
+            self.stage_label,
+            "Stage 4: aligning sentences with timing anchors",
         )
-        cached = None if ctx.force else _load_stage(path, input_hash)
-        if cached is not None:
-            ctx.emit("CJK", f"Stage 4: alignment (cached, {len(cached)} cues)")
-            return [CjkAlignedCue.from_dict(c) for c in cached], None
-
-        ctx.emit("CJK", "Stage 4: aligning sentences with timing anchors")
-
         try:
             corrected_to_raw = _map_corrected_to_raw(corrected.text, raw.text)
             corrected_to_timing = _map_corrected_to_raw(
@@ -453,11 +313,12 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
             logger.warning("Char-level alignment failed: %s", exc)
             ctx.emit(
                 "Align",
-                f"Char-level alignment failed ({type(exc).__name__}); falling back",
+                f"Char-level alignment failed ({type(exc).__name__}); "
+                "falling back",
             )
             return [], "mapping_failed"
 
-        cues: list[CjkAlignedCue] = []
+        cues: list[AlignedCue] = []
         any_anchored = False
         for sent in sentences:
             cue = _build_cue(
@@ -475,95 +336,98 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
 
         if not any_anchored:
             return [], "no_timing_anchor"
-
-        _save_stage(path, input_hash, [c.to_dict() for c in cues])
         return cues, None
 
     # ------------------------------------------------------------------
-    # Stage 5 — shared refine / split / merge
+    # Stage 5 — postprocess (display-width-aware) and fallback
     # ------------------------------------------------------------------
-    def _finalize(
+    def postprocess(
         self,
-        chunks: list[list[dict]],
+        cues: list[AlignedCue],
         ctx: StrategyContext,
-    ) -> list[list[dict]]:
-        profile = ctx.profile
-
-        ctx.emit("Refine", "Refining segment timing")
-        refined = refine_sentences_by_timing(
-            chunks,
-            min_duration=MIN_DURATION,
-            max_gap=MAX_GAP,
-            breath_gap=BREATH_GAP,
-            min_words_for_breath_split=MIN_WORDS_FOR_BREATH_SPLIT,
+    ) -> tuple[list[list[dict]], dict]:
+        ctx.emit("Postprocess", "CJK cue postprocess (width-aware)")
+        cfg = PostprocessConfig(
+            max_display_width=CJK_POSTPROCESS_MAX_WIDTH,
+            min_duration=CJK_POSTPROCESS_MIN_DURATION,
+            max_duration=CJK_POSTPROCESS_MAX_DURATION,
+            merge_max_width=CJK_POSTPROCESS_MERGE_MAX_WIDTH,
+            merge_max_duration=CJK_POSTPROCESS_MERGE_MAX_DURATION,
+            merge_max_gap=CJK_POSTPROCESS_MERGE_MAX_GAP,
+            short_cue_width=CJK_POSTPROCESS_SHORT_CUE_WIDTH,
         )
-        ctx.check_cancel()
+        post_cues, post_diag = postprocess_cjk_cues(cues, ctx.profile, cfg)
+        chunks = postprocess_cues_to_writer_chunks(post_cues, ctx.profile)
+        return chunks, post_diag
 
-        ctx.emit("Split", "Splitting long segments")
-        refined = split_long_sentences_by_length(
-            refined,
-            min_words=profile.seg_min,
-            max_words=profile.seg_hard,
-            soft_words=profile.seg_soft,
-            pause_threshold=SEG_PAUSE_THRESHOLD,
-            profile=profile,
+    def fallback(
+        self,
+        word_segments: list[dict],
+        ctx: StrategyContext,
+        raw: Transcript,
+        timing: TimingAnchors,
+        fallback_reason: str | None,
+    ) -> tuple[list[list[dict]], dict]:
+        ctx.emit(
+            "Align",
+            "Transcript-first alignment produced no cues — "
+            "falling back to word-segment punctuation split",
         )
-
-        ctx.emit("Merge", "Merging short segments")
-        refined = merge_short_segments(
-            refined,
-            max_words=profile.merge_max,
-            max_duration=MERGE_MAX_DURATION,
-            max_gap=MERGE_MAX_GAP,
-            profile=profile,
-        )
-        ctx.check_cancel()
-        return refined
+        chunks = split_word_segments_by_punctuation(word_segments, ctx.profile)
+        chunks = _finalize(chunks, ctx)
+        meta = {
+            "mode": "fallback",
+            "fallback_used": True,
+            "fallback_reason": fallback_reason or "alignment_empty",
+            "text_source": "raw_transcript",
+            "timing_source": timing.source,
+            "timing_status": "fallback",
+            "transcript_backend": ctx.transcript_backend
+            or ("sensevoice" if ctx.transcript_text is not None else "whisper"),
+            "transcript_model": ctx.transcript_model,
+            "transcript_length": len(raw.text),
+            "transcript_provenance": raw.source,
+            "timing_backend": ctx.timing_backend or "whisper",
+            "timing_model": ctx.timing_model,
+            "transcript_fallback": ctx.transcript_fallback,
+        }
+        return chunks, meta
 
     # ------------------------------------------------------------------
-    # Result persistence helpers
+    # Result metadata
     # ------------------------------------------------------------------
-    @staticmethod
-    def _summarise_result(
-        cues: list[CjkAlignedCue],
-        timing: CjkTimingAnchors,
-        raw_transcript: CjkTranscript,
+    def summarise_meta(
+        self,
+        cues: list[AlignedCue],
+        raw: Transcript,
+        timing: TimingAnchors,
         ctx: StrategyContext,
     ) -> dict:
         fallback_cues = [c for c in cues if c.fallback_reason is not None]
         text_sources = {c.text_source for c in cues}
-        if len(text_sources) == 1:
-            text_source = next(iter(text_sources))
-        else:
-            text_source = "mixed"
+        text_source = (
+            next(iter(text_sources)) if len(text_sources) == 1 else "mixed"
+        )
         anchored = [c for c in cues if c.fallback_reason is None]
         avg_conf = (
             sum(c.confidence for c in anchored) / len(anchored)
             if anchored
             else 0.0
         )
-        result = CjkPipelineResult(
-            cues=cues,
-            text_source=text_source,
-            timing_source=timing.source,
-            timing_status=timing.status,
-            fallback_used=bool(fallback_cues),
-            fallback_reason=(
+        return {
+            "mode": "transcript_first",
+            "text_source": text_source,
+            "timing_source": timing.source,
+            "timing_status": timing.status,
+            "fallback_used": bool(fallback_cues),
+            "fallback_reason": (
                 fallback_cues[0].fallback_reason if fallback_cues else None
             ),
-        )
-        meta = {
-            "mode": "transcript_first",
-            "text_source": result.text_source,
-            "timing_source": result.timing_source,
-            "timing_status": result.timing_status,
-            "fallback_used": result.fallback_used,
-            "fallback_reason": result.fallback_reason,
             "transcript_backend": ctx.transcript_backend
             or ("sensevoice" if ctx.transcript_text is not None else "whisper"),
             "transcript_model": ctx.transcript_model,
-            "transcript_provenance": raw_transcript.source,
-            "transcript_length": len(raw_transcript.text),
+            "transcript_provenance": raw.source,
+            "transcript_length": len(raw.text),
             "timing_backend": ctx.timing_backend or "whisper",
             "timing_model": ctx.timing_model,
             "timing_text_length": len(timing.text),
@@ -572,42 +436,83 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
             "alignment_total_cues": len(cues),
             "alignment_avg_confidence": avg_conf,
         }
-        return meta
-
-    @staticmethod
-    def _save_final_cues(
-        cjk_dir: Path,
-        chunks: list[list[dict]],
-        *,
-        meta: dict,
-    ) -> None:
-        path = cjk_dir / "final_cues.json"
-        payload = {
-            "meta": meta,
-            "chunks": chunks,
-        }
-        path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Strategy — thin compatibility wrapper
 # ---------------------------------------------------------------------------
+
+
+class CjkPipelineStrategy(LanguagePipelineStrategy):
+    """Compatibility wrapper that binds :class:`CjkPolicy` to the runner."""
+
+    def __init__(self, corrector: Corrector | None = None):
+        self.corrector = corrector or NoOpCorrector()
+        self._runner = StagedPipelineRunner(CjkPolicy(corrector=self.corrector))
+
+    def run(
+        self,
+        word_segments: list[dict],
+        ctx: StrategyContext,
+    ) -> list[list[dict]]:
+        return self._runner.run(word_segments, ctx)
+
+
+# ---------------------------------------------------------------------------
+# Helpers (used by CjkPolicy and exported for tests)
+# ---------------------------------------------------------------------------
+
+
+def _finalize(
+    chunks: list[list[dict]],
+    ctx: StrategyContext,
+) -> list[list[dict]]:
+    """Shared refine / split / merge passes used by the fallback path."""
+    profile = ctx.profile
+
+    ctx.emit("Refine", "Refining segment timing")
+    refined = refine_sentences_by_timing(
+        chunks,
+        min_duration=MIN_DURATION,
+        max_gap=MAX_GAP,
+        breath_gap=BREATH_GAP,
+        min_words_for_breath_split=MIN_WORDS_FOR_BREATH_SPLIT,
+    )
+    ctx.check_cancel()
+
+    ctx.emit("Split", "Splitting long segments")
+    refined = split_long_sentences_by_length(
+        refined,
+        min_words=profile.seg_min,
+        max_words=profile.seg_hard,
+        soft_words=profile.seg_soft,
+        pause_threshold=SEG_PAUSE_THRESHOLD,
+        profile=profile,
+    )
+
+    ctx.emit("Merge", "Merging short segments")
+    refined = merge_short_segments(
+        refined,
+        max_words=profile.merge_max,
+        max_duration=MERGE_MAX_DURATION,
+        max_gap=MERGE_MAX_GAP,
+        profile=profile,
+    )
+    ctx.check_cancel()
+    return refined
 
 
 def _build_cue(
-    sent: CjkSentence,
+    sent: Sentence,
     *,
-    raw: CjkTranscript,
-    corrected: CjkTranscript,
-    timing: CjkTimingAnchors,
+    raw: Transcript,
+    corrected: Transcript,
+    timing: TimingAnchors,
     corrected_to_raw: list[int | None],
     corrected_to_timing: list[int | None],
     correction_applied: bool,
-) -> CjkAlignedCue:
-    """Resolve one sentence into a fully-decorated :class:`CjkAlignedCue`."""
+) -> AlignedCue:
+    """Resolve one sentence into a fully-decorated :class:`AlignedCue`."""
     timing_indices: list[int] = []
     for i in range(sent.char_start, sent.char_end):
         if 0 <= i < len(corrected_to_timing):
@@ -643,12 +548,12 @@ def _build_cue(
         display_text = sent.text
         text_source = "corrected"
     else:
-        # Corrector was rejected, or the cue lost its anchor — prefer the raw
-        # ASR text so the user still gets something to read.
+        # Corrector was rejected, or the cue lost its anchor — prefer the
+        # raw ASR text so the user still gets something to read.
         display_text = raw_text if raw_text else sent.text
         text_source = "raw"
 
-    return CjkAlignedCue(
+    return AlignedCue(
         raw_text=raw_text,
         corrected_text=sent.text,
         display_text=display_text,
@@ -687,7 +592,13 @@ def _map_corrected_to_raw(corrected: str, raw: str) -> list[int | None]:
                 continue
             for k in range(n_corr):
                 mapping[i1 + k] = min(j1 + (k * n_raw) // n_corr, j2 - 1)
-        # "delete" (chars only in corrected) and "insert" (chars only in raw)
-        # leave the corrected positions unmapped.
+        # "delete" (chars only in corrected) and "insert" (chars only in
+        # raw) leave the corrected positions unmapped.
 
     return mapping
+
+
+__all__ = [
+    "CjkPipelineStrategy",
+    "CjkPolicy",
+]
