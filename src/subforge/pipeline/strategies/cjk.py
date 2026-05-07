@@ -46,6 +46,13 @@ from subforge.config import (
     BREATH_GAP,
     CHINESE_BENCHMARK_GAP_SECONDS,
     CHINESE_BENCHMARK_HARD_CHARS,
+    CJK_POSTPROCESS_MAX_DURATION,
+    CJK_POSTPROCESS_MAX_WIDTH,
+    CJK_POSTPROCESS_MERGE_MAX_DURATION,
+    CJK_POSTPROCESS_MERGE_MAX_GAP,
+    CJK_POSTPROCESS_MERGE_MAX_WIDTH,
+    CJK_POSTPROCESS_MIN_DURATION,
+    CJK_POSTPROCESS_SHORT_CUE_WIDTH,
     MAX_GAP,
     MERGE_MAX_DURATION,
     MERGE_MAX_GAP,
@@ -55,6 +62,11 @@ from subforge.config import (
 )
 from subforge.nlp.alignment import refine_sentences_by_timing
 from subforge.nlp.cjk_corrector import Corrector, NoOpCorrector
+from subforge.nlp.cjk_postprocess import (
+    PostprocessConfig,
+    postprocess_cjk_cues,
+    postprocess_cues_to_writer_chunks,
+)
 from subforge.nlp.segmentation import (
     merge_short_segments,
     split_long_sentences_by_length,
@@ -71,7 +83,6 @@ from subforge.pipeline.strategies.cjk_models import (
     CjkTimingAnchors,
     CjkTranscript,
     build_split_cjk_inputs,
-    cjk_cues_to_writer_chunks,
     word_segments_to_cjk_inputs,
 )
 
@@ -250,15 +261,25 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
             )
             return chunks
 
-        # Stage 4.5 — convert cues into the writer's chunk format. The CJK
-        # strategy owns this conversion so the rest of the pipeline never has
-        # to manufacture English-style word tokens for CJK text.
-        chunks = cjk_cues_to_writer_chunks(cues, ctx.profile)
-
-        # Stage 5 — shared timing refinement / length split / short merge.
-        chunks = self._finalize(chunks, ctx)
+        # Stage 5 — CJK postprocess: width-aware split / merge / timing
+        # safety. Replaces the shared length-split / short-merge passes so
+        # final SRT cues respect display columns instead of raw character
+        # counts. Diagnostics for each cue are recorded in final_cues.json.
+        ctx.emit("Postprocess", "CJK cue postprocess (width-aware)")
+        cfg = PostprocessConfig(
+            max_display_width=CJK_POSTPROCESS_MAX_WIDTH,
+            min_duration=CJK_POSTPROCESS_MIN_DURATION,
+            max_duration=CJK_POSTPROCESS_MAX_DURATION,
+            merge_max_width=CJK_POSTPROCESS_MERGE_MAX_WIDTH,
+            merge_max_duration=CJK_POSTPROCESS_MERGE_MAX_DURATION,
+            merge_max_gap=CJK_POSTPROCESS_MERGE_MAX_GAP,
+            short_cue_width=CJK_POSTPROCESS_SHORT_CUE_WIDTH,
+        )
+        post_cues, post_diag = postprocess_cjk_cues(cues, ctx.profile, cfg)
+        chunks = postprocess_cues_to_writer_chunks(post_cues, ctx.profile)
 
         result_meta = self._summarise_result(cues, timing, raw_transcript, ctx)
+        result_meta["postprocess"] = post_diag
         self._save_final_cues(cjk_dir, chunks, meta=result_meta)
         return chunks
 
