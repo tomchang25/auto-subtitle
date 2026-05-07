@@ -41,7 +41,21 @@ def hard_cut_chinese_segments(
         start = float(seg.get("start", 0.0))
         end = float(seg.get("end", 0.0))
 
-        has_valid_time = end > start
+        # Skip invalid intervals (end <= start) so chunks always have a
+        # positive duration. Non-monotonic timestamps (start < prev_end)
+        # are kept but logged so the issue is visible to the user.
+        if end <= start:
+            logger.warning(
+                "Skipping segment with invalid interval: word=%r start=%.3f end=%.3f",
+                word, start, end,
+            )
+            continue
+
+        if prev_end >= 0 and start < prev_end:
+            logger.warning(
+                "Non-monotonic timestamps: word=%r start=%.3f < prev_end=%.3f",
+                word, start, prev_end,
+            )
 
         tok = {
             "text": word,
@@ -51,16 +65,15 @@ def hard_cut_chinese_segments(
             "end": end,
         }
 
-        # Flush current chunk on a large timing gap (only when timestamps are valid)
-        if current and has_valid_time and prev_end >= 0 and start - prev_end > gap_seconds:
+        # Flush current chunk on a large timing gap
+        if current and prev_end >= 0 and start - prev_end > gap_seconds:
             chunks.append(current)
             current = []
             current_chars = 0
 
         current.append(tok)
         current_chars += len(word)
-        if has_valid_time:
-            prev_end = end
+        prev_end = end
 
         # Cut after sentence-end punctuation
         if word and word[-1] in _SENTENCE_END:
