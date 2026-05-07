@@ -49,6 +49,54 @@ def load_model(model_name: str):
     return _loaded_models[model_name]
 
 
+def transcribe_text_only(
+    wav_path: Path,
+    model_name: str,
+    progress_callback=None,
+) -> tuple[str, str]:
+    """Run SenseVoice and return ``(transcript_text, detected_lang)``.
+
+    Pre-Plan 2 routes CJK runs through SenseVoice for *text only* and lets
+    Whisper supply the timing anchors. SenseVoice's character timestamps are
+    unreliable in practice (often zero, often non-monotonic), so this entry
+    point intentionally drops them rather than emitting fake word segments
+    that downstream code would mistake for real timing.
+    """
+    if not wav_path.exists():
+        raise FileNotFoundError(f"Audio file does not exist: {wav_path}")
+
+    if progress_callback:
+        progress_callback("Transcribe", "Loading SenseVoice model…")
+
+    model = load_model(model_name)
+
+    logger.info("SenseVoice (text-only) on %s", wav_path)
+
+    if progress_callback:
+        progress_callback("Transcribe", "Running SenseVoice inference…")
+
+    res = model.generate(input=str(wav_path), batch_size_s=300)
+    if not res:
+        raise ValueError("SenseVoice did not return any results")
+
+    parts: list[str] = []
+    for chunk in res:
+        raw_text = chunk.get("text", "") or ""
+        cleaned = _strip_special_tokens(raw_text)
+        if cleaned:
+            parts.append(cleaned)
+    transcript_text = "".join(parts)
+
+    detected_lang = "zh"
+    logger.info(
+        "SenseVoice text-only complete: %d chars, model=%s, lang=%s",
+        len(transcript_text),
+        model_name,
+        detected_lang,
+    )
+    return transcript_text, detected_lang
+
+
 def transcribe_audio_word_level(
     wav_path: Path,
     model_name: str,

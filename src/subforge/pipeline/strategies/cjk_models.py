@@ -54,17 +54,23 @@ class CjkTimingAnchor:
 
 @dataclass
 class CjkTimingAnchors:
-    """A timing track parallel to a :class:`CjkTranscript`'s characters.
+    """A timing track with the text it is parallel to.
 
-    ``anchors[i]`` is the timing interval for character ``transcript.text[i]``
-    (when the timing has the same length as the transcript). ``status``
-    describes the granularity of the underlying source so downstream stages
-    can degrade gracefully without recomputing it.
+    ``anchors[i]`` is the timing interval for character ``text[i]``. When the
+    transcript and timing come from the same backend (Whisper-only), ``text``
+    matches :attr:`CjkTranscript.text`. When they come from different
+    backends (SenseVoice transcript + Whisper timing), ``text`` is the
+    timing-side string and downstream stages must align transcript sentences
+    to it before reading anchors.
+
+    ``status`` describes the granularity of the underlying source so later
+    stages can degrade gracefully without recomputing it.
     """
 
     anchors: list[CjkTimingAnchor]
     source: str  # "word_segments" | "whisper" | "missing" | …
     status: str  # one of TIMING_STATUSES
+    text: str = ""
     char_to_word: list[int] = field(default_factory=list)
 
     def to_dict(self) -> dict:
@@ -72,6 +78,7 @@ class CjkTimingAnchors:
             "anchors": [a.to_dict() for a in self.anchors],
             "source": self.source,
             "status": self.status,
+            "text": self.text,
             "char_to_word": list(self.char_to_word),
         }
 
@@ -84,6 +91,7 @@ class CjkTimingAnchors:
             ],
             source=data.get("source", ""),
             status=data.get("status", "missing"),
+            text=data.get("text", ""),
             char_to_word=list(data.get("char_to_word", [])),
         )
 
@@ -233,12 +241,39 @@ def word_segments_to_cjk_inputs(
             anchors.append(CjkTimingAnchor(ch_start, ch_end, "word_segments"))
             char_to_word.append(w_idx)
 
-    transcript = CjkTranscript(text="".join(text_parts), source="asr_raw")
+    text = "".join(text_parts)
+    transcript = CjkTranscript(text=text, source="asr_raw")
     timing = CjkTimingAnchors(
         anchors=anchors,
         source="word_segments",
         status="word_timing" if anchors else "missing",
+        text=text,
         char_to_word=char_to_word,
+    )
+    return transcript, timing
+
+
+def build_split_cjk_inputs(
+    word_segments: list[dict],
+    transcript_text: str,
+    transcript_source: str,
+    join_token: str,
+) -> tuple[CjkTranscript, CjkTimingAnchors]:
+    """Build CJK inputs from a separate transcript backend and timing backend.
+
+    Used when the transcript text comes from one backend (e.g. SenseVoice)
+    and the timing anchors come from another (e.g. Whisper word_segments).
+    The returned :class:`CjkTimingAnchors` carries its own ``text`` field —
+    the Whisper-side string that the anchors are parallel to — so later
+    alignment stages can map transcript sentences onto timing positions
+    without assuming the two strings are identical.
+    """
+    _whisper_transcript, timing = word_segments_to_cjk_inputs(
+        word_segments, join_token=join_token
+    )
+    transcript = CjkTranscript(
+        text=transcript_text or "",
+        source=transcript_source or "asr_raw",
     )
     return transcript, timing
 
