@@ -19,6 +19,7 @@ from subforge.pipeline.strategies.cjk_models import (
     CjkSentence,
     CjkTimingAnchors,
     CjkTranscript,
+    build_split_cjk_inputs,
     cjk_cues_to_writer_chunks,
     word_segments_to_cjk_inputs,
 )
@@ -28,7 +29,19 @@ def _segs(*words_and_times):
     return [{"word": w, "start": s, "end": e} for w, s, e in words_and_times]
 
 
-def _ctx(tmp_path: Path, profile=CHINESE, force=False, chinese_benchmark=False):
+def _ctx(
+    tmp_path: Path,
+    profile=CHINESE,
+    force=False,
+    chinese_benchmark=False,
+    transcript_text=None,
+    transcript_source=None,
+    transcript_backend=None,
+    transcript_model=None,
+    timing_backend=None,
+    timing_model=None,
+    transcript_fallback=None,
+):
     return StrategyContext(
         profile=profile,
         project_dir=tmp_path,
@@ -36,6 +49,13 @@ def _ctx(tmp_path: Path, profile=CHINESE, force=False, chinese_benchmark=False):
         emit=lambda step, detail="": None,
         check_cancel=lambda: None,
         chinese_benchmark=chinese_benchmark,
+        transcript_text=transcript_text,
+        transcript_source=transcript_source,
+        transcript_backend=transcript_backend,
+        transcript_model=transcript_model,
+        timing_backend=timing_backend,
+        timing_model=timing_model,
+        transcript_fallback=transcript_fallback,
     )
 
 
@@ -337,6 +357,7 @@ def test_word_segments_adapter_separates_text_and_timing():
     assert isinstance(timing, CjkTimingAnchors)
     assert timing.source == "word_segments"
     assert timing.status == "word_timing"
+    assert timing.text == "你好"
     assert len(timing.anchors) == 2
     assert timing.anchors[0].source == "word_segments"
     assert timing.char_to_word == [0, 1]
@@ -410,3 +431,143 @@ def test_cjk_sentence_roundtrip():
     s = CjkSentence(text="你好。", char_start=0, char_end=3)
     restored = CjkSentence.from_dict(s.to_dict())
     assert restored == s
+
+
+# ---------------------------------------------------------------------------
+# Pre-Plan 2 — SenseVoice transcript + Whisper timing
+# ---------------------------------------------------------------------------
+
+
+def test_build_split_cjk_inputs_separates_sources():
+    # Whisper word_segments and SenseVoice text deliberately differ so the
+    # split is observable.
+    segs = _segs(("今", 0.0, 0.2), ("天", 0.2, 0.4), ("。", 0.4, 0.5))
+    transcript, timing = build_split_cjk_inputs(
+        segs,
+        transcript_text="今天。",
+        transcript_source="sensevoice",
+        join_token="",
+    )
+    assert transcript.text == "今天。"
+    assert transcript.source == "sensevoice"
+    # Timing-side text comes from word_segments and is parallel to anchors.
+    assert timing.text == "今天。"
+    assert timing.source == "word_segments"
+    assert len(timing.anchors) == len(timing.text)
+
+
+def test_cjk_pipeline_uses_sensevoice_text_with_whisper_timing(tmp_path):
+    # Whisper output (with timestamps) and SenseVoice transcript text
+    # (without timestamps) — the SenseVoice text has slightly different
+    # punctuation/characters, simulating a real divergence.
+    whisper_segs = _segs(
+        ("今", 0.0, 0.2),
+        ("天", 0.2, 0.4),
+        ("天", 0.4, 0.6),
+        ("气", 0.6, 0.8),  # simplified
+        ("很", 0.8, 1.0),
+        ("好", 1.0, 1.2),
+        ("。", 1.2, 1.3),
+    )
+    sensevoice_text = "今天天氣很好。"  # traditional 氣
+
+    strat = CjkPipelineStrategy()
+    ctx = _ctx(
+        tmp_path,
+        transcript_text=sensevoice_text,
+        transcript_source="sensevoice",
+        transcript_backend="sensevoice",
+        transcript_model="iic/SenseVoiceSmall",
+        timing_backend="whisper",
+        timing_model="large-v3-turbo",
+    )
+    chunks = strat.run(whisper_segs, ctx)
+    assert chunks
+
+    # Final display text should follow SenseVoice (note 氣, not 气).
+    joined = "".join(tok["text"] for chunk in chunks for tok in chunk)
+    assert joined == "今天天氣很好。"
+
+    raw = json.loads(
+        (tmp_path / "cjk" / "raw_transcript.json").read_text(encoding="utf-8")
+    )["data"]
+    assert raw["text"] == sensevoice_text
+    assert raw["source"] == "sensevoice"
+
+    timing = json.loads(
+        (tmp_path / "cjk" / "timing_anchors.json").read_text(encoding="utf-8")
+    )["data"]
+    assert timing["source"] == "word_segments"
+    # Timing carries Whisper's text (with simplified 气) — independent of the
+    # transcript text the cue ultimately displays.
+    assert timing["text"] == "今天天气很好。"
+
+    final = json.loads(
+        (tmp_path / "cjk" / "final_cues.json").read_text(encoding="utf-8")
+    )
+    meta = final["meta"]
+    assert meta["transcript_backend"] == "sensevoice"
+    assert meta["timing_backend"] == "whisper"
+    assert meta["timing_source"] == "word_segments"
+    assert meta["transcript_provenance"] == "sensevoice"
+    assert meta["transcript_length"] == len(sensevoice_text)
+    assert meta["timing_text_length"] == len("今天天气很好。")
+    assert meta["transcript_fallback"] is None
+    assert meta["alignment_anchored_cues"] >= 1
+    # Alignment confidence should be high because the strings only differ by
+    # one character.
+    assert meta["alignment_avg_confidence"] > 0.7
+
+
+def test_cjk_pipeline_records_sensevoice_fallback(tmp_path):
+    # Caller (processor) decided SenseVoice was unusable and passed
+    # transcript_text=None plus a fallback reason. The strategy should still
+    # work via the Whisper-only path and record the fallback in artifacts.
+    segs = _segs(
+        ("今", 0.0, 0.2),
+        ("天", 0.2, 0.4),
+        ("好", 0.4, 0.6),
+        ("。", 0.6, 0.7),
+    )
+    strat = CjkPipelineStrategy()
+    ctx = _ctx(
+        tmp_path,
+        transcript_text=None,
+        transcript_fallback="sensevoice_unavailable",
+        timing_backend="whisper",
+    )
+    chunks = strat.run(segs, ctx)
+    assert chunks
+
+    final = json.loads(
+        (tmp_path / "cjk" / "final_cues.json").read_text(encoding="utf-8")
+    )
+    meta = final["meta"]
+    assert meta["transcript_backend"] == "whisper"
+    assert meta["timing_backend"] == "whisper"
+    assert meta["transcript_fallback"] == "sensevoice_unavailable"
+
+
+def test_cjk_pipeline_no_fake_sensevoice_word_timestamps(tmp_path):
+    # When SenseVoice text is supplied without any character timestamps, the
+    # strategy must not pretend it has word-level timing — the timing track's
+    # text comes from Whisper and only Whisper-derived anchors get used.
+    whisper_segs = _segs(("你", 0.0, 0.4), ("好", 0.4, 0.8))
+    strat = CjkPipelineStrategy()
+    ctx = _ctx(
+        tmp_path,
+        transcript_text="你好",
+        transcript_source="sensevoice",
+        transcript_backend="sensevoice",
+        timing_backend="whisper",
+    )
+    strat.run(whisper_segs, ctx)
+
+    timing = json.loads(
+        (tmp_path / "cjk" / "timing_anchors.json").read_text(encoding="utf-8")
+    )["data"]
+    # Every anchor is sourced from word_segments — no synthesised "sensevoice"
+    # anchors leak through.
+    sources = {a["source"] for a in timing["anchors"]}
+    assert sources == {"word_segments"}
+    assert timing["source"] == "word_segments"

@@ -27,6 +27,17 @@ class StrategyContext:
     chinese_benchmark: bool = False
     options: dict = field(default_factory=dict)
 
+    # Optional override transcript supplied by a separate backend (e.g.
+    # SenseVoice for CJK). When set, the strategy treats this string as the
+    # raw transcript text and uses ``word_segments`` only as a timing source.
+    transcript_text: str | None = None
+    transcript_source: str | None = None        # logical source label, e.g. "sensevoice"
+    transcript_backend: str | None = None       # concrete backend name, e.g. "sensevoice"
+    transcript_model: str | None = None
+    timing_backend: str | None = None           # concrete backend name, e.g. "whisper"
+    timing_model: str | None = None
+    transcript_fallback: str | None = None      # set when fallback occurred
+
 
 class LanguagePipelineStrategy(ABC):
     """Convert ASR ``word_segments`` into refined sentence chunks.

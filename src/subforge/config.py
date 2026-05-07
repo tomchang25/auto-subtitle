@@ -76,6 +76,16 @@ CHINESE_BENCHMARK_MODE = False
 CHINESE_BENCHMARK_HARD_CHARS = 30    # max characters accumulated before a forced cut
 CHINESE_BENCHMARK_GAP_SECONDS = 1.5  # timing gap (seconds) that triggers a cut
 
+# Pre-Plan 2 — CJK transcript/timing split:
+# When True (default), CJK runs use SenseVoice for transcript text and
+# Whisper for timing anchors. Falls back to Whisper-only when SenseVoice is
+# unavailable, fails, or produces suspiciously incomplete output.
+CJK_USE_SENSEVOICE_TRANSCRIPT = True
+# Minimum SenseVoice transcript length, expressed as a fraction of the
+# Whisper transcript character count, before SenseVoice output is considered
+# usable. Below this ratio, the pipeline falls back to Whisper-only.
+CJK_SENSEVOICE_MIN_RATIO = 0.5
+
 # Translation
 TRANSLATE_METHOD: str | None = None  # None = disabled by default
 TRANSLATE_SRC_LANG = "eng_Latn"  # NLLB language code

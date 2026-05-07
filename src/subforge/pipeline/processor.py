@@ -23,6 +23,7 @@ from subforge.subtitle.writer import write_srt
 from subforge.config import (
     MODEL_TIER,
     WHISPER_TIER_MAP,
+    SENSEVOICE_TIER_MAP,
     OUTPUT_DIR,
     USE_LLM_PUNCTUATION,
     TRANSLATE_TGT_LANG,
@@ -31,6 +32,8 @@ from subforge.config import (
     ASR_BACKEND,
     ASR_SOURCE_LANGUAGE,
     CHINESE_BENCHMARK_MODE,
+    CJK_USE_SENSEVOICE_TRANSCRIPT,
+    CJK_SENSEVOICE_MIN_RATIO,
 )
 from subforge.nlp.lang_profile import get_profile
 from subforge.pipeline.strategies import StrategyContext, get_strategy
@@ -164,6 +167,80 @@ class SubtitlePipeline:
                 f"{result.stderr.decode('utf-8', errors='replace')}"
             )
         return audio_out
+
+    def _maybe_run_sensevoice_transcript(
+        self,
+        wav_path: Path,
+        word_segments: list[dict],
+    ) -> tuple[str | None, str | None, str | None]:
+        """Return ``(text, transcript_source, fallback_reason)``.
+
+        ``text is None`` means SenseVoice was skipped entirely; the strategy
+        falls back to the Whisper-only path. ``fallback_reason`` is set when
+        SenseVoice was attempted but its output was rejected, so callers can
+        record why the fallback happened in CJK diagnostics.
+        """
+        from subforge.transcription.factory import is_backend_available
+
+        if not is_backend_available("sensevoice"):
+            self._emit(
+                "Transcript",
+                "SenseVoice unavailable — using Whisper-only transcript",
+            )
+            return None, None, "sensevoice_unavailable"
+
+        cache_path = self.project_dir / "sensevoice_text.txt"
+        if not self.force and cache_path.exists():
+            text = cache_path.read_text(encoding="utf-8")
+            self._emit("Transcript", f"SenseVoice transcript loaded ({len(text)} chars, cached)")
+        else:
+            self._emit("Transcript", "Running SenseVoice for transcript text…")
+            try:
+                from subforge.transcription.sensevoice_transcriber import (
+                    transcribe_text_only,
+                )
+
+                model_name = SENSEVOICE_TIER_MAP.get(
+                    self.model_name, SENSEVOICE_TIER_MAP["large"]
+                )
+                text, _detected = transcribe_text_only(
+                    wav_path,
+                    model_name,
+                    progress_callback=self.progress_callback,
+                )
+            except Exception as exc:  # noqa: BLE001 — transcript backend boundary
+                logger.warning("SenseVoice transcript failed: %s", exc)
+                self._emit(
+                    "Transcript",
+                    f"SenseVoice failed ({type(exc).__name__}); using Whisper-only",
+                )
+                return None, None, f"sensevoice_error:{type(exc).__name__}"
+            cache_path.write_text(text, encoding="utf-8")
+            self._emit(
+                "Transcript",
+                f"SenseVoice transcript complete ({len(text)} chars, saved)",
+            )
+
+        if not text.strip():
+            self._emit(
+                "Transcript",
+                "SenseVoice transcript empty — using Whisper-only",
+            )
+            return None, None, "sensevoice_empty"
+
+        whisper_chars = sum(len(seg.get("word", "") or "") for seg in word_segments)
+        if whisper_chars > 0:
+            ratio = len(text) / whisper_chars
+            if ratio < CJK_SENSEVOICE_MIN_RATIO:
+                self._emit(
+                    "Transcript",
+                    "SenseVoice transcript suspiciously short "
+                    f"({len(text)} vs Whisper {whisper_chars} chars, "
+                    f"ratio={ratio:.2f}); using Whisper-only",
+                )
+                return None, None, "sensevoice_too_short"
+
+        return text, "sensevoice", None
 
     def run(self) -> Path:
         self._emit("Pipeline", "=== Starting Subtitle Pipeline ===")
@@ -332,6 +409,39 @@ class SubtitlePipeline:
 
         # Step 5–8: language-specific NLP pipeline (English vs CJK)
         strategy = get_strategy(profile)
+
+        # Pre-Plan 2 — CJK transcript/timing split. For CJK languages (and
+        # only when not already in benchmark mode) we try to use SenseVoice
+        # as the transcript backend while keeping Whisper word_segments as
+        # the timing source. Whisper-only is the documented fallback.
+        sensevoice_text: str | None = None
+        sensevoice_source: str | None = None
+        sensevoice_backend: str | None = None
+        sensevoice_model: str | None = None
+        timing_backend: str | None = None
+        timing_model: str | None = None
+        transcript_fallback: str | None = None
+        if (
+            not profile.use_spacy
+            and not self.chinese_benchmark
+            and CJK_USE_SENSEVOICE_TRANSCRIPT
+        ):
+            sensevoice_text, sensevoice_source, transcript_fallback = (
+                self._maybe_run_sensevoice_transcript(
+                    processed_audio,
+                    word_segments,
+                )
+            )
+            if sensevoice_text is not None:
+                sensevoice_backend = "sensevoice"
+                sensevoice_model = SENSEVOICE_TIER_MAP.get(
+                    self.model_name, SENSEVOICE_TIER_MAP["large"]
+                )
+                timing_backend = "whisper"
+                timing_model = WHISPER_TIER_MAP.get(
+                    self.model_name, WHISPER_TIER_MAP["large"]
+                )
+
         ctx = StrategyContext(
             profile=profile,
             project_dir=self.project_dir,
@@ -339,6 +449,13 @@ class SubtitlePipeline:
             emit=self._emit,
             check_cancel=self._check_cancel,
             chinese_benchmark=self.chinese_benchmark,
+            transcript_text=sensevoice_text,
+            transcript_source=sensevoice_source,
+            transcript_backend=sensevoice_backend,
+            transcript_model=sensevoice_model,
+            timing_backend=timing_backend,
+            timing_model=timing_model,
+            transcript_fallback=transcript_fallback,
         )
         refined = strategy.run(word_segments, ctx)
         self._check_cancel()

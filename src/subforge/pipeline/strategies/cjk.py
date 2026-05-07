@@ -70,6 +70,7 @@ from subforge.pipeline.strategies.cjk_models import (
     CjkSentence,
     CjkTimingAnchors,
     CjkTranscript,
+    build_split_cjk_inputs,
     cjk_cues_to_writer_chunks,
     word_segments_to_cjk_inputs,
 )
@@ -79,7 +80,7 @@ logger = logging.getLogger(__name__)
 
 # Bumped whenever the artifact schema changes so old caches don't poison
 # new pipeline runs.
-_STAGE_SCHEMA_VERSION = "v2"
+_STAGE_SCHEMA_VERSION = "v3"
 
 _STAGE_FILES = (
     "raw_transcript.json",
@@ -184,6 +185,8 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
         ws_hash = _hash(
             _STAGE_SCHEMA_VERSION,
             json.dumps(word_segments, ensure_ascii=False, sort_keys=True),
+            (ctx.transcript_text or ""),
+            (ctx.transcript_source or ""),
         )
 
         # Stage 1 — raw transcript + timing anchors (separate artifacts).
@@ -235,6 +238,14 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
                     "text_source": "raw_transcript",
                     "timing_source": timing.source,
                     "timing_status": "fallback",
+                    "transcript_backend": ctx.transcript_backend
+                    or ("sensevoice" if ctx.transcript_text is not None else "whisper"),
+                    "transcript_model": ctx.transcript_model,
+                    "transcript_length": len(raw_transcript.text),
+                    "transcript_provenance": raw_transcript.source,
+                    "timing_backend": ctx.timing_backend or "whisper",
+                    "timing_model": ctx.timing_model,
+                    "transcript_fallback": ctx.transcript_fallback,
                 },
             )
             return chunks
@@ -247,7 +258,7 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
         # Stage 5 — shared timing refinement / length split / short merge.
         chunks = self._finalize(chunks, ctx)
 
-        result_meta = self._summarise_result(cues, timing)
+        result_meta = self._summarise_result(cues, timing, raw_transcript, ctx)
         self._save_final_cues(cjk_dir, chunks, meta=result_meta)
         return chunks
 
@@ -274,10 +285,24 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
                 CjkTimingAnchors.from_dict(cached_timing),
             )
 
-        ctx.emit("CJK", "Stage 1: building raw transcript and timing anchors")
-        transcript, timing = word_segments_to_cjk_inputs(
-            word_segments, ctx.profile.join_token
-        )
+        if ctx.transcript_text is not None:
+            ctx.emit(
+                "CJK",
+                "Stage 1: split transcript "
+                f"({ctx.transcript_source or 'transcript_only'} text + "
+                f"{ctx.timing_backend or 'word_segments'} timing)",
+            )
+            transcript, timing = build_split_cjk_inputs(
+                word_segments,
+                transcript_text=ctx.transcript_text,
+                transcript_source=ctx.transcript_source or "transcript_only",
+                join_token=ctx.profile.join_token,
+            )
+        else:
+            ctx.emit("CJK", "Stage 1: building raw transcript and timing anchors")
+            transcript, timing = word_segments_to_cjk_inputs(
+                word_segments, ctx.profile.join_token
+            )
         _save_stage(raw_path, ws_hash, transcript.to_dict())
         _save_stage(timing_path, ws_hash, timing.to_dict())
         return transcript, timing
@@ -399,7 +424,10 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
         ctx.emit("CJK", "Stage 4: aligning sentences with timing anchors")
 
         try:
-            mapping = _map_corrected_to_raw(corrected.text, raw.text)
+            corrected_to_raw = _map_corrected_to_raw(corrected.text, raw.text)
+            corrected_to_timing = _map_corrected_to_raw(
+                corrected.text, timing.text
+            )
         except Exception as exc:  # noqa: BLE001 — alignment boundary
             logger.warning("Char-level alignment failed: %s", exc)
             ctx.emit(
@@ -416,7 +444,8 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
                 raw=raw,
                 corrected=corrected,
                 timing=timing,
-                mapping=mapping,
+                corrected_to_raw=corrected_to_raw,
+                corrected_to_timing=corrected_to_timing,
                 correction_applied=correction_applied,
             )
             if cue.fallback_reason is None:
@@ -477,6 +506,8 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
     def _summarise_result(
         cues: list[CjkAlignedCue],
         timing: CjkTimingAnchors,
+        raw_transcript: CjkTranscript,
+        ctx: StrategyContext,
     ) -> dict:
         fallback_cues = [c for c in cues if c.fallback_reason is not None]
         text_sources = {c.text_source for c in cues}
@@ -484,6 +515,12 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
             text_source = next(iter(text_sources))
         else:
             text_source = "mixed"
+        anchored = [c for c in cues if c.fallback_reason is None]
+        avg_conf = (
+            sum(c.confidence for c in anchored) / len(anchored)
+            if anchored
+            else 0.0
+        )
         result = CjkPipelineResult(
             cues=cues,
             text_source=text_source,
@@ -501,6 +538,18 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
             "timing_status": result.timing_status,
             "fallback_used": result.fallback_used,
             "fallback_reason": result.fallback_reason,
+            "transcript_backend": ctx.transcript_backend
+            or ("sensevoice" if ctx.transcript_text is not None else "whisper"),
+            "transcript_model": ctx.transcript_model,
+            "transcript_provenance": raw_transcript.source,
+            "transcript_length": len(raw_transcript.text),
+            "timing_backend": ctx.timing_backend or "whisper",
+            "timing_model": ctx.timing_model,
+            "timing_text_length": len(timing.text),
+            "transcript_fallback": ctx.transcript_fallback,
+            "alignment_anchored_cues": len(anchored),
+            "alignment_total_cues": len(cues),
+            "alignment_avg_confidence": avg_conf,
         }
         return meta
 
@@ -533,33 +582,34 @@ def _build_cue(
     raw: CjkTranscript,
     corrected: CjkTranscript,
     timing: CjkTimingAnchors,
-    mapping: list[int | None],
+    corrected_to_raw: list[int | None],
+    corrected_to_timing: list[int | None],
     correction_applied: bool,
 ) -> CjkAlignedCue:
     """Resolve one sentence into a fully-decorated :class:`CjkAlignedCue`."""
-    raw_indices: list[int] = []
+    timing_indices: list[int] = []
     for i in range(sent.char_start, sent.char_end):
-        if 0 <= i < len(mapping):
-            ri = mapping[i]
-            if ri is not None and 0 <= ri < len(timing.anchors):
-                raw_indices.append(ri)
+        if 0 <= i < len(corrected_to_timing):
+            ti = corrected_to_timing[i]
+            if ti is not None and 0 <= ti < len(timing.anchors):
+                timing_indices.append(ti)
 
     raw_chars: list[str] = []
     for i in range(sent.char_start, sent.char_end):
-        if 0 <= i < len(mapping):
-            ri = mapping[i]
+        if 0 <= i < len(corrected_to_raw):
+            ri = corrected_to_raw[i]
             if ri is not None and 0 <= ri < len(raw.text):
                 raw_chars.append(raw.text[ri])
     raw_text = "".join(raw_chars) if raw_chars else sent.text
 
     sent_len = max(sent.char_end - sent.char_start, 1)
-    if raw_indices:
-        anchors = [timing.anchors[i] for i in raw_indices]
+    if timing_indices:
+        anchors = [timing.anchors[i] for i in timing_indices]
         start = min(a.start for a in anchors)
         end = max(a.end for a in anchors)
         if end < start:
             end = start
-        confidence = len(raw_indices) / sent_len
+        confidence = len(timing_indices) / sent_len
         fallback_reason: str | None = None
         cue_status = timing.status
     else:
