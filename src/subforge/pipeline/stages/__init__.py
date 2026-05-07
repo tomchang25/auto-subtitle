@@ -12,10 +12,17 @@ Modules in this package:
   for language-specific behavior.
 * :mod:`runner` — :class:`StagedPipelineRunner`, the language-agnostic
   staged orchestration.
-* :mod:`postprocess_helpers` — shared refine/split/merge passes used by
-  CJK fallback and English postprocess.
-* :mod:`cjk_policy` — concrete :class:`CjkPolicy`.
-* :mod:`english_policy` — concrete :class:`EnglishPolicy`.
+* :mod:`cjk_policy` — :class:`CjkPolicy` wiring layer.
+* :mod:`english_policy` — :class:`EnglishPolicy` wiring layer.
+* :mod:`sentences` — concrete sentence-splitter implementations
+  (spaCy, punctuation).
+* :mod:`align` — concrete alignment implementations (char-level for
+  CJK, word-level for English).
+* :mod:`postprocess` — concrete postprocess implementations
+  (token-aware word_count, display-width-aware) and the shared
+  ``finalize_token_chunks`` helper.
+* :mod:`fallback` — per-language fallback chunk assembly used when the
+  transcript-first alignment path produces no cues.
 
 The legacy CJK names (``CjkTranscript``, ``CjkAlignedCue``, …) live in
 :mod:`subforge.pipeline.strategies.cjk_models` as compatibility aliases.
