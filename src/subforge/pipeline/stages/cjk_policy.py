@@ -27,7 +27,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from subforge.config import (
-    BREATH_GAP,
     CHINESE_BENCHMARK_GAP_SECONDS,
     CHINESE_BENCHMARK_HARD_CHARS,
     CJK_POSTPROCESS_MAX_DURATION,
@@ -37,23 +36,12 @@ from subforge.config import (
     CJK_POSTPROCESS_MERGE_MAX_WIDTH,
     CJK_POSTPROCESS_MIN_DURATION,
     CJK_POSTPROCESS_SHORT_CUE_WIDTH,
-    MAX_GAP,
-    MERGE_MAX_DURATION,
-    MERGE_MAX_GAP,
-    MIN_DURATION,
-    MIN_WORDS_FOR_BREATH_SPLIT,
-    SEG_PAUSE_THRESHOLD,
 )
-from subforge.nlp.alignment import refine_sentences_by_timing
 from subforge.nlp.cjk_corrector import Corrector
 from subforge.nlp.cjk_postprocess import (
     PostprocessConfig,
     postprocess_cjk_cues,
     postprocess_cues_to_writer_chunks,
-)
-from subforge.nlp.segmentation import (
-    merge_short_segments,
-    split_long_sentences_by_length,
 )
 from subforge.nlp.text_semantically import split_word_segments_by_punctuation
 from subforge.pipeline.stages.cache import hash_inputs
@@ -65,6 +53,7 @@ from subforge.pipeline.stages.models import (
     build_split_inputs,
     word_segments_to_inputs,
 )
+from subforge.pipeline.stages.postprocess_helpers import finalize_token_chunks
 
 if TYPE_CHECKING:
     from subforge.pipeline.strategies.base import StrategyContext
@@ -337,7 +326,7 @@ class CjkPolicy:
             "falling back to word-segment punctuation split",
         )
         chunks = split_word_segments_by_punctuation(word_segments, ctx.profile)
-        chunks = _finalize(chunks, ctx)
+        chunks = finalize_token_chunks(chunks, ctx)
         meta = {
             "mode": "fallback",
             "fallback_used": True,
@@ -404,45 +393,6 @@ class CjkPolicy:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _finalize(
-    chunks: list[list[dict]],
-    ctx: "StrategyContext",
-) -> list[list[dict]]:
-    """Shared refine / split / merge passes used by the fallback path."""
-    profile = ctx.profile
-
-    ctx.emit("Refine", "Refining segment timing")
-    refined = refine_sentences_by_timing(
-        chunks,
-        min_duration=MIN_DURATION,
-        max_gap=MAX_GAP,
-        breath_gap=BREATH_GAP,
-        min_words_for_breath_split=MIN_WORDS_FOR_BREATH_SPLIT,
-    )
-    ctx.check_cancel()
-
-    ctx.emit("Split", "Splitting long segments")
-    refined = split_long_sentences_by_length(
-        refined,
-        min_words=profile.seg_min,
-        max_words=profile.seg_hard,
-        soft_words=profile.seg_soft,
-        pause_threshold=SEG_PAUSE_THRESHOLD,
-        profile=profile,
-    )
-
-    ctx.emit("Merge", "Merging short segments")
-    refined = merge_short_segments(
-        refined,
-        max_words=profile.merge_max,
-        max_duration=MERGE_MAX_DURATION,
-        max_gap=MERGE_MAX_GAP,
-        profile=profile,
-    )
-    ctx.check_cancel()
-    return refined
 
 
 def _build_cue(

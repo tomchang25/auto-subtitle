@@ -12,7 +12,10 @@ Modules in this package:
   for language-specific behavior.
 * :mod:`runner` — :class:`StagedPipelineRunner`, the language-agnostic
   staged orchestration.
+* :mod:`postprocess_helpers` — shared refine/split/merge passes used by
+  CJK fallback and English postprocess.
 * :mod:`cjk_policy` — concrete :class:`CjkPolicy`.
+* :mod:`english_policy` — concrete :class:`EnglishPolicy`.
 
 The legacy CJK names (``CjkTranscript``, ``CjkAlignedCue``, …) live in
 :mod:`subforge.pipeline.strategies.cjk_models` as compatibility aliases.
