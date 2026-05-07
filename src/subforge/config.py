@@ -94,6 +94,26 @@ CJK_POSTPROCESS_MERGE_MAX_GAP = 0.5
 # Cues at/below this display width are merge candidates.
 CJK_POSTPROCESS_SHORT_CUE_WIDTH = 6
 
+# Pre-Plan 4 — CJK rule-based sentence boundary restoration:
+# Mode for the deterministic boundary restorer that runs between
+# correction and sentence splitting. ``"rule"`` enables the restorer
+# (the default), ``"none"`` short-circuits it so raw / benchmark output
+# can be inspected without inserted punctuation.
+CJK_BOUNDARY_RESTORE_MODE = "rule"
+# Hard sentence-length cap, in characters. Once a running span without a
+# sentence-end exceeds this, the restorer inserts a sentence terminator.
+CJK_BOUNDARY_MAX_SENTENCE_CHARS = 30
+# Soft phrase-length cap, in characters. Triggers a phrase-level comma
+# when the running span without any break exceeds it.
+CJK_BOUNDARY_SOFT_PHRASE_CHARS = 15
+# Silence gap (seconds) on the timing track that promotes a position
+# into a pause-based phrase or sentence boundary.
+CJK_BOUNDARY_PAUSE_THRESHOLD = 0.6
+# Minimum characters between two consecutive boundary insertions.
+# Prevents tiny phrase fragments when characters cluster around timing
+# pauses.
+CJK_BOUNDARY_MIN_CHARS_BETWEEN = 4
+
 # Pre-Plan 2 — CJK transcript/timing split:
 # When True (default), CJK runs use SenseVoice for transcript text and
 # Whisper for timing anchors. Falls back to Whisper-only when SenseVoice is

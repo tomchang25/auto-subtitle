@@ -46,6 +46,11 @@ from subforge.config import (
     BREATH_GAP,
     CHINESE_BENCHMARK_GAP_SECONDS,
     CHINESE_BENCHMARK_HARD_CHARS,
+    CJK_BOUNDARY_MAX_SENTENCE_CHARS,
+    CJK_BOUNDARY_MIN_CHARS_BETWEEN,
+    CJK_BOUNDARY_PAUSE_THRESHOLD,
+    CJK_BOUNDARY_RESTORE_MODE,
+    CJK_BOUNDARY_SOFT_PHRASE_CHARS,
     CJK_POSTPROCESS_MAX_DURATION,
     CJK_POSTPROCESS_MAX_WIDTH,
     CJK_POSTPROCESS_MERGE_MAX_DURATION,
@@ -61,6 +66,7 @@ from subforge.config import (
     SEG_PAUSE_THRESHOLD,
 )
 from subforge.nlp.alignment import refine_sentences_by_timing
+from subforge.nlp.cjk_boundaries import BoundaryConfig, restore_cjk_boundaries
 from subforge.nlp.cjk_corrector import Corrector, NoOpCorrector
 from subforge.nlp.cjk_postprocess import (
     PostprocessConfig,
@@ -91,12 +97,13 @@ logger = logging.getLogger(__name__)
 
 # Bumped whenever the artifact schema changes so old caches don't poison
 # new pipeline runs.
-_STAGE_SCHEMA_VERSION = "v3"
+_STAGE_SCHEMA_VERSION = "v4"
 
 _STAGE_FILES = (
     "raw_transcript.json",
     "timing_anchors.json",
     "corrected_transcript.json",
+    "boundaries.json",
     "sentences.json",
     "alignment.json",
     "final_cues.json",
@@ -135,8 +142,19 @@ def _save_stage(path: Path, input_hash: str, data) -> None:
 class CjkPipelineStrategy(LanguagePipelineStrategy):
     """Transcript-first subtitle strategy for CJK languages."""
 
-    def __init__(self, corrector: Corrector | None = None):
+    def __init__(
+        self,
+        corrector: Corrector | None = None,
+        boundary_config: BoundaryConfig | None = None,
+    ):
         self.corrector = corrector or NoOpCorrector()
+        self.boundary_config = boundary_config or BoundaryConfig(
+            mode=CJK_BOUNDARY_RESTORE_MODE,
+            max_sentence_chars=CJK_BOUNDARY_MAX_SENTENCE_CHARS,
+            soft_phrase_chars=CJK_BOUNDARY_SOFT_PHRASE_CHARS,
+            pause_threshold=CJK_BOUNDARY_PAUSE_THRESHOLD,
+            min_chars_between_breaks=CJK_BOUNDARY_MIN_CHARS_BETWEEN,
+        )
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -212,9 +230,16 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
         )
         ctx.check_cancel()
 
+        # Stage 2.5 — rule-based CJK boundary restoration. Inserts
+        # punctuation only; speaker text is preserved verbatim.
+        restored_transcript, boundary_diag = self._stage_restore_boundaries(
+            corrected_transcript, timing, ctx, cjk_dir, ws_hash
+        )
+        ctx.check_cancel()
+
         # Stage 3 — sentence list (text only).
         sentences = self._stage_split_sentences(
-            corrected_transcript, ctx, cjk_dir, ws_hash
+            restored_transcript, ctx, cjk_dir, ws_hash
         )
         ctx.check_cancel()
 
@@ -222,7 +247,7 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
         cues, fallback_reason = self._stage_align(
             sentences,
             raw_transcript,
-            corrected_transcript,
+            restored_transcript,
             timing,
             correction_applied,
             ctx,
@@ -257,6 +282,7 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
                     "timing_backend": ctx.timing_backend or "whisper",
                     "timing_model": ctx.timing_model,
                     "transcript_fallback": ctx.transcript_fallback,
+                    "boundary_restoration": boundary_diag,
                 },
             )
             return chunks
@@ -280,6 +306,7 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
 
         result_meta = self._summarise_result(cues, timing, raw_transcript, ctx)
         result_meta["postprocess"] = post_diag
+        result_meta["boundary_restoration"] = boundary_diag
         self._save_final_cues(cjk_dir, chunks, meta=result_meta)
         return chunks
 
@@ -377,6 +404,121 @@ class CjkPipelineStrategy(LanguagePipelineStrategy):
         }
         _save_stage(path, input_hash, data)
         return corrected, applied
+
+    # ------------------------------------------------------------------
+    # Stage 2.5 — rule-based CJK boundary restoration
+    # ------------------------------------------------------------------
+    def _stage_restore_boundaries(
+        self,
+        corrected: CjkTranscript,
+        timing: CjkTimingAnchors,
+        ctx: StrategyContext,
+        cjk_dir: Path,
+        ws_hash: str,
+    ) -> tuple[CjkTranscript, dict]:
+        cfg = self.boundary_config
+        path = cjk_dir / "boundaries.json"
+        cfg_blob = json.dumps(
+            {
+                "mode": cfg.mode,
+                "max_sentence_chars": cfg.max_sentence_chars,
+                "soft_phrase_chars": cfg.soft_phrase_chars,
+                "pause_threshold": cfg.pause_threshold,
+                "min_chars_between_breaks": cfg.min_chars_between_breaks,
+                "sentence_punct": cfg.sentence_punct,
+                "phrase_punct": cfg.phrase_punct,
+            },
+            sort_keys=True,
+        )
+        input_hash = _hash(ws_hash, corrected.text, timing.text, cfg_blob)
+        cached = None if ctx.force else _load_stage(path, input_hash)
+        if cached is not None:
+            ctx.emit("CJK", "Stage 2.5: boundary restoration (cached)")
+            restored = CjkTranscript(
+                text=cached.get("text", corrected.text),
+                source=cached.get("source", corrected.source),
+            )
+            return restored, cached.get("diagnostics", {})
+
+        if cfg.mode == "none":
+            ctx.emit("CJK", "Stage 2.5: boundary restoration disabled (mode=none)")
+            diag = {
+                "applied": False,
+                "mode": "none",
+                "reason_counts": {},
+                "marks": [],
+                "total_marks": 0,
+                "inserted_count": 0,
+            }
+            _save_stage(
+                path,
+                input_hash,
+                {
+                    "text": corrected.text,
+                    "source": corrected.source,
+                    "diagnostics": diag,
+                },
+            )
+            return corrected, diag
+
+        ctx.emit("CJK", "Stage 2.5: restoring CJK sentence boundaries")
+        gap_after = self._build_gap_after(corrected.text, timing)
+        out_text, _marks, diag = restore_cjk_boundaries(
+            corrected.text,
+            ctx.profile,
+            gap_after=gap_after,
+            cfg=cfg,
+        )
+        source = (
+            "boundary_restored" if diag.get("inserted_count", 0) > 0 else corrected.source
+        )
+        restored = CjkTranscript(text=out_text, source=source)
+        _save_stage(
+            path,
+            input_hash,
+            {
+                "text": out_text,
+                "source": source,
+                "diagnostics": diag,
+            },
+        )
+        return restored, diag
+
+    @staticmethod
+    def _build_gap_after(
+        text: str,
+        timing: CjkTimingAnchors,
+    ) -> list[float | None] | None:
+        """Return per-character silence gaps parallel to *text*.
+
+        ``gap_after[i]`` is the silence (seconds) between ``text[i]`` and
+        ``text[i + 1]``, or ``None`` when either side cannot be mapped to
+        a timing anchor. Returns ``None`` if the timing track has no
+        anchors at all so callers can treat boundary restoration as
+        text-only.
+        """
+        if not text or not timing.anchors:
+            return None
+        if timing.text == text:
+            mapping: list[int | None] = list(range(len(text)))
+        else:
+            mapping = _map_corrected_to_raw(text, timing.text)
+
+        gaps: list[float | None] = [None] * len(text)
+        for i in range(len(text) - 1):
+            a = mapping[i]
+            b = mapping[i + 1]
+            if a is None or b is None:
+                continue
+            if not (0 <= a < len(timing.anchors) and 0 <= b < len(timing.anchors)):
+                continue
+            anchor_a = timing.anchors[a]
+            anchor_b = timing.anchors[b]
+            gap = anchor_b.start - anchor_a.end
+            if gap < 0.0:
+                gap = 0.0
+            gaps[i] = gap
+        return gaps
 
     # ------------------------------------------------------------------
     # Stage 3 — sentence split (text only)
